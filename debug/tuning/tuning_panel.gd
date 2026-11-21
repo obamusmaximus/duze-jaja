@@ -14,7 +14,10 @@ const TUNING_DIR: String = "res://tuning/"
 ## Tab name to the stats classes shown on it.
 const TABS: Dictionary = {
 	"Camera": ["CameraStats"],
-	"Debug": ["PlaytestLogStats"],
+	"Units": ["UnitStats", "WeaponStats", "OrderStats"],
+	"Map": ["MapStats"],
+	"Controls": ["PlayerControlStats"],
+	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }
 const MAX_TAB_HEIGHT: float = 460.0
 const MAX_WIDTH: float = 1160.0

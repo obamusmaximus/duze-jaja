@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_default.tres" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_stats")
+weapon = ExtResource("2_weapon")

@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://player/rts_player.gd" id="1_player"]
+[ext_resource type="Resource" path="res://tuning/player_control_default.tres" id="2_stats"]
+[ext_resource type="Script" path="res://player/pointer_input.gd" id="3_pointer"]
+[ext_resource type="Script" path="res://selection/selection_control.gd" id="4_select"]
+[ext_resource type="Script" path="res://selection/control_groups.gd" id="5_groups"]
+[ext_resource type="Script" path="res://orders/order_control.gd" id="6_orders"]
+[ext_resource type="Script" path="res://selection/selection_box.gd" id="7_box"]
+[ext_resource type="Script" path="res://combat/health_bars.gd" id="8_bars"]
+
+[node name="RtsPlayer" type="Node"]
+script = ExtResource("1_player")
+stats = ExtResource("2_stats")
+
+[node name="PointerInput" type="Node" parent="."]
+script = ExtResource("3_pointer")
+
+[node name="SelectionControl" type="Node" parent="."]
+script = ExtResource("4_select")
+
+[node name="ControlGroups" type="Node" parent="."]
+script = ExtResource("5_groups")
+
+[node name="OrderControl" type="Node" parent="."]
+script = ExtResource("6_orders")
+
+[node name="BarLayer" type="CanvasLayer" parent="."]
+
+[node name="HealthBars" type="Control" parent="BarLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_bars")
+
+[node name="BoxLayer" type="CanvasLayer" parent="."]
+
+[node name="SelectionBox" type="Control" parent="BoxLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("7_box")
+
+[node name="Markers" type="Node3D" parent="."]

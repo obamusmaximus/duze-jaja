@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://units/unit.gd" id="1_unit"]
+[ext_resource type="Resource" path="res://tuning/unit_default.tres" id="2_stats"]
+[ext_resource type="Script" path="res://units/unit_look.gd" id="3_look"]
+[ext_resource type="Script" path="res://units/unit_movement.gd" id="4_move"]
+[ext_resource type="Script" path="res://orders/order_queue.gd" id="5_orders"]
+[ext_resource type="Script" path="res://units/unit_navigator.gd" id="6_nav"]
+[ext_resource type="Script" path="res://units/order_brain.gd" id="7_brain"]
+[ext_resource type="Script" path="res://combat/unit_targeting.gd" id="8_targeting"]
+[ext_resource type="Script" path="res://combat/weapon.gd" id="9_weapon"]
+[ext_resource type="Script" path="res://combat/health.gd" id="10_health"]
+
+[sub_resource type="CylinderShape3D" id="Shape_body"]
+resource_local_to_scene = true
+
+[node name="Unit" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 5
+script = ExtResource("1_unit")
+stats = ExtResource("2_stats")
+
+[node name="Shape" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape_body")
+
+[node name="Look" type="Node3D" parent="."]
+script = ExtResource("3_look")
+
+[node name="Movement" type="Node" parent="."]
+script = ExtResource("4_move")
+
+[node name="Navigator" type="Node" parent="."]
+script = ExtResource("6_nav")
+
+[node name="Orders" type="Node" parent="."]
+script = ExtResource("5_orders")
+
+[node name="Brain" type="Node" parent="."]
+script = ExtResource("7_brain")
+
+[node name="Targeting" type="Node" parent="."]
+script = ExtResource("8_targeting")
+
+[node name="Weapon" type="Node" parent="."]
+script = ExtResource("9_weapon")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("10_health")

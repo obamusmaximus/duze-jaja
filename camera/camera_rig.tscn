@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://camera/camera_rig.gd" id="1_rig"]
+[ext_resource type="Resource" path="res://tuning/camera_default.tres" id="2_stats"]
+[ext_resource type="Script" path="res://camera/camera_input.gd" id="3_input"]
+[ext_resource type="Script" path="res://camera/camera_pan.gd" id="4_pan"]
+[ext_resource type="Script" path="res://camera/camera_rotate.gd" id="5_rotate"]
+[ext_resource type="Script" path="res://camera/camera_zoom.gd" id="6_zoom"]
+[ext_resource type="Script" path="res://camera/camera_ground_follow.gd" id="7_ground"]
+
+[node name="CameraRig" type="Node3D"]
+script = ExtResource("1_rig")
+stats = ExtResource("2_stats")
+
+[node name="Camera" type="Camera3D" parent="."]
+far = 1000.0
+
+[node name="CameraInput" type="Node" parent="."]
+script = ExtResource("3_input")
+
+[node name="Pan" type="Node" parent="."]
+script = ExtResource("4_pan")
+
+[node name="Rotate" type="Node" parent="."]
+script = ExtResource("5_rotate")
+
+[node name="Zoom" type="Node" parent="."]
+script = ExtResource("6_zoom")
+
+[node name="GroundFollow" type="Node" parent="."]
+script = ExtResource("7_ground")

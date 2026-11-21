@@ -4,3 +4,4 @@
 
 [resource]
 script = ExtResource("1_stats")
+pitch_near = 20.0

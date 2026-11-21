@@ -1,6 +1,21 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://menus/pause_menu.tscn" id="1_pause"]
+[ext_resource type="Script" path="res://levels/sandbox/sandbox.gd" id="2_level"]
+[ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="3_rig"]
+[ext_resource type="Script" path="res://units/unit_registry.gd" id="4_registry"]
+[ext_resource type="PackedScene" path="res://units/unit.tscn" id="5_unit"]
+[ext_resource type="Script" path="res://selection/selection.gd" id="6_selection"]
+[ext_resource type="Script" path="res://orders/command_issuer.gd" id="7_issuer"]
+[ext_resource type="Resource" path="res://tuning/order_default.tres" id="8_order_stats"]
+[ext_resource type="PackedScene" path="res://player/rts_player.tscn" id="9_player"]
+[ext_resource type="Script" path="res://map/map_grid.gd" id="10_map"]
+[ext_resource type="Script" path="res://map/path_service.gd" id="11_paths"]
+[ext_resource type="Resource" path="res://tuning/map_default.tres" id="12_map_stats"]
+[ext_resource type="Script" path="res://combat/shots.gd" id="13_shots"]
+[ext_resource type="Script" path="res://combat/shot_view.gd" id="14_shot_view"]
+[ext_resource type="Script" path="res://debug/map_wall/map_wall.gd" id="15_wall"]
+[ext_resource type="Script" path="res://debug/map_view/map_grid_view.gd" id="16_grid_view"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
 size = Vector2(200, 200)
@@ -14,6 +29,30 @@ size = Vector3(200, 1, 200)
 [sub_resource type="BoxMesh" id="BoxMesh_marker"]
 size = Vector3(1, 2, 1)
 
+[sub_resource type="StandardMaterial3D" id="Mat_hill"]
+albedo_color = Color(0.45, 0.42, 0.33, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ramp"]
+size = Vector3(16, 1, 24.331)
+
+[sub_resource type="BoxShape3D" id="Shape_ramp"]
+size = Vector3(16, 1, 24.331)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plateau"]
+size = Vector3(16, 4, 20)
+
+[sub_resource type="BoxShape3D" id="Shape_plateau"]
+size = Vector3(16, 4, 20)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.55, 0.5, 0.45, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(90, 3, 1.5)
+
+[sub_resource type="BoxShape3D" id="Shape_wall"]
+size = Vector3(90, 3, 1.5)
+
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
 background_color = Color(0.45, 0.55, 0.65, 1)
@@ -22,6 +61,7 @@ ambient_light_color = Color(0.6, 0.65, 0.7, 1)
 ambient_light_energy = 0.6
 
 [node name="Sandbox" type="Node3D"]
+script = ExtResource("2_level")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Env")
@@ -44,9 +84,102 @@ shape = SubResource("Shape_ground")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("BoxMesh_marker")
 
-[node name="Camera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866, 0, -0.866, 0.5, 0, 30, 17)
-fov = 40.0
-current = true
+[node name="Ramp" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.986394, -0.164399, 0, 0.164399, 0.986394, 30, 1.5068, -22.082)
+
+[node name="Mesh" type="MeshInstance3D" parent="Ramp"]
+mesh = SubResource("BoxMesh_ramp")
+surface_material_override/0 = SubResource("Mat_hill")
+
+[node name="Shape" type="CollisionShape3D" parent="Ramp"]
+shape = SubResource("Shape_ramp")
+
+[node name="Plateau" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 2, -44)
+
+[node name="Mesh" type="MeshInstance3D" parent="Plateau"]
+mesh = SubResource("BoxMesh_plateau")
+surface_material_override/0 = SubResource("Mat_hill")
+
+[node name="Shape" type="CollisionShape3D" parent="Plateau"]
+shape = SubResource("Shape_plateau")
+
+[node name="CameraRig" parent="." instance=ExtResource("3_rig")]
+
+[node name="MapGrid" type="Node" parent="."]
+script = ExtResource("10_map")
+stats = ExtResource("12_map_stats")
+
+[node name="PathService" type="Node" parent="."]
+script = ExtResource("11_paths")
+stats = ExtResource("12_map_stats")
+
+[node name="Shots" type="Node" parent="."]
+script = ExtResource("13_shots")
+
+[node name="ShotView" type="Node3D" parent="."]
+script = ExtResource("14_shot_view")
+
+[node name="DebugWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 1.5, -2)
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("15_wall")
+
+[node name="Mesh" type="MeshInstance3D" parent="DebugWall"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="Shape" type="CollisionShape3D" parent="DebugWall"]
+shape = SubResource("Shape_wall")
+
+[node name="DebugMapGridView" type="MultiMeshInstance3D" parent="."]
+script = ExtResource("16_grid_view")
+
+[node name="Units" type="Node3D" parent="."]
+script = ExtResource("4_registry")
+
+[node name="Ally1" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 8)
+
+[node name="Ally2" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 8)
+
+[node name="Ally3" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 8)
+
+[node name="Ally4" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 11)
+
+[node name="Ally5" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 11)
+
+[node name="Ally6" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 11)
+
+[node name="Enemy1" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -6)
+team = 1
+
+[node name="Enemy2" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -6)
+team = 1
+
+[node name="Enemy3" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -9)
+team = 1
+
+[node name="Enemy4" parent="Units" instance=ExtResource("5_unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -9)
+team = 1
+
+[node name="Selection" type="Node" parent="."]
+script = ExtResource("6_selection")
+
+[node name="CommandIssuer" type="Node" parent="."]
+script = ExtResource("7_issuer")
+stats = ExtResource("8_order_stats")
+
+[node name="RtsPlayer" parent="." instance=ExtResource("9_player")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("1_pause")]
