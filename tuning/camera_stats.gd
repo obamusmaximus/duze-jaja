@@ -16,7 +16,7 @@ extends Resource
 @export var edge_scroll_enabled: bool = true
 ## Keep the cursor inside the game window while playing (freed while paused), so the edge can be reached in a
 ## window too.
-@export var confine_mouse: bool = true
+@export var confine_mouse: bool = false
 ## How close to the screen edge (pixels, at the 2560x1440 base size) the mouse must be to scroll.
 @export_range(1.0, 100.0, 1.0) var edge_margin_px: float = 12.0
 ## Drag pan (hold the drag button and move): ground metres moved per pixel of mouse movement, at the closest zoom.

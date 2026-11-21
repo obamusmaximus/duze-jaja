@@ -13,6 +13,10 @@ signal zoom_notches(notches: float)
 signal reset_pressed
 
 var _stats: CameraStats
+## Last cursor position inside the viewport, and whether the cursor has left the window (it left through an edge,
+## so the last position says which). Lets the edge scroll without confining the cursor.
+var _last_mouse: Vector2 = Vector2(-1.0, -1.0)
+var _mouse_left_window: bool = false
 
 
 func setup(stats: CameraStats) -> void:
@@ -23,6 +27,8 @@ func setup(stats: CameraStats) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
+		_mouse_left_window = false
+		_last_mouse = motion.position
 		if Input.is_action_pressed(&"camera_drag"):
 			drag_moved.emit(motion.relative)
 		elif Input.is_action_pressed(&"camera_rotate"):
@@ -61,8 +67,12 @@ func _edge_direction() -> Vector2:
 		return Vector2.ZERO
 	var view: Rect2 = get_viewport().get_visible_rect()
 	var mouse: Vector2 = get_viewport().get_mouse_position()
-	if not view.grow(1.0).has_point(mouse):
+	if _mouse_left_window:
+		mouse = _last_mouse
+	elif not view.grow(1.0).has_point(mouse):
 		return Vector2.ZERO
+	else:
+		_last_mouse = mouse
 	var margin: float = _stats.edge_margin_px
 	var direction := Vector2.ZERO
 	if mouse.x < view.position.x + margin:
@@ -80,6 +90,10 @@ func _edge_direction() -> Vector2:
 ## while paused or when the rig goes away.
 func _notification(what: int) -> void:
 	match what:
+		NOTIFICATION_WM_MOUSE_EXIT:
+			_mouse_left_window = true
+		NOTIFICATION_WM_MOUSE_ENTER:
+			_mouse_left_window = false
 		NOTIFICATION_UNPAUSED, NOTIFICATION_APPLICATION_FOCUS_IN:
 			_confine(not get_tree().paused)
 		NOTIFICATION_PAUSED, NOTIFICATION_EXIT_TREE:

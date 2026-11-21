@@ -30,7 +30,7 @@ func _draw() -> void:
 		var unit := node as Unit
 		if unit == null or not unit.alive or (not unit.selected and not unit.health.is_damaged()):
 			continue
-		var top: Vector3 = unit.global_position + Vector3.UP * (unit.stats.height + LIFT)
+		var top: Vector3 = unit.get_global_transform_interpolated().origin + Vector3.UP * (unit.stats.height + LIFT)
 		if camera.is_position_behind(top):
 			continue
 		var point: Vector2 = camera.unproject_position(top)
