@@ -5,27 +5,53 @@
 _Last updated: 2026-11-21_
 
 ## Vision
-A top-down real-time strategy game. Everything beyond that is open.
+A top-down 3D real-time strategy game built, to start with, along the lines of Red Alert 3 and C&C3: Tiberium Wars: their camera, their control scheme, army-and-base play.
 
 ## Decided
-- **3D world, top-down view.** Exact camera model is open (below).
+- **Reference games: Red Alert 3 and C&C3: Tiberium Wars.** When a detail isn't settled here, do what they do, and note it here once it's built.
+- **Army and base scale**, not hero or squad play.
+- **Camera: free, in the RA3 / C&C3 style** (below).
+- **Control scheme: the RA3 / C&C3 left-click scheme** (below).
 
-## Camera (open)
-Reference points the user named: StarCraft II, Red Alert 3 / Command & Conquer, Dota 2. The axes on which they differ:
-- **Projection and angle:** all three use a perspective camera at a fixed steep pitch; none is true orthographic.
-- **Rotation:** SC2 and Dota 2 lock yaw (north is always up, so map knowledge and minimap stay one-to-one); RA3 lets the player rotate and tilt.
-- **Zoom:** SC2 has a narrow zoom band (competitive fairness: everyone sees the same area); RA3 has a wide one; Dota 2 a fixed height.
-- **What the camera serves:** an army and a base (free camera, edge pan, hotkeyed locations) vs one hero (camera loosely tied to the hero, with lock on).
-- **Screen real estate:** heavy bottom HUD shifts the useful view up and changes where the camera pivot should sit.
-- **Visibility rules:** fog of war and how a raised building or cliff hides what's behind it; a steep pitch keeps occlusion low.
+## Camera (Decided)
+A perspective camera that orbits a focus point on the ground. Tunables: `CameraStats` (`tuning/camera_default.tres`).
+- **Free rotation** around the focus point, with a reset back to `default_yaw` (north up). Because the view can turn, every model and building must read from all sides, and the minimap needs a view cone showing where the camera faces.
+- **Wide zoom**, with the **pitch tied to the zoom**: flatter (`pitch_near`) when close, steeper (`pitch_far`) when far. Zoomed in is for watching the action; zoomed out is for commanding.
+- **Pan** by keys, the screen edge and a held-button drag, faster when zoomed out (`pan_scales_with_zoom`). The focus point rides the ground height smoothly.
+- **Jumps:** double-tapping a control group's number centres on it; a key jumps to the latest alert; clicking the minimap moves the camera there.
+- **Lopsided view:** a tilted camera sees further up the screen than down it. Rotation lets the player fix that themselves, so maps don't need to work around it.
 
-**Leaning:** none yet.
+## Controls (Decided: the RA3 / C&C3 left-click scheme)
+Left-click both selects and gives orders; right-click clears the selection. RA3 and C&C3 also offered a right-click-orders scheme as an option; we may add that later as a setting.
+
+| Input | Does |
+|---|---|
+| Left-click a unit | Select it (replaces the selection) |
+| Left-drag | Box select own units |
+| Shift + left-click / drag | Add to or remove from the selection |
+| Double-click a unit | Select all own units of that type on screen |
+| Left-click ground / enemy (with a selection) | Move there / attack it (the cursor shows which) |
+| Right-click | Clear the selection |
+| Right-drag | Drag-pan the camera |
+| Middle-drag | Rotate the camera |
+| Mouse wheel | Zoom |
+| Arrow keys, screen edge | Pan |
+| Ctrl + number / number / number twice | Make a control group / select it / centre the camera on it |
+| Ctrl + left-click | Force-fire at a spot or unit |
+| Alt + left-click | Queue a waypoint |
+| Attack-move key, then left-click | Attack-move |
+| Stop key | Stop |
+| Space | Jump to the latest alert |
+| Camera-reset key | Reset yaw and zoom |
+
+The hotkeys in this table follow how we remember RA3 and C&C3; the exact keys and the less common ones (scatter, select all of a type across the map, reverse move, formation move) still need checking against those games' manuals before they're bound. Any key is just an Input Map action, so it's cheap to change.
+
+**Production (leaning: the C&C model):** construction and unit production are queued from a sidebar, not by selecting the building, and new structures are placed near existing ones. This shapes the HUD layout, but it isn't part of the groundwork.
 
 ## Open questions
-- **Scale of play:** army and base (SC2, C&C) vs a few heroes or squads (Dota, Company of Heroes)?
-- **Economy:** gathered resources, captured points, or none?
+- **Economy:** C&C-style harvested resource (leaning, from the reference games), captured points, or both?
 - **Setting and look.**
 - **Opponent:** AI skirmish, campaign missions, multiplayer (multiplayer forces a deterministic lockstep model early)?
-- **Pathing:** NavigationServer3D agents vs flow fields; how many units on screen at once?
+- **Pathing:** NavigationServer3D agents vs flow fields; how many units on screen at once? The groundwork starts on NavigationServer3D (`docs/plans/groundwork.md`).
 
 ## Parked

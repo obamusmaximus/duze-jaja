@@ -12,7 +12,7 @@ One doc per load-bearing mechanic, listed in the table in `STATUS.md`. Each hold
 
 ## Documenting principles (all docs)
 1. **Write for the next session, not as a record.** Keep only what a fresh session needs and can't cheaply get from the code or git.
-2. **One home per fact.** Rules go in `CLAUDE.md`, current state and next up in `STATUS.md`, mechanic detail in its doc, test-harness notes in `docs/testing.md`, design in `GAME_DESIGN.md`. Point to the home instead of copying.
+2. **One home per fact.** Rules go in `CLAUDE.md`, current state and next up in `STATUS.md`, mechanic detail in its doc, test-harness notes in `docs/testing.md`, build orders in `docs/plans/` (deleted once built), design in `GAME_DESIGN.md`. Point to the home instead of copying.
 3. **Only every-session facts go in `CLAUDE.md` and `STATUS.md`.** Both are loaded into every session, so a line there costs every session. Anything only some sessions need goes in the doc for that work, with a pointer.
 4. **Name parameters, never values.** The `.tres` files are the source of truth.
 5. **Describe the present.** Rewrite to match the code and delete what's no longer true. No changelog, no dated entries, no "now" or "fixed": git has the history.

@@ -3,7 +3,7 @@
 ## Project
 - **Engine:** Godot 4 (project is on 4.7, GL Compatibility renderer, Jolt physics). Use Godot 4 APIs only. Don't use Godot 3 patterns such as `KinematicBody`, `yield`, or `export var`.
 - **Language:** GDScript only.
-- **Genre:** Top-down 3D real-time strategy (camera model still open, see `GAME_DESIGN.md`).
+- **Genre:** Top-down 3D real-time strategy, built along the lines of Red Alert 3 / C&C3 (free camera, left-click control scheme; see `GAME_DESIGN.md`). Groundwork build order: `docs/plans/groundwork.md`.
 
 ## Code conventions
 - **Use typed GDScript everywhere.** Give types to variables, parameters, return values, and `@export`s (e.g. `var speed: float = 5.0`, `func move() -> void:`). Use `:=` when the type is obvious.
@@ -23,6 +23,7 @@
 ## Session workflow
 - **`STATUS.md` is imported at the end of this file**, so it is already loaded at the start of every session.
 - **Working on a mechanic? Read its doc in `docs/mechanics/`** (the glossary below says which) before touching its scripts, and read only the scripts it lists unless the task needs more.
+- **Building groundwork?** `docs/plans/groundwork.md` is the build order; tick a step there when it lands.
 - **Writing a headless test?** Read `docs/testing.md` first.
 - **At the end of a task, update the mechanic's doc, then `STATUS.md`.** Follow the documenting principles in `docs/mechanics/README.md`.
 - Several sessions may work in this checkout at once, one per mechanic. Touch only your mechanic's doc, and re-read `STATUS.md` right before editing it.
@@ -33,6 +34,7 @@
 ## Glossary
 Game-specific terms. Use them consistently in code, comments and conversation. Each is defined in the mechanic doc in brackets (all in `docs/mechanics/`).
 
+- **[`GAME_DESIGN.md`, until the rig has a doc]** focus point, yaw, distance, pitch, pan, drag pan, edge scrolling, reset
 - **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe
 
 - **Dev-only tools live in `debug/`** (one subfolder per tool) and their scripts start their doc comment with "Debug:". Gameplay must never depend on them; they hook in through groups and signals.

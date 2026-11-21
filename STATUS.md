@@ -11,20 +11,18 @@ _Last updated: 2026-11-21_
 |---|---|---|
 | Debug tools (tuning panel, pause menu, playtest log) | `debug_tools.md`, `../playtest_log.md` | Ported from `../first`. Tuning panel has one tab (Debug); no diagrams yet. Playtest log has no probes yet. |
 | Sandbox level | `debug_tools.md` | `levels/sandbox/sandbox.tscn` (main scene): flat ground, sun, a 2 m scale marker, a fixed placeholder camera, the pause menu. |
+| Camera | (doc comes with the rig) | Design decided (`GAME_DESIGN.md`, "Camera"). `CameraStats` and `camera_default.tres` exist (Camera tab); no rig uses them yet. |
 
 ## Current goals
-1. **Decide the camera model** (`GAME_DESIGN.md`, "Camera"), then build the RTS camera rig.
-2. **First playable loop:** select units, order them to move.
+1. **Build the RTS groundwork** in the RA3 / C&C3 style: follow `docs/plans/groundwork.md` step by step (camera rig, picking, units, selection, orders, pathing, basic combat, HUD shell).
 
 ## Cross-cutting known issues and gotchas
 - Typed `@export var x: Camera3D` loads as null from a `.tscn`. Verify any node export.
 - GDScript 4.7: `Array[T]()` doesn't parse (declare a typed local first). A `const` can't hold `PackedVector3Array([...])`. Scalars passed to functions are copies, so return results.
 
 ## Next up
-1. Camera rig (pan, zoom, rotate as decided) with its own stats class and tuning tab.
-2. Unit selection (click, box select) and move orders on the ground plane.
-3. Pathfinding and group movement (NavigationServer3D vs flow fields: open).
+1. **The next unticked step in `docs/plans/groundwork.md`** (step 1, the camera rig, to start). Read the plan and `GAME_DESIGN.md` "Camera" and "Controls" first.
 
 ## Layout and branches
-- Feature folders: `levels/sandbox/`, `menus/`, `tuning/`, `debug/` (dev-only tools: `debug/tuning/` builds the tuning panel from the stats resources; `debug/playtest_log/`). Each mechanic doc lists its scripts. Headless test notes: `docs/testing.md`.
+- Feature folders: `levels/sandbox/`, `camera/` (planned), `menus/`, `tuning/`, `debug/` (dev-only tools: `debug/tuning/` builds the tuning panel from the stats resources; `debug/playtest_log/`). Each mechanic doc lists its scripts. Headless test notes: `docs/testing.md`.
 - Git: local repository only, no remote yet. Work happens on feature branches off `main` (one topic per branch); finished branches are merged and deleted.

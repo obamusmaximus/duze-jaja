@@ -13,6 +13,7 @@ signal back_pressed
 const TUNING_DIR: String = "res://tuning/"
 ## Tab name to the stats classes shown on it.
 const TABS: Dictionary = {
+	"Camera": ["CameraStats"],
 	"Debug": ["PlaytestLogStats"],
 }
 const MAX_TAB_HEIGHT: float = 460.0
