@@ -16,6 +16,7 @@
 - **The `.tres` files are the source of truth.** The user tunes live and saves them between sessions, so values change between prompts. That is normal: don't be surprised by a changed value, don't "fix", reset or revert it. Never write tunable values into the docs (name the parameter), and treat any number in a doc as possibly stale.
 - **Use named input actions** from the Input Map, never raw keys. Current actions: `pause` (Esc), `save_playtest_log` (L).
 - **Movement and raycasts go in `_physics_process`**, not `_process`.
+- **Keep the simulation apart from views** (`GAME_DESIGN.md`, "Multiplayer and simulation"). Units, orders, pathing, combat and map changes run on the fixed tick and never read a camera, the mouse, the selection or the HUD, so a headless server can run them. Views, players and AI change the game only by sending `Order` data through `CommandIssuer`. Never assume the map is fixed: it changes during a match.
 - **Collision layers:** 1 World, 2 Unit, 3 Building, 4 Projectile. Use these when setting `collision_layer` and `collision_mask`. The names are set in `project.godot`.
 - Use `@onready var x: Type = $Path` for node references. Don't call `get_node` repeatedly.
 - Follow the official GDScript style guide: `snake_case` for files, functions, and variables; `PascalCase` for classes and nodes.
@@ -35,6 +36,7 @@
 Game-specific terms. Use them consistently in code, comments and conversation. Each is defined in the mechanic doc in brackets (all in `docs/mechanics/`).
 
 - **[`GAME_DESIGN.md`, until the rig has a doc]** focus point, yaw, distance, pitch, pan, drag pan, edge scrolling, reset
+- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, order, `CommandIssuer`, map grid, guidelines (Leitlinien), AI commander
 - **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe
 
 - **Dev-only tools live in `debug/`** (one subfolder per tool) and their scripts start their doc comment with "Debug:". Gameplay must never depend on them; they hook in through groups and signals.
