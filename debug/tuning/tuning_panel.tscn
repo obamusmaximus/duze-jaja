@@ -1,0 +1,101 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://debug/tuning/tuning_panel.gd" id="1_panel"]
+[ext_resource type="Script" path="res://debug/tuning/tuning_preview.gd" id="2_preview"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_holder"]
+
+[node name="TuningPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(1160, 0)
+visible = false
+script = ExtResource("1_panel")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="Column" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Margin/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Tuning"
+horizontal_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Tabs" type="TabContainer" parent="Margin/Column/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 440)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Preview" type="VBoxContainer" parent="Margin/Column/Body"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+script = ExtResource("2_preview")
+
+[node name="PreviewTitle" type="Label" parent="Margin/Column/Body/Preview"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.45, 1)
+theme_override_font_sizes/font_size = 18
+text = "Hover a setting"
+
+[node name="VisualHolder" type="PanelContainer" parent="Margin/Column/Body/Preview"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 240)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_holder")
+
+[node name="NoVisual" type="Label" parent="Margin/Column/Body/Preview/VisualHolder"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.6, 0.68, 0.7)
+text = "No diagram for this one"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PreviewDescription" type="Label" parent="Margin/Column/Body/Preview"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="Status" type="Label" parent="Margin/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SaveButton" type="Button" parent="Margin/Column/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save tab to .tres"
+
+[node name="ResetButton" type="Button" parent="Margin/Column/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset tab"
+
+[node name="Spacer" type="Control" parent="Margin/Column/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BackButton" type="Button" parent="Margin/Column/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
