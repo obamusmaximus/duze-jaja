@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PropStats" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tuning/prop_stats.gd" id="1_stats"]
+[ext_resource type="PackedScene" path="res://assets/kenney_space_kit/hangar_smallA.glb" id="2_model"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Small Hangar"
+model = ExtResource("2_model")
+model_scale = 4.0
+footprint_x = 8.0
+footprint_z = 8.0
+height = 4.0

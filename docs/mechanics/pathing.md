@@ -2,7 +2,7 @@
 
 How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "Changing maps"). Tunables: `MapStats` (`tuning/map_default.tres`, Map tab); `UnitStats` "Movement" and "Crowds" (Units tab).
 
-**Scripts:** `map/map_grid.gd`, `map/path_service.gd`; `units/unit_navigator.gd`, `unit_movement.gd`, `unit_spatial_hash.gd` (in `unit_registry.gd`); debug: `debug/map_wall/map_wall.gd`, `debug/map_view/map_grid_view.gd`.
+**Scripts:** `map/map_grid.gd`, `map/path_service.gd`; `props/prop.gd` (blocks its footprint, see `props.md`); `units/unit_navigator.gd`, `unit_movement.gd`, `unit_spatial_hash.gd` (in `unit_registry.gd`); debug: `debug/map_wall/map_wall.gd`, `debug/map_view/map_grid_view.gd`.
 
 ## How it works
 - **`MapGrid`** (the map model): the map area in cells of `cell_size`, each with a ground height and blocked or not. The level builds it on its first physics tick (`build(area)`, rays down on layer 1). A cell is blocked when the height step to a side neighbour is steeper than `max_slope_deg` (both sides of a cliff), or when an obstacle covers it. For paths, blocked cells grow by `path_clearance`, so paths keep off walls and every path check is a cell lookup. One clearance serves every unit size for now.

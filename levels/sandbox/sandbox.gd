@@ -1,6 +1,6 @@
 extends Node3D
-## The sandbox level: flat ground with a ramp up to a plateau, a debug wall (F3) and a few units of two teams, for
-## testing the groundwork. Wires the match (map grid, paths, units, shots, command issuer) and the local player's RTS
+## The sandbox level (the space demo level uses this script too): flat ground with a ramp up to a plateau, a debug
+## wall (F3) and a few units of two teams, for testing the groundwork. Wires the match (map grid, paths, units, shots, command issuer) and the local player's RTS
 ## view (camera rig, selection, controls, shot view).
 
 ## The part of the ground (x, z) the camera's focus point may move over.
@@ -29,6 +29,7 @@ func _ready() -> void:
 	# The ground's collision is only queryable once the physics server has stepped.
 	await get_tree().physics_frame
 	_map.build(MAP_AREA)
+	get_tree().call_group(&"props", "block_in", _map)
 	_paths.setup(_map)
 	_shots.setup(_units)
 	_units.setup(_map, _paths, _shots)

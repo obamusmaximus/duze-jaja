@@ -33,6 +33,14 @@ extends Resource
 ## Height of the body, in metres.
 @export_range(0.2, 10.0, 0.1) var height: float = 1.2
 
+@export_group("Look")
+## The imported model (.glb) shown for the unit. None: the placeholder cylinder with a nose.
+@export var model: PackedScene
+## Uniform scale of the model. Imported kits are not built to one scale, so each type sets its own.
+@export_range(0.1, 30.0, 0.05) var model_scale: float = 1.0
+## Turns the model about its centre, in degrees, to line its front up with the way the unit faces (-Z).
+@export_range(-180.0, 180.0, 15.0) var model_yaw_deg: float = 0.0
+
 @export_group("Combat")
 ## Hit points when full.
 @export_range(1.0, 5000.0, 1.0) var max_health: float = 100.0

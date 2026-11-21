@@ -40,6 +40,7 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`pathing.md`]** map grid (map model), cell, clearance, path service, shared path, navigator, separation (soft collision), crowd arrival, stuck, map change
 - **[`combat.md`]** health, weapon, fire arc, targeting, doomed (overkill), shots, return fire, hold ground, leash
 - **[`orders.md`]** order, `CommandIssuer`, order queue, group move, waypoint, attack-move
+- **[`props.md`]** prop, prop type, model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
 - **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander
 - **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe, slow time

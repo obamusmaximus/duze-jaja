@@ -15,7 +15,7 @@ const TUNING_DIR: String = "res://tuning/"
 const TABS: Dictionary = {
 	"Camera": ["CameraStats"],
 	"Units": ["UnitStats", "WeaponStats", "OrderStats"],
-	"Map": ["MapStats"],
+	"Map": ["MapStats", "PropStats"],
 	"Controls": ["PlayerControlStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }

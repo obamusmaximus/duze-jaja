@@ -10,6 +10,7 @@ Read before writing a headless or `--script` test harness. Add a line here when 
 - A GDScript lambda captures locals by value: assigning to an outer variable inside one (a signal callback collecting results) changes nothing outside. Mutate a container instead (`got[0] = x`).
 - For a deterministic run (comparing a trace before and after a refactor), pass `--fixed-fps 60`; without it the physics step count follows wall time.
 - A screenshot script on a small window must set `root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED`, or the project's 2560x1440 stretch shrinks everything to a corner.
+- A windowed screenshot harness (no `--headless`, `--resolution WxH`, `--script`): add the level to `root`, `await` a second or so, then `root.get_viewport().get_texture().get_image().save_png(path)`. Add your own `Camera3D` and frame it with `look_at_from_position` once it is in the tree (`look_at` fails inside `_init`).
 - Keep harness scripts out of the project folder (or delete them after the run, with their `.uid`).
 - Push input with `root.push_input(event, true)` (local coordinates) to use viewport points such as `unproject_position()`; without `true` the event is mapped from the tiny headless window and lands far off.
 - Headless reports the mouse at (0, 0), a screen corner: turn off `CameraStats.edge_scroll_enabled` in the test or the camera pans away.
