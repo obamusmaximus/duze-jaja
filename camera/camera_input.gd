@@ -60,7 +60,7 @@ func _mouse_busy() -> bool:
 	return Input.is_action_pressed(&"camera_drag") or Input.is_action_pressed(&"camera_rotate")
 
 
-## In viewport units, which under the project's canvas_items stretch are the 2560x1440 base units that
+## In viewport units, which under the project's canvas_items stretch are the 1920x1080 base units that
 ## `edge_margin_px` is given in. An unfocused window or a mouse outside the viewport never scrolls.
 func _edge_direction() -> Vector2:
 	if not get_window().has_focus():

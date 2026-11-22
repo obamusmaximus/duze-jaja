@@ -5,7 +5,7 @@ extends Node3D
 ## rotate, zoom, ground follow) owning its own target and current values; this node wires them and places the camera.
 ##
 ## A view only: it owns its camera and input and nothing else, and the simulation never reads it. It runs on real
-## time, so it keeps full speed while `Engine.time_scale` slows the game. The level calls `setup(bounds)`.
+## time, so it keeps full speed while `Engine.time_scale` slows the game. The level calls `setup(bounds, home_yaw)`.
 
 @export var stats: CameraStats
 
@@ -32,9 +32,11 @@ func _ready() -> void:
 	_place()
 
 
-## Keeps the focus point inside `bounds` (x, z on the ground).
-func setup(bounds: Rect2) -> void:
+## Keeps the focus point inside `bounds` (x, z on the ground), and sets the yaw that reset returns to (degrees; 0
+## looks toward -Z, so a level laid out along X starts at -90 or 90).
+func setup(bounds: Rect2, home_yaw: float) -> void:
 	_pan.set_bounds(bounds)
+	_rotate.set_home(home_yaw)
 
 
 ## Moves the camera to look at `point` (control-group jumps, minimap clicks, alerts).

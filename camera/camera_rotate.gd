@@ -9,12 +9,20 @@ var target: float
 var yaw: float
 
 var _stats: CameraStats
+## The yaw reset returns to: the level's home yaw, starting from the stats' default.
+var _home: float
 
 
 func setup(stats: CameraStats) -> void:
 	_stats = stats
-	target = stats.default_yaw
-	yaw = target
+	set_home(stats.default_yaw)
+
+
+## Sets the home yaw (degrees) and turns to it at once: the level's own facing, for its layout.
+func set_home(home: float) -> void:
+	_home = home
+	target = home
+	yaw = home
 
 
 ## Turns by a mouse movement of `pixels` while the rotate button is held: moving right swings the camera right.
@@ -27,9 +35,9 @@ func turn(direction: float, delta: float) -> void:
 	target += direction * _stats.rotate_key_speed * delta
 
 
-## Heads back to `default_yaw` the short way round.
+## Heads back to the home yaw the short way round.
 func reset() -> void:
-	target += wrapf(_stats.default_yaw - target, -180.0, 180.0)
+	target += wrapf(_home - target, -180.0, 180.0)
 
 
 func step(delta: float) -> void:

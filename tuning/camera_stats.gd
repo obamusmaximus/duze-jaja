@@ -17,7 +17,7 @@ extends Resource
 ## Keep the cursor inside the game window while playing (freed while paused), so the edge can be reached in a
 ## window too.
 @export var confine_mouse: bool = false
-## How close to the screen edge (pixels, at the 2560x1440 base size) the mouse must be to scroll.
+## How close to the screen edge (pixels, at the 1920x1080 base size) the mouse must be to scroll.
 @export_range(1.0, 100.0, 1.0) var edge_margin_px: float = 12.0
 ## Drag pan (hold the drag button and move): ground metres moved per pixel of mouse movement, at the closest zoom.
 ## Scales with the distance like `pan_speed`.
@@ -34,7 +34,7 @@ extends Resource
 @export_range(10.0, 360.0, 1.0) var rotate_key_speed: float = 90.0
 ## How quickly the yaw catches up with its target (per second). 0 means instant.
 @export_range(0.0, 40.0, 0.5) var rotate_smoothing: float = 16.0
-## The yaw (degrees) the reset action returns to: 0 looks toward -Z, the map's "north".
+## The yaw (degrees) the camera starts at, until a level sets its own home yaw: 0 looks toward -Z, the map's "north".
 @export_range(-180.0, 180.0, 1.0) var default_yaw: float = 0.0
 
 @export_group("Zoom")
