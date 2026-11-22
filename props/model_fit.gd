@@ -9,9 +9,11 @@ static var _bounds: Dictionary = {}
 
 
 ## A new node holding `scene` centred on its footprint with its underside at y = 0, scaled by `model_scale` and
-## turned `yaw_deg` degrees about the vertical axis.
-static func instance(scene: PackedScene, model_scale: float, yaw_deg: float) -> Node3D:
+## turned `yaw_deg` degrees about the vertical axis. Its materials are recoloured into the world palette
+## (`WorldMaterials`), with `team` colouring the livery parts (-1: no team).
+static func instance(scene: PackedScene, model_scale: float, yaw_deg: float, team: int = -1) -> Node3D:
 	var model: Node3D = scene.instantiate() as Node3D
+	WorldMaterials.recolour(model, team)
 	var bounds: AABB = _bounds_of(scene, model)
 	model.position = -Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
 	var holder := Node3D.new()
