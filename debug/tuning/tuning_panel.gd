@@ -15,8 +15,9 @@ const TUNING_DIR: String = "res://tuning/"
 const TABS: Dictionary = {
 	"Camera": ["CameraStats"],
 	"Units": ["UnitStats", "WeaponStats", "OrderStats"],
-	"Map": ["MapStats", "PropStats"],
-	"Controls": ["PlayerControlStats"],
+	"Map": ["MapStats", "PropStats", "TerrainStats", "WaterStats", "WorldLookStats", "LightStats"],
+	"Audio": ["AudioStats", "SfxCue", "FxStats"],
+	"Controls": ["PlayerControlStats", "UiStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }
 const MAX_TAB_HEIGHT: float = 460.0

@@ -52,6 +52,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.8, 0.45, 1)
 theme_override_font_sizes/font_size = 18
 text = "Hover a setting"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="VisualHolder" type="PanelContainer" parent="Margin/Column/Body/Preview"]
 unique_name_in_owner = true
@@ -67,10 +69,16 @@ text = "No diagram for this one"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PreviewDescription" type="Label" parent="Margin/Column/Body/Preview"]
+[node name="DescriptionScroll" type="ScrollContainer" parent="Margin/Column/Body/Preview"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PreviewDescription" type="Label" parent="Margin/Column/Body/Preview/DescriptionScroll"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 autowrap_mode = 3
 
 [node name="Status" type="Label" parent="Margin/Column"]
