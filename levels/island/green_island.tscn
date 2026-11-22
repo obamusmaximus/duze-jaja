@@ -1,0 +1,646 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://menus/pause_menu.tscn" id="pause"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="hud"]
+[ext_resource type="Script" path="res://levels/island/island_level.gd" id="level"]
+[ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="rig"]
+[ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
+[ext_resource type="PackedScene" path="res://units/unit.tscn" id="unit"]
+[ext_resource type="Script" path="res://selection/selection.gd" id="selection"]
+[ext_resource type="Script" path="res://orders/command_issuer.gd" id="issuer"]
+[ext_resource type="Resource" path="res://tuning/order_default.tres" id="order_stats"]
+[ext_resource type="PackedScene" path="res://player/rts_player.tscn" id="player"]
+[ext_resource type="Script" path="res://map/map_grid.gd" id="map"]
+[ext_resource type="Script" path="res://map/path_service.gd" id="paths"]
+[ext_resource type="Resource" path="res://tuning/map_default.tres" id="map_stats"]
+[ext_resource type="Script" path="res://combat/shots.gd" id="shots"]
+[ext_resource type="Script" path="res://combat/shot_view.gd" id="shot_view"]
+[ext_resource type="Script" path="res://debug/map_view/map_grid_view.gd" id="grid_view"]
+[ext_resource type="PackedScene" path="res://props/prop.tscn" id="prop"]
+[ext_resource type="Script" path="res://audio/game_sound.gd" id="game_sound"]
+[ext_resource type="Script" path="res://fx/combat_effects.gd" id="combat_fx"]
+[ext_resource type="Resource" path="res://tuning/fx_default.tres" id="fx_stats"]
+[ext_resource type="Script" path="res://terrain/terrain_map.gd" id="terrain_map"]
+[ext_resource type="Script" path="res://debug/terrain_editor/terrain_editor.gd" id="terrain_editor"]
+[ext_resource type="Resource" path="res://levels/island/green_island_terrain.tres" id="terrain_layout"]
+[ext_resource type="Resource" path="res://tuning/terrain_island.tres" id="terrain_stats"]
+[ext_resource type="Resource" path="res://tuning/unit_rover.tres" id="unit_rover"]
+[ext_resource type="Resource" path="res://tuning/unit_skiff.tres" id="unit_skiff"]
+[ext_resource type="Resource" path="res://tuning/unit_trooper.tres" id="unit_trooper"]
+
+[ext_resource type="PackedScene" path="res://bases/carrier.tscn" id="carrier"]
+[ext_resource type="Script" path="res://water/water_body.gd" id="water_body"]
+[ext_resource type="Resource" path="res://tuning/water_default.tres" id="water_stats"]
+[ext_resource type="Resource" path="res://tuning/prop_tree_round.tres" id="prop_tree_round"]
+[ext_resource type="Resource" path="res://tuning/prop_tree_pine.tres" id="prop_tree_pine"]
+[ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
+[ext_resource type="Resource" path="res://tuning/light_day.tres" id="light_stats"]
+
+[node name="GreenIsland" type="Node3D"]
+script = ExtResource("level")
+camera_bounds = Rect2(-395, -95, 790, 190)
+map_area = Rect2(-400, -100, 800, 200)
+camera_yaw = -90.0
+
+[node name="WorldLight" parent="." instance=ExtResource("world_light")]
+stats = ExtResource("light_stats")
+
+[node name="Water" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+script = ExtResource("water_body")
+size = Vector2(1160, 560)
+stats = ExtResource("water_stats")
+
+[node name="CarrierAlly" parent="." instance=ExtResource("carrier")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -315, 0, 0)
+
+[node name="CarrierEnemy" parent="." instance=ExtResource("carrier")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 315, 0, 0)
+team = 1
+
+[node name="CameraRig" parent="." instance=ExtResource("rig")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -290, 4, 0)
+
+[node name="MapGrid" type="Node" parent="."]
+script = ExtResource("map")
+stats = ExtResource("map_stats")
+
+[node name="PathService" type="Node" parent="."]
+script = ExtResource("paths")
+stats = ExtResource("map_stats")
+
+[node name="Shots" type="Node" parent="."]
+script = ExtResource("shots")
+
+[node name="GameSound" type="Node" parent="."]
+script = ExtResource("game_sound")
+
+[node name="CombatEffects" type="Node3D" parent="."]
+script = ExtResource("combat_fx")
+stats = ExtResource("fx_stats")
+
+[node name="ShotView" type="Node3D" parent="."]
+script = ExtResource("shot_view")
+
+[node name="DebugMapGridView" type="MultiMeshInstance3D" parent="."]
+script = ExtResource("grid_view")
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("terrain_map")
+layout = ExtResource("terrain_layout")
+stats = ExtResource("terrain_stats")
+
+[node name="TerrainEditor" type="Node" parent="."]
+script = ExtResource("terrain_editor")
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="Tree0" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.29, 0, 1.29, 0, 1.29, 0, 0, -48.4, 4, -28.8)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.9, 0, 0, -12.7, 4, 24.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.27, 0, 1.27, 0, 1.27, 0, 0, 99.3, 4, -11)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree3" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.93, 0, 0.93, 0, 0.93, 0, 0, 23.1, 8, 9.2)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree4" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.04, 0, 1.04, 0, 1.04, 0, 0, -53.1, 4, -35.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree5" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.31, 0, 1.31, 0, 1.31, 0, 0, 5.5, 4, 27.4)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree6" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.3, 0, 1.3, 0, 1.3, 0, 0, -10.9, 4, 39.4)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree7" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.91, 0, 0.91, 0, 0.91, 0, 0, -5.6, 8, -9.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree8" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.93, 0, 0.93, 0, 0.93, 0, 0, 21.6, 8, -15.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree9" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.04, 0, 1.04, 0, 1.04, 0, 0, -61.8, 4, 23)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree10" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.11, 0, 1.11, 0, 1.11, 0, 0, 81.9, 4, 27.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree11" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.03, 0, 1.03, 0, 1.03, 0, 0, -67.6, 4, 20.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree12" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.87, 0, 0.87, 0, 0.87, 0, 0, -11.8, 4, -32.4)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree13" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.95, 0, 0.95, 0, 0.95, 0, 0, -91.1, 4, 10.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree14" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.23, 0, 1.23, 0, 1.23, 0, 0, 0.7, 8, -12.8)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree15" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.34, 0, 1.34, 0, 1.34, 0, 0, -26.2, 8, 14.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree16" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.82, 0, 0.82, 0, 0.82, 0, 0, 34.5, 8, 15.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree17" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.14, 0, 1.14, 0, 1.14, 0, 0, 58.7, 4, -22.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree18" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -4.5, 4, 27)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree19" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.82, 0, 0.82, 0, 0.82, 0, 0, 51.9, 4, -26.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree20" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.3, 0, 1.3, 0, 1.3, 0, 0, 26.1, 4, 45.2)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree21" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.87, 0, 0.87, 0, 0.87, 0, 0, -59.2, 4, -36.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree22" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.16, 0, 1.16, 0, 1.16, 0, 0, 6.3, 8, -23.5)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree23" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.13, 0, 1.13, 0, 1.13, 0, 0, -49.2, 4, -40)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree24" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.18, 0, 1.18, 0, 1.18, 0, 0, -27.7, 8, 23.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree25" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.98, 0, 0.98, 0, 0.98, 0, 0, -9.2, 8, 18.5)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree26" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.05, 0, 1.05, 0, 1.05, 0, 0, 92.2, 4, 5.9)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree27" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, 18.5, 4, 26.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree28" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.06, 0, 1.06, 0, 1.06, 0, 0, -55.3, 8, -11.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree29" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.2, 0, 1.2, 0, 1.2, 0, 0, -89.8, 4, 18.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree30" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.07, 0, 1.07, 0, 1.07, 0, 0, -14.5, 8, -17.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree31" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.06, 0, 1.06, 0, 1.06, 0, 0, 84.1, 4, -14.4)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree32" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.81, 0, 0.81, 0, 0.81, 0, 0, 80.5, 4, 3.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree33" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.17, 0, 1.17, 0, 1.17, 0, 0, 46.4, 4, 17.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree34" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.09, 0, 1.09, 0, 1.09, 0, 0, 3.1, 4, 47.9)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree35" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.94, 0, 0.94, 0, 0.94, 0, 0, 12.5, 8, 23.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree36" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.26, 0, 1.26, 0, 1.26, 0, 0, -46.4, 4, 42.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree37" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.27, 0, 1.27, 0, 1.27, 0, 0, 22.6, 4, -34.2)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree38" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.07, 0, 1.07, 0, 1.07, 0, 0, 43.3, 4, -31.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree39" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.91, 0, 0.91, 0, 0.91, 0, 0, 62.8, 4, 22.5)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree40" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.08, 0, 1.08, 0, 1.08, 0, 0, -61.3, 4, 39.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree41" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.86, 0, 0.86, 0, 0.86, 0, 0, -7, 4, -28.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree42" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.88, 0, 0.88, 0, 0.88, 0, 0, -81.7, 4, -23.8)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree43" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.06, 0, 1.06, 0, 1.06, 0, 0, -46.7, 8, -11.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree44" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.86, 0, 0.86, 0, 0.86, 0, 0, 89.5, 4, 21.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree45" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.07, 0, 1.07, 0, 1.07, 0, 0, -81.2, 4, 17)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree46" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.11, 0, 1.11, 0, 1.11, 0, 0, 33.8, 8, -19.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree47" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.82, 0, 0.82, 0, 0.82, 0, 0, 77.4, 4, -27.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree48" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.18, 0, 1.18, 0, 1.18, 0, 0, 60.1, 4, 28.2)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree49" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.85, 0, 0.85, 0, 0.85, 0, 0, -64.5, 4, -32.9)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree50" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.24, 0, 1.24, 0, 1.24, 0, 0, 40.5, 4, 31)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree51" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.27, 0, 1.27, 0, 1.27, 0, 0, -41.1, 4, -17.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree52" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.11, 0, 1.11, 0, 1.11, 0, 0, 69.5, 4, -28.9)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree53" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.83, 0, 0.83, 0, 0.83, 0, 0, -69.1, 4, -24.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree54" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.1, 0, 1.1, 0, 1.1, 0, 0, 13.5, 8, 9.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree55" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.03, 0, 1.03, 0, 1.03, 0, 0, 67.9, 4, 29)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree56" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.37, 0, 1.37, 0, 1.37, 0, 0, 47, 4, -21.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree57" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.88, 0, 0.88, 0, 0.88, 0, 0, 2.6, 8, 14.8)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree58" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.31, 0, 1.31, 0, 1.31, 0, 0, 74.4, 4, 28.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree59" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, 1.6, 4, -37.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree60" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.24, 0, 1.24, 0, 1.24, 0, 0, 30.2, 4, -35.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree61" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.29, 0, 1.29, 0, 1.29, 0, 0, 108.7, 4, 8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree62" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.92, 0, 0.92, 0, 0.92, 0, 0, -80.3, 4, -11)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree63" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.39, 0, 1.39, 0, 1.39, 0, 0, -60, 4, -21.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree64" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.1, 0, 1.1, 0, 1.1, 0, 0, -8.1, 8, -15.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree65" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.37, 0, 1.37, 0, 1.37, 0, 0, 20.4, 8, 18)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree66" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.35, 0, 1.35, 0, 1.35, 0, 0, -24.1, 4, -41.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree67" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.9, 0, 0, 28.4, 8, -22.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree68" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.27, 0, 1.27, 0, 1.27, 0, 0, -56.3, 4, 26.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree69" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.36, 0, 1.36, 0, 1.36, 0, 0, 16.3, 4, -26.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree70" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.84, 0, 0.84, 0, 0.84, 0, 0, 16, 8, -12.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree71" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.01, 0, 1.01, 0, 1.01, 0, 0, -48.6, 4, 22.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree72" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -101.9, 4, -6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree73" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.9, 0, 0, -37.4, 4, -34.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree74" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.34, 0, 1.34, 0, 1.34, 0, 0, 83.6, 4, -24.1)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree75" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.96, 0, 0.96, 0, 0.96, 0, 0, -87.3, 4, -12.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree76" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.29, 0, 1.29, 0, 1.29, 0, 0, -17.3, 8, 19.2)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree77" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.89, 0, 0.89, 0, 0.89, 0, 0, -23.2, 8, -18.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree78" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.1, 0, 1.1, 0, 1.1, 0, 0, -19.1, 8, -13)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree79" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.35, 0, 1.35, 0, 1.35, 0, 0, -31.4, 4, 32.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree80" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.92, 0, 0.92, 0, 0.92, 0, 0, -42.1, 4, -30)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree81" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.96, 0, 0.96, 0, 0.96, 0, 0, -31, 4, 43.2)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree82" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.1, 0, 1.1, 0, 1.1, 0, 0, -85.8, 4, 28.4)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree83" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.99, 0, 0.99, 0, 0.99, 0, 0, -11.3, 4, -40.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree84" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.82, 0, 0.82, 0, 0.82, 0, 0, 42.8, 4, 46)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree85" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.91, 0, 0.91, 0, 0.91, 0, 0, 80.7, 4, -4.1)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree86" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.9, 0, 0, -71.3, 4, 25.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree87" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.36, 0, 1.36, 0, 1.36, 0, 0, 55.8, 4, 33.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree88" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.21, 0, 1.21, 0, 1.21, 0, 0, 42, 8, 11.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree89" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.34, 0, 1.34, 0, 1.34, 0, 0, -74.7, 4, -21)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree90" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.9, 0, 0.9, 0, 0.9, 0, 0, -22.8, 4, 46.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree91" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.27, 0, 1.27, 0, 1.27, 0, 0, 100.5, 4, 13.2)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree92" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.87, 0, 0.87, 0, 0.87, 0, 0, 28.1, 8, 23.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree93" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.12, 0, 1.12, 0, 1.12, 0, 0, 64.6, 4, -36.9)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree94" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.18, 0, 1.18, 0, 1.18, 0, 0, -5.1, 4, 42)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree95" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.02, 0, 1.02, 0, 1.02, 0, 0, -2.1, 4, 33.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree96" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.32, 0, 1.32, 0, 1.32, 0, 0, -77.2, 4, 23.1)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree97" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.13, 0, 1.13, 0, 1.13, 0, 0, -51.1, 4, 33.2)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree98" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, -92.8, 4, -23.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree99" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.33, 0, 1.33, 0, 1.33, 0, 0, 45.2, 4, -37.8)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree100" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.86, 0, 0.86, 0, 0.86, 0, 0, -5.9, 8, -21.4)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree101" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.4, 0, 1.4, 0, 1.4, 0, 0, 34, 4, 40.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree102" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.18, 0, 1.18, 0, 1.18, 0, 0, -53.1, 4, 39.3)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree103" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.04, 0, 1.04, 0, 1.04, 0, 0, -52, 4, 17.1)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree104" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.28, 0, 1.28, 0, 1.28, 0, 0, -57.6, 4, 32.6)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree105" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.96, 0, 0.96, 0, 0.96, 0, 0, -80.5, 4, -30)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree106" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.39, 0, 1.39, 0, 1.39, 0, 0, 82.6, 4, 21)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree107" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, -21.3, 4, 30.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree108" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.02, 0, 1.02, 0, 1.02, 0, 0, 109, 4, -3.5)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree109" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.26, 0, 1.26, 0, 1.26, 0, 0, 15.5, 4, 33.5)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree110" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.07, 0, 1.07, 0, 1.07, 0, 0, -96.3, 4, 15.3)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree111" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.91, 0, 0.91, 0, 0.91, 0, 0, 57.1, 4, -37)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree112" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -102.2, 4, 12.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree113" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.83, 0, 0.83, 0, 0.83, 0, 0, 38.9, 4, -45.1)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree114" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.29, 0, 1.29, 0, 1.29, 0, 0, -83, 4, -4.7)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree115" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -0.95, 0, 0.95, 0, 0.95, 0, 0, 92.7, 4, -2.7)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree116" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.18, 0, 1.18, 0, 1.18, 0, 0, -15.3, 4, -26.9)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree117" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.39, 0, 1.39, 0, 1.39, 0, 0, -30.7, 8, -21.6)
+stats = ExtResource("prop_tree_pine")
+
+[node name="Tree118" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, 12.1, 4, -40.2)
+stats = ExtResource("prop_tree_round")
+
+[node name="Tree119" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(0, 0, -1.2, 0, 1.2, 0, 1.2, 0, 0, 11, 4, -32.8)
+stats = ExtResource("prop_tree_round")
+
+[node name="Units" type="Node3D" parent="."]
+script = ExtResource("registry")
+
+[node name="AllyTrooper1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -312, 4.3, -34)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 312, 4.3, 34)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyTrooper2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -312, 4.3, -30.5)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 312, 4.3, 30.5)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyTrooper3" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -312, 4.3, -27)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper3" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 312, 4.3, 27)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyRover4" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -315.5, 4.3, -34)
+stats = ExtResource("unit_rover")
+
+[node name="EnemyRover4" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 315.5, 4.3, 34)
+stats = ExtResource("unit_rover")
+team = 1
+
+[node name="AllyRover5" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -315.5, 4.3, -30.5)
+stats = ExtResource("unit_rover")
+
+[node name="EnemyRover5" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 315.5, 4.3, 30.5)
+stats = ExtResource("unit_rover")
+team = 1
+
+[node name="AllySkiff6" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -315.5, 4.3, -27)
+stats = ExtResource("unit_skiff")
+
+[node name="EnemySkiff6" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 315.5, 4.3, 27)
+stats = ExtResource("unit_skiff")
+team = 1
+
+[node name="Selection" type="Node" parent="."]
+script = ExtResource("selection")
+
+[node name="CommandIssuer" type="Node" parent="."]
+script = ExtResource("issuer")
+stats = ExtResource("order_stats")
+
+[node name="RtsPlayer" parent="." instance=ExtResource("player")]
+
+[node name="Hud" parent="." instance=ExtResource("hud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("pause")]

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="WaterStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/water_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+ramp_contrast = 1.2
+crest_tint = 0.12
+light_strength = 0.7
