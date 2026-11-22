@@ -1,9 +1,10 @@
 class_name RtsPlayer
 extends Node
 ## The local player's RTS view controls for one team: turns mouse gestures and keys into selection changes and
-## orders. Left-click both selects and orders, decided on release (PointerInput): a box selects; a click on an own
-## unit selects it; otherwise, with a selection, a click on ground moves and on an enemy attacks; without one, a
-## click on an enemy inspects it. Right-click clears the selection (or cancels attack-move).
+## orders. Left-click selects, right-click orders (the StarCraft scheme), both decided on release (PointerInput): a box
+## selects; a click on an own unit selects it; a click on an enemy inspects it, on ground clears the selection.
+## A right click with a selection moves (ground) or attacks (enemy); with no selection it only cancels attack-move.
+## Attack-move, once armed, takes the next left click.
 ##
 ## Gestures are resolved on the next physics tick, where picking (GroundPick) is safe. View side: it changes the
 ## game only through the CommandIssuer.
@@ -33,7 +34,7 @@ func setup(team: int, selection: Selection, issuer: CommandIssuer, camera_rig: C
 	_pointer.left_clicked.connect(func(point: Vector2, double_click: bool) -> void:
 		_pending.append(_resolve_click.bind(point, double_click)))
 	_pointer.box_released.connect(func(rect: Rect2) -> void: _pending.append(_selection_control.select_box.bind(rect)))
-	_pointer.right_clicked.connect(func(_point: Vector2) -> void: _pending.append(_on_right_click))
+	_pointer.right_clicked.connect(func(point: Vector2) -> void: _pending.append(_resolve_order.bind(point)))
 
 
 func _physics_process(_delta: float) -> void:
@@ -47,13 +48,26 @@ func _physics_process(_delta: float) -> void:
 
 func _resolve_click(point: Vector2, double_click: bool) -> void:
 	var unit := GroundPick.object_under(get_viewport(), point) as Unit
-	if unit and unit.team == _team and not _orders.attack_move_armed:
+	if _orders.attack_move_armed and not _selection.is_empty():
+		_order_at(unit, point)
+		return
+	if unit and unit.team == _team:
 		_selection_control.click_unit(unit, double_click)
-		return
+	elif unit:
+		_selection_control.inspect(unit)
+	elif GroundPick.ground_point(get_viewport(), point).is_finite():
+		_selection_control.clear()
+
+
+func _resolve_order(point: Vector2) -> void:
 	if _selection.is_empty():
-		if unit:
-			_selection_control.inspect(unit)
+		_orders.disarm()
 		return
+	_order_at(GroundPick.object_under(get_viewport(), point) as Unit, point)
+
+
+## Gives the selection an order at a screen point: attack an enemy there, else move (or attack-move when armed).
+func _order_at(unit: Unit, point: Vector2) -> void:
 	if unit and unit.is_enemy_of(_team):
 		_orders.attack(unit)
 		return
@@ -64,13 +78,6 @@ func _resolve_click(point: Vector2, double_click: bool) -> void:
 		_orders.attack_move(ground)
 	else:
 		_orders.move(ground)
-
-
-func _on_right_click() -> void:
-	if _orders.attack_move_armed:
-		_orders.disarm()
-	else:
-		_selection_control.clear()
 
 
 func _update_cursor() -> void:

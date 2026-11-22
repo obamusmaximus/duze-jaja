@@ -114,6 +114,19 @@ func cell_center(cell: Vector2i) -> Vector3:
 		bounds.position.y + (cell.y + 0.5) * cell_size)
 
 
+## Height of the sea (world y). Ground under the sea is lower, so flyers measure from here instead.
+const SEA_LEVEL: float = 0.0
+
+
+## The ground height under `point` (its cell's height, at least the sea level). Flyers use it for altitude.
+func ground_height(point: Vector3) -> float:
+	if not _built:
+		return SEA_LEVEL
+	var cell: Vector2i = cell_of(point)
+	var height: float = _heights[_index(cell)]
+	return maxf(height, SEA_LEVEL) if is_finite(height) else SEA_LEVEL
+
+
 func is_walkable(cell: Vector2i) -> bool:
 	return _built and cell.x >= 0 and cell.y >= 0 and cell.x < size.x and cell.y < size.y \
 		and _walkable[cell.y * size.x + cell.x] == 1

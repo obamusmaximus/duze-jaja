@@ -49,11 +49,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			box_released.emit(_rect_to(point))
 		else:
 			left_clicked.emit(point, _left_double)
-	elif event.is_action_pressed(&"deselect"):
+	elif event.is_action_pressed(&"order_click"):
 		_right_down = true
 		_right_start = point
 		_right_moved = false
-	elif event.is_action_released(&"deselect") and _right_down:
+	elif event.is_action_released(&"order_click") and _right_down:
 		_right_down = false
 		if not _right_moved:
 			right_clicked.emit(point)

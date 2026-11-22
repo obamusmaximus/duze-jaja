@@ -38,6 +38,8 @@ func setup(new_id: int, registry: UnitRegistry) -> void:
 	add_to_group(&"units")
 	add_to_group(StringName("team_%d" % team))
 	health.setup(stats)
+	if stats.flying:
+		collision_mask = 0 # Flyers pass over walls and buildings; they only share the air with other flyers.
 	weapon.setup(self, stats.weapon, registry.shots)
 	targeting.setup(self, registry, weapon)
 	navigator.setup(self, stats, registry)
@@ -78,6 +80,20 @@ func center() -> Vector3:
 
 func is_enemy_of(other_team: int) -> bool:
 	return team != other_team
+
+
+func is_flying() -> bool:
+	return stats.flying
+
+
+## Whether this unit may target `other` at all: an enemy, and in the air only if this unit is anti-air.
+func can_attack(other: Unit) -> bool:
+	return other != null and other.team != team and (not other.is_flying() or stats.anti_air)
+
+
+## Flyers: how far the body hovers above the ground under it, for the look (its plate and ring sit on the ground).
+func set_hover(height: float) -> void:
+	_look.set_hover(height)
 
 
 func die(killer_id: int = 0) -> void:

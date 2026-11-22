@@ -31,8 +31,14 @@ func issue(order: Order) -> bool:
 			var target: Unit = _registry.get_unit(order.target_unit_id)
 			if target == null or not target.is_enemy_of(order.team):
 				return false
+			var able: int = 0
 			for unit: Unit in units:
+				if not unit.can_attack(target):
+					continue # Ground units can't attack a flyer; the rest of the selection still goes.
 				_give(unit, order.for_unit(unit.id, target.global_position))
+				able += 1
+			if able == 0:
+				return false
 		Order.Kind.MOVE, Order.Kind.ATTACK_MOVE:
 			var slots: PackedVector3Array = Formation.slots(_positions(units), order.target_position, _spacing(units))
 			for i: int in units.size():

@@ -4,7 +4,7 @@ extends Resource
 ## the RtsPlayer (tuning/player_control_default.tres).
 
 @export_group("Mouse")
-## How far (pixels, at the 2560x1440 base size) the mouse must move with a button held before it counts as a drag
+## How far (pixels, at the 1920x1080 base size) the mouse must move with a button held before it counts as a drag
 ## (a box with the left button, a camera pan with the right) instead of a click.
 @export_range(1.0, 60.0, 1.0) var drag_threshold_px: float = 10.0
 

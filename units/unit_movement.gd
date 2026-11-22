@@ -28,6 +28,7 @@ func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitR
 	_stats = stats
 	brain = start_brain
 	_registry = registry
+	snap_to_altitude()
 
 
 ## One physics tick.
@@ -49,6 +50,9 @@ func step(delta: float) -> void:
 		var forward: Vector3 = -_body.global_basis.z
 		flat = wanted.limit_length(_stats.speed) * clampf(forward.dot(wanted.normalized()), 0.0, 1.0)
 	flat = (flat + _separation() * _stats.speed).limit_length(_stats.speed)
+	if _stats.flying:
+		_fly(flat, delta)
+		return
 	var on_floor: bool = _body.is_on_floor()
 	if on_floor and flat.length_squared() < 0.0001:
 		_body.velocity = Vector3.ZERO
@@ -65,7 +69,33 @@ func step(delta: float) -> void:
 	_body.move_and_slide()
 
 
-## Push away from overlapping units, stronger the deeper the overlap.
+## The height a flyer keeps above sea level over ground at `ground` (metres): `flight_height` plus a share of the
+## ground's rise, but never less than `flight_min_clearance` above the ground itself.
+func altitude_for(ground: float) -> float:
+	return maxf(ground + _stats.flight_min_clearance, _stats.flight_height + _stats.flight_terrain_follow * ground)
+
+
+## Puts a flyer at its altitude at once (it is placed on the ground in the level).
+func snap_to_altitude() -> void:
+	if not _stats.flying or _registry == null or _registry.map == null:
+		return
+	var ground: float = _registry.map.ground_height(_body.global_position)
+	_body.global_position.y = altitude_for(ground)
+
+
+## Flyers: no gravity and no walls. Height follows the altitude over the ground below, at most `flight_climb_rate`.
+func _fly(flat: Vector3, delta: float) -> void:
+	var position: Vector3 = _body.global_position
+	var ground: float = _registry.map.ground_height(position) if _registry.map else MapGrid.SEA_LEVEL
+	var climb: float = clampf((altitude_for(ground) - position.y) / delta, -_stats.flight_climb_rate,
+		_stats.flight_climb_rate)
+	_body.velocity = Vector3(flat.x, climb, flat.z)
+	_body.move_and_slide()
+	_body.set_hover(_body.global_position.y - ground)
+
+
+## Push away from overlapping units, stronger the deeper the overlap. Flyers only push other flyers, and ground units
+## only the ground ones: the air and the ground don't block each other.
 func _separation() -> Vector3:
 	if _registry == null or _stats.separation_strength <= 0.0:
 		return Vector3.ZERO
@@ -73,7 +103,7 @@ func _separation() -> Vector3:
 	_registry.units_near(position, _stats.radius + NEIGHBOUR_MARGIN, _neighbours)
 	var push := Vector3.ZERO
 	for other: Unit in _neighbours:
-		if other == _body:
+		if other == _body or other.is_flying() != _body.is_flying():
 			continue
 		var away := Vector3(position.x - other.global_position.x, 0.0, position.z - other.global_position.z)
 		var distance: float = away.length()

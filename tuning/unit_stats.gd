@@ -33,6 +33,20 @@ extends Resource
 ## Height of the body, in metres.
 @export_range(0.2, 10.0, 0.1) var height: float = 1.2
 
+@export_group("Flight")
+## Flies: the unit keeps to the air above the ground (see `flight_height`), moves straight to its goal over anything,
+## and is hit only by weapons and units that can attack air (`anti_air`).
+@export var flying: bool = false
+## Height above sea level over flat ground, in metres, for a flyer.
+@export_range(0.0, 200.0, 0.5) var flight_height: float = 10.0
+## Metres a flyer rises per metre the ground rises beneath it. Below 1, so it sits closer to the ground over high
+## terrain than over the sea.
+@export_range(0.0, 1.0, 0.05) var flight_terrain_follow: float = 0.4
+## The least gap (metres) between a flyer and the ground under it, however high the terrain.
+@export_range(0.0, 50.0, 0.5) var flight_min_clearance: float = 3.0
+## How fast a flyer climbs or descends, in metres per second.
+@export_range(0.5, 50.0, 0.5) var flight_climb_rate: float = 6.0
+
 @export_group("Look")
 ## The imported model (.glb) shown for the unit. None: the placeholder cylinder with a nose.
 @export var model: PackedScene
@@ -44,6 +58,8 @@ extends Resource
 @export_group("Combat")
 ## Hit points when full.
 @export_range(1.0, 5000.0, 1.0) var max_health: float = 100.0
+## Can target flying units. Units without it never pick a flyer as a target, on their own initiative or by order.
+@export var anti_air: bool = false
 ## The unit's weapon (a WeaponStats .tres), or none.
 @export var weapon: WeaponStats
 ## How far the unit notices enemies, in metres: attack-move engages anything this close.
@@ -52,3 +68,11 @@ extends Resource
 @export_range(0.0, 100.0, 0.5) var leash_distance: float = 10.0
 ## Seconds between searches for targets. Searches are spread over the units, not all on one tick.
 @export_range(0.05, 2.0, 0.05) var scan_interval: float = 0.25
+
+@export_group("Sound and effects")
+## Sound cue played to the player when the unit is selected (a `SfxCue` id).
+@export var select_cue: StringName = &"select_unit"
+## Sound cue played where the unit dies.
+@export var death_cue: StringName = &"death_small"
+## Size of the death explosion, as a multiple of the normal size (big units: more than 1).
+@export_range(0.2, 4.0, 0.05) var death_effect_scale: float = 1.0

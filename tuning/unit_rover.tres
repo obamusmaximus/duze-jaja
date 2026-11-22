@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="UnitStats" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
-[ext_resource type="Resource" path="res://tuning/weapon_default.tres" id="2_weapon"]
+[ext_resource type="Resource" path="res://tuning/weapon_rover.tres" id="2_weapon"]
 [ext_resource type="PackedScene" path="res://assets/kenney_space_kit/rover.glb" id="3_model"]
 
 [resource]
@@ -14,3 +14,5 @@ model = ExtResource("3_model")
 model_scale = 5.0
 max_health = 160.0
 weapon = ExtResource("2_weapon")
+death_cue = &"death_large"
+death_effect_scale = 1.5

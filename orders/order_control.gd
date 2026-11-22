@@ -2,12 +2,13 @@ class_name OrderControl
 extends Node
 ## Turns the player's order clicks and keys into `Order`s for the selection and sends them through the
 ## CommandIssuer. Holding `order_queue` (Alt) queues a waypoint; `order_attack_move` (A) arms attack-move for the next
-## left click; `order_stop` (S) stops. Also the feedback: the cursor and a short marker where an order landed.
+## left click (orders themselves are right clicks); `order_stop` (S) stops. Also the feedback: the cursor and a short marker where an order landed.
 ## View side: it only reads the selection and sends orders.
 
-const MOVE_COLOR: Color = Color(0.4, 1.0, 0.4)
-const ATTACK_COLOR: Color = Color(1.0, 0.3, 0.25)
-const ATTACK_MOVE_COLOR: Color = Color(1.0, 0.7, 0.2)
+## Confirm is acid green; hostile orders are safety orange (`UiTokens`).
+const MOVE_COLOR: Color = UiTokens.GREEN
+const ATTACK_COLOR: Color = UiTokens.ORANGE
+const ATTACK_MOVE_COLOR: Color = UiTokens.ORANGE
 
 ## The next left click gives an attack-move.
 var attack_move_armed: bool = false
@@ -58,7 +59,7 @@ func disarm() -> void:
 	attack_move_armed = false
 
 
-## Sets the cursor for what a left click would do: `hovered` is the unit under the mouse (or null) and
+## Sets the cursor for what an order click would do: `hovered` is the unit under the mouse (or null) and
 ## `over_ground` whether there is ground under it.
 func show_cursor(hovered: Unit, over_ground: bool) -> void:
 	var shape: Input.CursorShape = Input.CURSOR_ARROW

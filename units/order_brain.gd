@@ -52,7 +52,7 @@ func wanted_velocity(delta: float) -> Vector3:
 			return _move(delta)
 		Order.Kind.ATTACK:
 			var target: Unit = _registry.get_unit(order.target_unit_id)
-			if target == null:
+			if target == null or not _unit.can_attack(target):
 				return _finish()
 			return _fight(target, delta)
 		Order.Kind.ATTACK_MOVE:

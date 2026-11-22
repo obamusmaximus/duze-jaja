@@ -2,9 +2,9 @@ class_name SelectionBox
 extends Control
 ## Visual only: the drag box while box selecting. Never takes the mouse.
 
-const FILL: Color = Color(0.4, 1.0, 0.4, 0.12)
-const EDGE: Color = Color(0.4, 1.0, 0.4, 0.9)
-const EDGE_WIDTH: float = 2.0
+const FILL: Color = Color(UiTokens.GREEN, 0.12)
+const EDGE: Color = UiTokens.GREEN
+const EDGE_WIDTH: float = UiTokens.BORDER
 
 var _rect: Rect2
 

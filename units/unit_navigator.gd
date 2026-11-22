@@ -151,7 +151,7 @@ func _progressing(waypoint_distance: float, goal_distance: float, delta: float) 
 func _blocked_by_arrived(to_goal: Vector3) -> bool:
 	_registry.units_near(_unit.global_position, _stats.radius * 2.0 + 1.5, _neighbours)
 	for other: Unit in _neighbours:
-		if other == _unit or other.team != _unit.team or other.navigator.active:
+		if other == _unit or other.team != _unit.team or other.navigator.active or other.is_flying() != _unit.is_flying():
 			continue
 		var between: Vector3 = _flat(other.global_position - _unit.global_position)
 		var touch: float = _stats.radius + other.stats.radius + _stats.separation_padding + 0.25
@@ -167,7 +167,7 @@ func _repath(reason: StringName) -> void:
 	_best = INF
 	_stuck = 0.0
 	_since_repath = 0.0
-	if _registry.paths == null:
+	if _stats.flying or _registry.paths == null: # Flyers fly straight: the ground grid doesn't apply to them.
 		_path = PackedVector3Array([goal])
 		return
 	if reason != &"":
@@ -190,7 +190,7 @@ func _cancel() -> void:
 
 
 func _on_cells_changed(area: Rect2, opened: bool) -> void:
-	if not active or _request != null or _path.is_empty():
+	if not active or _request != null or _path.is_empty() or _stats.flying:
 		return
 	var margin: float = _stats.radius + _registry.map.cell_size
 	if _path_touches(area.grow(margin)):
