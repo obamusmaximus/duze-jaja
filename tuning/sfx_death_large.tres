@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SfxCue" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="1_cue"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/sci_fi_sounds/explosionCrunch_002.ogg" id="2_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/sci_fi_sounds/explosionCrunch_003.ogg" id="3_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/sci_fi_sounds/explosionCrunch_004.ogg" id="4_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/sci_fi_sounds/lowFrequency_explosion_001.ogg" id="5_s"]
+
+[resource]
+script = ExtResource("1_cue")
+id = &"death_large"
+streams = Array[AudioStream]([ExtResource("2_s"), ExtResource("3_s"), ExtResource("4_s"), ExtResource("5_s")])
+volume_db = -5.0
+pitch_min = 0.85
+max_voices = 3
+min_interval = 0.1

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SfxCue" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="1_cue"]
+[ext_resource type="AudioStream" path="res://assets/synth/select_unit.wav" id="2_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/interface_sounds/select_008.ogg" id="3_s"]
+
+[resource]
+script = ExtResource("1_cue")
+id = &"select_unit"
+streams = Array[AudioStream]([ExtResource("2_s"), ExtResource("3_s")])
+volume_db = -9.0
+pitch_max = 1.12
+positional = false
+max_voices = 2
+min_interval = 0.06

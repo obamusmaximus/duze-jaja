@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SfxCue" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="1_cue"]
+[ext_resource type="AudioStream" path="res://assets/synth/ambient_mars_wind.wav" id="2_s"]
+
+[resource]
+script = ExtResource("1_cue")
+id = &"ambient_mars_wind"
+streams = Array[AudioStream]([ExtResource("2_s")])
+pitch_min = 1.0
+pitch_max = 1.0
+loop = true
+bus = &"Ambient"
+positional = false
+max_voices = 1

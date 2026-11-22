@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SfxCue" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="1_cue"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/impact_sounds/impactMetal_heavy_000.ogg" id="2_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/impact_sounds/impactMetal_heavy_002.ogg" id="3_s"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/sci_fi_sounds/impactMetal_002.ogg" id="4_s"]
+
+[resource]
+script = ExtResource("1_cue")
+id = &"hit_heavy"
+streams = Array[AudioStream]([ExtResource("2_s"), ExtResource("3_s"), ExtResource("4_s")])
+volume_db = -11.0
+pitch_min = 0.9
+pitch_max = 1.1
+max_voices = 4
+min_interval = 0.05

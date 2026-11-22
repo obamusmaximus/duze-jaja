@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SfxCue" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="1_cue"]
+[ext_resource type="AudioStream" path="res://assets/kenney_audio/interface_sounds/error_004.ogg" id="2_s"]
+
+[resource]
+script = ExtResource("1_cue")
+id = &"ui_error"
+streams = Array[AudioStream]([ExtResource("2_s")])
+volume_db = -7.0
+pitch_min = 0.98
+pitch_max = 1.02
+bus = &"UI"
+positional = false
+max_voices = 2
+min_interval = 0.1
