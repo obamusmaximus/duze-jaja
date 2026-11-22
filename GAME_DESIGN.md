@@ -2,7 +2,7 @@
 
 **Optional reading.** Not needed at the start of a session; `CLAUDE.md` and `STATUS.md` are enough for coding work. Open this when discussing game design, level structure or progression. It records where a design discussion got to, so it holds decisions, leanings and open questions. Nothing here is final unless marked **Decided**. No tunable values belong here (name the parameter, the value lives in `tuning/`).
 
-_Last updated: 2026-11-21_
+_Last updated: 2026-11-22_
 
 ## Vision
 A top-down 3D real-time strategy game built, to start with, along the lines of Red Alert 3 and C&C3: Tiberium Wars: their camera, their control scheme, army-and-base play.
@@ -19,20 +19,43 @@ A top-down 3D real-time strategy game built, to start with, along the lines of R
 - **Pathing on our own grid** (below).
 - **AI commanders are layered and hand-authored** (below). No LLM or learned layer: out of scope.
 - **Single player can pause.** A slow-time control exists as a dev tool from the start, and may become a mechanic.
-- **Setting: carrier warfare over islands** (below, "A typical match").
+- **Setting: mothership warfare over islands** (below, "A typical match"). Battlefield 2142's Titan mode is a main inspiration.
 - **Roles split command** between a strategist, company commanders and first-person players (below, "Roles").
+- **Squads are the tactical unit** and **carryalls deliver them** (below, "Squads", "Carryalls").
+- **Tilt-shift is part of the look:** the strategy view is a war table (below, "Views").
 
 ## A typical match (Decided unless marked)
-The reference level to orient on while iterating (`levels/island/green_island.tscn` is its first draft).
-- **Each side's main base is a carrier**, anchored off the island. It's static: its distance from the island sets how long reinforcements take to arrive, so map layout is mostly a question of travel times. Units spawn on it until a forward spawn exists. It's where the commander "is".
-- **No land link between carrier and island.** Everything reaches the island by air or sea, and so will the eventual carrier assault.
-- **The carrier in each view:** a simple base object in the command views; a detailed, futuristic, multifunctional space in first person (air units launched from internal catapults, transports assembling on the flight deck, ships launching from below). The interior is a view: the simulation only knows where and when a unit appears.
-- **Forward bases:** the carrier can detach two pieces of itself that fly quickly to a point on the map and become hovering forward bases, as huge as the carrier.
-- **Scale is emphasised:** the carrier should look like it could host a whole force (within reason). The strategy view should feel like Battlefield's 3D overhead spawn map, not a near-isometric RTS.
+The reference level is the battlefield level (`levels/atoll/`, built by `docs/plans/battlefield.md`): an atoll and islands in open sea, a mothership per side far out. The green island was its first draft.
+- **Each side's main base is a hovering mothership**, standing off from the islands. Its distance sets how long reinforcements take to arrive, so map layout is mostly a question of travel times; the map size is picked on a scale reference level. Squads are produced aboard and flown in by carryall. It's where the commander "is".
+- **Hovering** is mostly for the look now, but it's what later lets the mothership drop naval units onto the water, split off hovering forward bases, and relocate itself (as Titans do in BF2142). Its position is game state from the start.
+- **No land link between mothership and island.** Everything reaches the island by air or sea, and so will the eventual mothership assault.
+- **The mothership in each view:** a simple base object in the command views; a detailed, futuristic, multifunctional space in first person (air units launched from internal catapults, carryalls loading in hangars, ships dropped from below). The interior is a view: the simulation only knows where and when a unit appears.
+- **Forward bases:** the mothership can detach two pieces of itself that fly quickly to a point on the map and become hovering forward bases, as huge as the mothership.
+- **Scale is emphasised:** the mothership should look like it could host a whole force (within reason).
 - **The island battle is over capture points** (radar arrays, launch platforms). Capturing one gives static defences and a forward spawn point.
 - **Win condition (for now): tickets.** Holding points earns tickets; the first side to reach the target wins.
-- **Later:** a carrier assault, in the style of Battlefield 2142's Titan mode (holding points lets you take the fight to the enemy carrier), possibly including infiltrating it in first person. So the carrier should become a unit with separate parts (hangar, catapults, decks, forward-base pieces) that each have their own health, rather than one health bar.
+- **Later:** a mothership assault, in the style of Battlefield 2142's Titan mode (holding points lets you take the fight to the enemy mothership), possibly including infiltrating it in first person. So the mothership should become a unit with separate parts (hangars, production bays, carryall pads, forward-base pieces) that each have their own health, rather than one health bar.
 - **Snowballing is a known risk.** Points are not the economy (yet) for that reason, and the defences and forward spawn they give must not make a held point too hard to retake.
+
+## Economy (Leaning: flat income, no harvesting)
+- **Both sides get the same flat income per minute.** No resource harvesting and no economy micro. The skill is in how the income is spent: which units go into which squads, and later how much goes into forward bases, to suit the commander's strategy and the battlefield's needs. Think Clash Royale more than C&C.
+- Open: a bank cap, and whether unspent income carries over.
+
+## Squads (Decided)
+- **A squad is made of individual units**, and in the RTS view each unit can still be micro'd on its own (with the right clearances), or taken over in first person.
+- **Above that, the squad is the smallest tactical unit**, and it usually has one job: scouting, patrol, guard duty, a hail-mary covert operation. A big battle over a control point is rarely just one squad.
+- **Fully custom, with presets:** the commander composes a squad from unit types, or starts from a preset (fireteam, anti-air, motorized division, covert insertion, and so on). The rule is one squad per carryall; a less granular strategy may call for bigger single squads.
+- Squads are produced on the mothership in several parallel production lines, paid from the income.
+- Squads are also the natural unit the strategist hands to company commanders ("Roles") and the AI's squad layer ("Commander AI").
+
+## Carryalls (Decided)
+- **Big air transports** that carry squads from the mothership to the islands.
+- **Cargo:** infantry slots and machinery slots (twice as many infantry slots as machinery ones; the counts are tunables). An IFV takes half the machinery slots, a tank-type unit all of them.
+- **Para-drop** everything it carries anywhere; it **must land to pick units up**.
+- **Two carried units can act as side gunners**, firing from the carryall.
+- **A player can pilot it** (first person); otherwise an autopilot (not an AI infantry unit) carries out RTS-view orders.
+- **Cargo is stored as data** (type, health, squad), not as units riding along; dropped or unloaded units come back as themselves.
+- Open: whether its cargo dies when it's shot down, and whether units can be shot while descending.
 
 ## Roles (Decided: compartmentalized command; first-person squads are a leaning)
 In multiplayer one side can be several players, each in one role:
@@ -53,7 +76,7 @@ Parts of the map can appear and disappear, walls can block the way, and elevatio
 ## Views (Decided: three views of one match)
 In one match the commander switches freely between:
 1. **RTS view:** the camera and controls below. A tactical, company-commander view, for micro.
-2. **Strategy view:** a separate view of the whole map, simplified (2D or isometric 3D, undecided), for big-picture command and unit distribution. It should feel like Battlefield's overhead spawn map.
+2. **Strategy view (Decided, v1): a war table.** A tilt-shift view of about two thirds of the map at its farthest, for big-picture command and unit distribution. It need not show the live level: it's a model of the map with low-res, scaled-up unit models (as in Homeworld) or icons. Zooming in hands over to the live battle in the RTS view. Its HUD overlay builds squads, assigns landing zones, places map markers allies can see, and sets general strategy outlines (the guidelines, below). A lighter tilt-shift fades in as the RTS camera zooms out, so the two views blend.
 3. **First-person:** inhabit any own unit on the map and control it directly.
 
 What this means for the build:
@@ -77,9 +100,13 @@ What this means for the build:
 - Players and AI change the game only by sending **orders** (plain data) through `CommandIssuer`. Views send orders; they never touch units directly.
 - Game state lives in a few plain values per unit and per map change, so it can be sent over the network and saved.
 - Effects that are only for show (projectile trails, selection rings, death effects) sit apart from the simulation.
+- **The unit simulation ticks at half the physics rate** (the inhabited unit and projectiles every tick), and views interpolate. Rules and reasons: `docs/performance.md`.
 
 ## Pathing (Decided: our own grid)
 The map model holds a grid of cells (height, passability, cost). Single paths use the engine's `AStarGrid2D` (cells can be blocked and reweighted at runtime); big group moves to one point can use flow fields; units steer around each other locally. A map change updates its cells, and units whose path crosses them re-path. Not Godot's navmesh: it is baked, handles changing maps poorly, and would be a second map model to keep in sync. Later: unit sizes (clearance), and whether anything needs two levels (bridges over paths).
+- **Flyers never pathfind:** they fly straight over the terrain.
+- **Ground moves stay on their land mass.** A ground unit ordered to a point it can't reach by land (another island) ignores the order; amphibious units are the exception, and crossing water is the carryalls' job. Pathing is therefore always local to one island.
+- **The strategy view rarely micro-manages:** it sets squads, landing zones and outlines; unit-level moves come from the RTS commander or the AI. Long searches across the whole map shouldn't exist.
 
 ## Commander AI (Decided: layered and hand-authored)
 One AI commander design serves both the enemy and the player's own delegate while they're in first person.
@@ -125,15 +152,16 @@ The hotkeys in this table follow how we remember RA3 and C&C3; the exact keys an
 **Production (leaning: the C&C model):** construction and unit production are queued from a sidebar, not by selecting the building, and new structures are placed near existing ones. This shapes the HUD layout, but it isn't part of the groundwork.
 
 ## Open questions
-- **Economy:** not the capture points (snowball risk). Then what? A flat income per side that the strategist hands out to commanders would fit the roles; a harvested resource is still possible.
+- **Economy:** the flat income is a leaning (above, "Economy"); how the strategist hands it out to commanders is open.
 - **Look:** the setting is decided; how the world art shows scale (haze, detail density, slow heavy motion) against the style guide's flat look is open.
-- **Map scale:** a carrier that could host a force is likely a few hundred metres long, so a match map is likely kilometres, not hundreds of metres. That affects grid size and network relevance.
+- **Map scale:** a mothership that could host a force is likely a few hundred metres long, so a match map is likely kilometres, not hundreds of metres. That affects grid size and network relevance. Picked on the scale reference level (`docs/plans/battlefield.md`, step 1).
 - **Capture points:** how capturing works (presence, timers, contesting); whether radar arrays and launch platforms do different things; whether a point's defences switch sides on capture or must be rebuilt.
-- **Forward bases:** can they be shot down in transit, moved once placed, or rebuilt after they're lost? Where may they be placed?
-- **Carrier assault:** how points open it up, and what "winning" the assault means (destroyed, boarded, captured).
+- **Forward bases:** can they be shot down in transit, moved once placed, or rebuilt after they're lost? Where may they be placed? How much income do they cost?
+- **Mothership relocation and naval drops:** when and how a mothership moves, and what it drops on the water.
+- **Mothership assault:** how points open it up, and what "winning" the assault means (destroyed, boarded, captured).
 - **Modes besides multiplayer:** AI skirmish, campaign missions?
 - **Networking model:** server-authoritative is the leaning (above); confirm before networking is built. Hosting: a player hosts, or dedicated servers, or both?
-- **Strategy view:** 2D or isometric 3D? What exactly can the guidelines (Leitlinien) say?
+- **Strategy view:** what exactly can the strategy outlines (guidelines, Leitlinien) say, and how does the AI read them?
 - **Time:** what pause and slow time do in multiplayer, and whether slow time becomes a mechanic.
 - **Ground changing under units:** fall, die or get pushed out?
 

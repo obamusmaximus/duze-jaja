@@ -75,12 +75,13 @@ Marathon's look, which Bungie calls "graphic realism", is the main reference for
 - **Ground:** concrete grey with a thin panel grid (`levels/sandbox/ground_grid.gdshader`), which also shows scale. The void beyond is deep black.
 - **Light and air:** every level instances `WorldLight` (`lighting/world_light.tscn`) with a shared `LightStats` preset (Map tab): `light_day` (a pale sky fading to the haze colour at the horizon, haze over distance) or `light_void` (the black void, distance fading to black). One shadow-casting sun in the sun colour, haze-coloured ambient light, filmic tonemap with the exposure kept low enough that bone hulls don't blow out. Colours are palette roles (`WORLD_SKY`, `WORLD_HAZE`, `WORLD_SUN`, `WORLD_VOID`).
 - **Team and selection marks:** a flat square base plate in the team colour under each unit; selection is the acid-green ring. Both are hard-edged and unshaded.
-- **Scale is part of the look** (`GAME_DESIGN.md`, "A typical match"). Big things read as big through true proportions, many small parts next to large surfaces, haze with distance and slow, heavy motion. No tilt-shift or depth-of-field blur: they make everything look like a miniature.
+- **Scale is part of the look** (`GAME_DESIGN.md`, "A typical match"). Big things read as big through true proportions, many small parts next to large surfaces, haze with distance and slow, heavy motion.
+- **Tilt-shift is part of the look:** the strategy view is a war table, a model of the battle seen from above, and a heavy tilt-shift blur sells that on purpose. A lighter blur fades in as the RTS camera zooms out, so the two views blend. Near RTS zoom and first person stay sharp.
 
 ## Prototyping rules (for anyone building world visuals, agents included)
 Prototype art is built so the artist pass can replace it without touching gameplay, and so that everything already looks like one game.
 1. **Colours come from the palette, through shared materials.** Never write a `Color` literal or make a new `StandardMaterial3D` in a model; use `WorldMaterials.role()` for surfaces and `WorldMaterials.mark()` for marks. Imported models get this through `ModelFit`. A colour that isn't in the palette is a style-guide question, not a local choice.
-2. **Flat-shaded, matte, untextured.** Lit, high roughness, no metal, no textures, no normal maps, no emission (except effects). The Compatibility renderer must show it the same way.
+2. **Flat-shaded, matte, untextured.** Lit, high roughness, no metal, no textures, no normal maps, no emission (except effects). The Mobile renderer (`docs/performance.md`) must show it the same way.
 3. **Mostly neutral.** A model is mostly base tones (off-white, concrete, graphite, black), with accent colour only in a few deliberate blocks. Team colour appears only in the team livery slot and on the base plate, never on the whole model.
 4. **Build from hard-edged primitives.** Boxes, wedges and low-sided cylinders, joined at hard edges. Spheres and smooth curves only where the thing is round by nature (a radar dish, a tank).
 5. **The silhouette comes first.** Each unit type must be told apart by shape alone at the farthest RTS zoom. Check that before adding detail.
@@ -92,7 +93,8 @@ Prototype art is built so the artist pass can replace it without touching gamepl
 
 ## Kept for the artist pass
 Prototypes build working stand-ins for all of these; the real versions wait:
-- Final models for the carrier, forward bases, capture points and units, and the carrier interior.
+- Final models for the mothership, forward bases, carryalls, capture points and units, and the mothership interior.
+- The war table's final look (table model of the map, unit tokens).
 - The graphic layer: type on objects (hull numbers, labels), faction insignia, logos, decal sheets.
 - Texturing approach (if any beyond flat colour), wear and dirt.
 - Faction identity: how the sides differ in shape and livery.
@@ -117,4 +119,4 @@ Prototypes build working stand-ins for all of these; the real versions wait:
 - **Still off the palette:** the Mars level's ground grid colours (literals in `mars_outpost.tscn`) and the Kenney terrain tiles where they aren't tinted (Mars), the unit portrait's own light, and the debug ground grid's default colours.
 - **How models get their colour:** one shared material per role (in use), or one small palette texture shared by all models (one swatch per colour), which also makes team colours and the final palette one swap.
 - **Strategy-view symbols:** the symbol language (shapes per unit class, how team and state show).
-- **Low-poly budget:** what "low poly" means in numbers per class (unit, building, carrier), so the artist pass matches.
+- **Low-poly budget:** what "low poly" means in numbers per class (unit, building, mothership), so the artist pass matches.

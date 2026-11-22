@@ -2,6 +2,8 @@
 
 Read before writing a headless or `--script` test harness. Add a line here when a harness trips on something new.
 
+- **Keep output short:** a harness prints one pass/fail summary (and the numbers it measured), not per-tick logs. Pipe runs through `tail` and the engine's noise through `grep -v`, so a run's output stays a few lines.
+
 - New `class_name`s need `godot --headless --import` before headless runs can see them.
 - A `--script` harness (`extends SceneTree`) can't name autoloads as globals at compile time: reach them with `root.get_node("PlaytestLog")`.
 - Headless runs have no renderer, so `PlaytestLog`'s screenshot logs a harmless "Parameter t is null" error.

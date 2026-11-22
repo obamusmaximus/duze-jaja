@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Project
-- **Engine:** Godot 4 (project is on 4.7, GL Compatibility renderer, Jolt physics). Use Godot 4 APIs only. Don't use Godot 3 patterns such as `KinematicBody`, `yield`, or `export var`.
+- **Engine:** Godot 4 (project is on 4.7, Jolt physics; GL Compatibility renderer until `docs/plans/battlefield.md` step 0 switches it to Mobile). Use Godot 4 APIs only. Don't use Godot 3 patterns such as `KinematicBody`, `yield`, or `export var`.
 - **Language:** GDScript only.
 - **Genre:** Top-down 3D real-time strategy, built along the lines of Red Alert 3 / C&C3 (free camera, left-click control scheme; see `GAME_DESIGN.md`). Groundwork build order: `docs/plans/groundwork.md`.
 
@@ -28,11 +28,24 @@
 - **Working on a mechanic? Read its doc in `docs/mechanics/`** (the glossary below says which) before touching its scripts, and read only the scripts it lists unless the task needs more.
 - **Building groundwork?** `docs/plans/groundwork.md` is the build order; tick a step there when it lands.
 - **Writing a headless test?** Read `docs/testing.md` first.
+- **Building anything that runs every tick, scales with units or map size, or draws a lot?** Follow `docs/performance.md` (target: an M1 with 8 GB).
 - **At the end of a task, update the mechanic's doc, then `STATUS.md`.** Follow the documenting principles in `docs/mechanics/README.md`.
 - Several sessions may work in this checkout at once, one per mechanic. Touch only your mechanic's doc, and re-read `STATUS.md` right before editing it.
 - `GAME_DESIGN.md` is optional reading for design discussions.
 - **Playtest logs** (`playtest_logs/`, saved in game with L): read them only when the user asks, and read `docs/playtest_log.md` first.
 - The sibling project `../first` (an FPS) is where these conventions and debug tools came from. Look there for prior art when a tool or pattern is needed again, but don't edit it.
+
+## Saving usage
+The user's plan has limited usage; spend it on the work, not on reading and re-checking.
+- **One plan step per session.** Read the step, its mechanic doc and the scripts the doc lists; nothing else unless the task needs it. `GAME_DESIGN.md` and `docs/style_guide.md` are long: grep them and read only the section needed.
+- **Don't re-read** a file already read this session unless it changed; grep a big file before reading a range of it.
+- **Ask every blocking question at once, at the start.** Otherwise pick the sensible default, say so in one line, and carry on.
+- **No screenshots or browser checks unless the user asks:** the user playtests. Verify headless.
+- **Short test output** (`docs/testing.md`).
+- **Edit docs in place** with small edits; don't rewrite a doc to change a few lines.
+- **No subagents or parallel sessions unless the user asks.**
+- **Short replies:** what changed, what to playtest, what's open. No restating the plan.
+- **A step too big for one session** (more than one feature, or a lot of feel iteration) gets split in its plan before work starts.
 
 ## Glossary
 Game-specific terms. Use them consistently in code, comments and conversation. Each is defined in the mechanic doc in brackets (all in `docs/mechanics/`).
@@ -44,7 +57,7 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`orders.md`]** order, `CommandIssuer`, order queue, group move, waypoint, attack-move
 - **[`props.md`]** prop, prop type, model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
-- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander
+- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, carryall, cargo slots (infantry, machinery), landing zone (LZ), para-drop, side gunner, autopilot, war table (the strategy view), map marker, strategy outline
 - **[`ui.md`]** tokens (`UiTokens`), face, game theme, theme variation, hatching, stat bar, command grid, HUD, HUD layout, section, band, HUD module, minimap, selection module
 - **[`audio.md`]** cue (`SfxCue`), `Sfx`, bus, listener, combat effects (muzzle flash, sparks, death burst)
 - **[`terrain.md`]** terrain layout, tile, height level, ramp, cliff, terrain editor (F2)
@@ -57,7 +70,7 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **Ask before adding any addon or plugin** (Asset Library, `addons/` folder, GDExtension). Prefer built-in engine features.
 
 ## Notes
-- **Levels share principles.** A change to how levels in general work (wiring, what they hand units, conventions) goes into all of them. Level-specific geometry doesn't. Every level instances `menus/pause_menu.tscn`.
+- **One maintained level:** the battlefield level (`levels/atoll/`, from `docs/plans/battlefield.md`, step 1 creates it) is the main scene and the only level kept up to date. The sandbox, Mars and island levels are left as they are unless the user asks; don't port changes to them. Every new level instances `menus/pause_menu.tscn`.
 - Don't edit files in `.godot/`. It's generated cache.
 
 @STATUS.md
