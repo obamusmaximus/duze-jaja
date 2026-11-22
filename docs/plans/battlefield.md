@@ -21,13 +21,14 @@ The order for building the first full-scale match space: a battlefield-sized lev
 - The cap on squad size above one carryall.
 - Para-drop: can units be shot while descending?
 
-## 0. Performance foundations  [ ]
+## 0. Performance foundations  [x]
 The rules are in `docs/performance.md`; this step puts the existing code on them before the battlefield builds on it.
 - **Renderer:** switch to Mobile. Check the water shader, `WorldMaterials`, the light presets and the UI still look right.
 - **Tick:** physics interpolation on; the registry steps units at half rate (half the units per tick), the inhabited unit and projectiles every tick; units lose their own `_physics_process`.
 - **Kinematic units:** RTS units move without `move_and_slide` (height from the map model, walls from the grid), keeping their collision shape for queries; the brain swap to direct control brings the physics controller back.
 - **Ids, not nodes:** selection, control groups, targets and orders hold unit ids.
 - **Benchmark scene:** headless, fixed unit count and ticks, one summary line of milliseconds per system.
+- **Landed (see `units.md`, `pathing.md` "Measured"):** Mobile renderer, registry loop at half rate with per-tick integration, kinematic ground units, ids in selection/groups/targets, `debug/benchmark/benchmark.gd`. The Mobile look of water, materials, lights and UI is for the user's playtest.
 - **Done when:** the benchmark shows the per-unit cost down from today's (`pathing.md`, "Measured"), units still path, fight and look smooth, and the numbers are in the mechanic docs.
 
 ## 1. Scale reference level  [ ]

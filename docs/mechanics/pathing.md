@@ -16,8 +16,10 @@ How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "C
 - **Probe events:** `map_change` (MapGrid), `repath` (PathService: unit, reason `map_change`, `map_opened`, `stuck`).
 
 ## Settled
-- Measured headless, 100 units ordered across the map: about 2.8 ms per tick wall time, of which Jolt `move_and_slide` is about 1 ms and separation about 0.7 ms. The order made 42 searches and 139 shared paths, nothing waited in the queue, and all units arrived. A long path onto the plateau costs about 0.16 ms.
+- Measured headless before step 0 (battlefield plan), 100 units ordered across the map: about 2.8 ms per tick wall time, of which Jolt `move_and_slide` is about 1 ms and separation about 0.7 ms. The order made 42 searches and 139 shared paths, nothing waited in the queue, and all units arrived. A long path onto the plateau costs about 0.16 ms.
 - 12 units sent to one point settle in a few seconds, without overlap.
+
+- After step 0 (`debug/benchmark/benchmark.gd`: 100 units move 600 ticks across the sandbox, M1): about 2.2 ms per tick overall, of which the unit loop (decisions at half rate, integration, no `move_and_slide`) is about 1.6 ms. Includes path requests and shared paths, which are not part of the loop figure's split yet.
 
 ## Tried and passed on
 - Path checks sampling half-cells with the unit's radius either side: about 0.4 ms per long line, and the reason long paths cost 2 ms; replaced by clearance built into the cells and a cell-by-cell grid walk.

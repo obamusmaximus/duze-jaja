@@ -2,14 +2,19 @@ class_name Weapon
 extends Node
 ## Fires at `target` (set by the brain each tick) whenever the target is in range, inside the fire arc and the
 ## cooldown is ready; the shot itself is the Shots system's job. A unit without WeaponStats has an idle weapon.
-## Simulation.
+## Holds its target as an id. Simulation.
 
 ## What the brain wants shot at, or null.
-var target: Unit
+var target: Unit:
+	get:
+		return _unit.registry.get_unit(_target_id) if _target_id != 0 else null
+	set(value):
+		_target_id = value.id if value else 0
 var stats: WeaponStats
 
 var _unit: Unit
 var _shots: Shots
+var _target_id: int = 0
 var _cooldown: float = 0.0
 
 
@@ -51,12 +56,16 @@ func in_arc(other: Unit) -> bool:
 func step(delta: float) -> void:
 	if _cooldown > 0.0:
 		_cooldown -= delta
-	if stats == null or target == null or not target.alive or _cooldown > 0.0:
+	if stats == null or _target_id == 0 or _cooldown > 0.0:
 		return
-	if not in_range(target) or not in_arc(target):
+	var aim: Unit = target
+	if aim == null:
+		_target_id = 0
+		return
+	if not in_range(aim) or not in_arc(aim):
 		return
 	_cooldown = stats.cooldown
-	_shots.fire(_unit, target, stats)
+	_shots.fire(_unit, aim, stats)
 
 
 func _flat_distance(other: Unit) -> float:

@@ -18,6 +18,9 @@ var paths: PathService
 var shots: Shots
 
 var _next_id: int = 1
+var _tick: int = 0
+## Total microseconds spent in the unit loop since the match began (the benchmark reads it).
+var step_usec: int = 0
 ## Unit id to Unit.
 var _by_id: Dictionary = {}
 var _units: Array[Unit] = []
@@ -29,8 +32,9 @@ func setup(map_grid: MapGrid, path_service: PathService, shot_system: Shots) -> 
 	map = map_grid
 	paths = path_service
 	shots = shot_system
-	process_physics_priority = -100 # Rebuild the hash before anything reads it this tick.
+	process_physics_priority = -100 # Rebuild the hash and step the units before views and shots read them.
 	add_to_group(&"playtest_probe")
+	add_to_group(&"unit_registry")
 	for child: Node in get_children():
 		if child is Unit:
 			_register(child as Unit)
@@ -65,8 +69,23 @@ func units_near(point: Vector3, radius: float, out: Array[Unit]) -> void:
 	_hash.query(point, radius, out)
 
 
-func _physics_process(_delta: float) -> void:
+## The one loop over the units. Half of them think each tick (by id parity, so the load is even), with twice the delta;
+## every unit moves every tick (the decided velocity, so physics interpolation stays smooth); `full_rate` units think
+## every tick.
+func _physics_process(delta: float) -> void:
+	var started: int = Time.get_ticks_usec()
 	_hash.rebuild(_units)
+	_tick += 1
+	var parity: int = _tick & 1
+	for unit: Unit in _units:
+		if not unit.alive:
+			continue
+		if unit.full_rate:
+			unit.think(delta)
+		elif (unit.id & 1) == parity:
+			unit.think(delta * 2.0)
+		unit.movement.integrate(delta)
+	step_usec += Time.get_ticks_usec() - started
 
 
 func _register(unit: Unit) -> void:

@@ -2,7 +2,8 @@ class_name Unit
 extends CharacterBody3D
 ## A unit in the match. It only holds its parts (look, movement, navigator, order queue and brain, targeting,
 ## weapon, health) and its identity: a stable `id` (unique per match, given by the UnitRegistry), the owning `team`,
-## and its type (`stats`). Simulation: runs on the fixed tick and never reads views. Groups: `units`, `team_<n>`.
+## and its type (`stats`). Simulation: the registry runs it on the fixed tick (no `_physics_process` here)
+## and never reads views. Groups: `units`, `team_<n>`.
 ## Units don't collide with each other (layer 2, masks 1 and 3): they keep apart by separation steering.
 
 ## The unit died (it leaves the match at the end of the frame; `alive` is already false).
@@ -16,6 +17,9 @@ signal selected_changed(selected: bool)
 
 ## Unique per match; 0 until the registry adds the unit.
 var id: int = 0
+var registry: UnitRegistry
+## Thinks every physics tick instead of every other one (the unit a player inhabits; `docs/performance.md`).
+var full_rate: bool = false
 var alive: bool = true
 var selected: bool = false
 ## Id of the unit that dealt the killing blow (0 if none).
@@ -33,18 +37,19 @@ var killed_by: int = 0
 
 
 ## Called once by the UnitRegistry as the unit joins the match.
-func setup(new_id: int, registry: UnitRegistry) -> void:
+func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 	id = new_id
+	registry = unit_registry
 	add_to_group(&"units")
 	add_to_group(StringName("team_%d" % team))
 	health.setup(stats)
 	if stats.flying:
 		collision_mask = 0 # Flyers pass over walls and buildings; they only share the air with other flyers.
-	weapon.setup(self, stats.weapon, registry.shots)
-	targeting.setup(self, registry, weapon)
-	navigator.setup(self, stats, registry)
-	brain.setup(self, orders, navigator, targeting, weapon, registry)
-	movement.setup(self, stats, brain, registry)
+	weapon.setup(self, stats.weapon, unit_registry.shots)
+	targeting.setup(self, unit_registry, weapon)
+	navigator.setup(self, stats, unit_registry)
+	brain.setup(self, orders, navigator, targeting, weapon, unit_registry)
+	movement.setup(self, stats, brain, unit_registry)
 	_look.setup(stats, team)
 	_apply_size()
 	stats.changed.connect(_apply_size)
@@ -52,11 +57,10 @@ func setup(new_id: int, registry: UnitRegistry) -> void:
 	health.died.connect(die)
 
 
-func _physics_process(delta: float) -> void:
-	if id == 0 or not alive:
-		return
+## One decision, run by the registry at the unit's rate: targeting, what movement wants, the weapon.
+func think(delta: float) -> void:
 	targeting.step(delta)
-	movement.step(delta)
+	movement.decide(delta)
 	weapon.step(delta)
 
 

@@ -11,8 +11,9 @@ const GROUP_COUNT: int = 10
 var _stats: PlayerControlStats
 var _selection: Selection
 var _camera_rig: CameraRig
-## Group number to its units (untyped: they may have been freed); dead ones are dropped when the group is used.
-var _groups: Array = []
+## Group number to its unit ids; ids of units that left the match are dropped when the group is used.
+var _groups: Array[PackedInt32Array] = []
+var _registry: UnitRegistry
 var _last_group: int = -1
 var _last_press_time: float = -INF
 
@@ -23,7 +24,7 @@ func setup(stats: PlayerControlStats, selection: Selection, camera_rig: CameraRi
 	_camera_rig = camera_rig
 	add_to_group(&"playtest_probe")
 	for i: int in GROUP_COUNT:
-		_groups.append([])
+		_groups.append(PackedInt32Array())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -38,16 +39,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func store(number: int) -> void:
-	_groups[number] = _selection.units.duplicate()
+	_groups[number] = _selection.ids()
 	playtest_event.emit(&"group_set", {"group": number, "ids": _selection.ids()})
 
 
 func recall(number: int) -> void:
+	if _registry == null:
+		_registry = get_tree().get_first_node_in_group(&"unit_registry") as UnitRegistry
 	var alive: Array[Unit] = []
-	for unit: Variant in _groups[number]:
-		if is_instance_valid(unit) and (unit as Unit).is_inside_tree():
-			alive.append(unit as Unit)
-	_groups[number] = alive
+	var kept := PackedInt32Array()
+	for id: int in _groups[number]:
+		var unit: Unit = _registry.get_unit(id) if _registry else null
+		if unit:
+			alive.append(unit)
+			kept.append(id)
+	_groups[number] = kept
 	if alive.is_empty():
 		return
 	var now: float = Time.get_ticks_msec() / 1000.0 # Real time: unaffected by slow time.

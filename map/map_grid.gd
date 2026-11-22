@@ -127,6 +127,33 @@ func ground_height(point: Vector3) -> float:
 	return maxf(height, SEA_LEVEL) if is_finite(height) else SEA_LEVEL
 
 
+## The ground height under `point`, blended between the neighbouring cell centres so a walking unit rides ramps
+## smoothly (cells without ground are skipped). Unlike `ground_height` it is not raised to sea level.
+func surface_height(point: Vector3) -> float:
+	if not _built:
+		return point.y
+	var fx: float = (point.x - bounds.position.x) / cell_size - 0.5
+	var fz: float = (point.z - bounds.position.y) / cell_size - 0.5
+	var x0: int = floori(fx)
+	var z0: int = floori(fz)
+	var tx: float = fx - x0
+	var tz: float = fz - z0
+	var centre: float = _heights[_index(cell_of(point))]
+	if not is_finite(centre):
+		return 0.0
+	var sum: float = 0.0
+	var weight: float = 0.0
+	for dz: int in 2:
+		for dx: int in 2:
+			var cell := Vector2i(clampi(x0 + dx, 0, size.x - 1), clampi(z0 + dz, 0, size.y - 1))
+			var height: float = _heights[_index(cell)]
+			if is_finite(height):
+				var w: float = (tx if dx == 1 else 1.0 - tx) * (tz if dz == 1 else 1.0 - tz)
+				sum += height * w
+				weight += w
+	return sum / weight if weight > 0.0 else centre
+
+
 func is_walkable(cell: Vector2i) -> bool:
 	return _built and cell.x >= 0 and cell.y >= 0 and cell.x < size.x and cell.y < size.y \
 		and _walkable[cell.y * size.x + cell.x] == 1

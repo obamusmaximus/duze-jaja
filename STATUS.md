@@ -12,7 +12,7 @@ _Last updated: 2026-11-22_
 | Debug tools (tuning panel, pause menu, playtest log, slow time) | `debug_tools.md`, `../playtest_log.md` | Ported from `../first`, plus slow time (`DebugTimeScale` autoload). Tabs: Camera, Units, Map, Controls, Debug; no diagrams yet. Panel has its own tool theme (IBM Plex Sans, `TuningThemeBuilder`). Map debug: wall (F3), grid view (F4). |
 | Sandbox level | `debug_tools.md` | `levels/sandbox/sandbox.tscn` (main scene): ground with a ramp and plateau, sun, a 2 m scale marker, a debug wall, 6 + 4 units of two teams, the camera rig and player controls, the pause menu. |
 | Camera rig (RTS view) | `camera.md` | Built (groundwork step 1): pan (keys, edge with the cursor confined, drag), rotate, zoom with pitch, reset, ground following, map bounds; runs on real time. |
-| Units and teams | `units.md` | Built (step 4): registry with stable ids and a spatial hash, swappable brain. Flyers (Hornet, `tuning/unit_hornet.tres`): altitude over the ground, straight flight, anti-air flag. |
+| Units and teams | `units.md` | Built (step 4): registry with stable ids and a spatial hash, swappable brain; Mobile renderer, half-rate decisions, kinematic movement, ids in selection and targets (battlefield step 0). Flyers (Hornet, `tuning/unit_hornet.tres`): altitude over the ground, straight flight, anti-air flag. |
 | Orders | `orders.md` | Built (step 6): `Order` data, `CommandIssuer` (team check, group move, waypoints), per-unit queue. |
 | Map grid, pathing, movement | `pathing.md` | Built (step 7): changing map grid, budgeted jump-point paths with sharing, soft-collision steering, crowd arrival, map-change re-paths. 100 units at about 2.8 ms per tick headless. |
 | Combat | `combat.md` | Built (step 8): health, weapons (instant or projectile), staggered targeting with return fire and no overkill, behaviour by order with leash, health bars. |
@@ -32,7 +32,7 @@ _Last updated: 2026-11-22_
 
 ## Next up
 1. **The next unticked step in `docs/plans/groundwork.md`** (step 9, HUD shell: selection panel and minimap exist, enemy inspect and the camera clearing the bar remain). Read the plan first, including its rules at the top; the design behind them is in `GAME_DESIGN.md` ("Camera", "Controls", "Views", "Multiplayer and simulation", "Pathing").
-2. **Battlefield plan** (`docs/plans/battlefield.md`): a full-scale level with sculpted heightmap terrain (atoll, mountains, plains, shores), hovering motherships, flat income and custom squads in production lines, carryalls (para-drop, side gunners), the war-table strategy view with tilt-shift. Decisions are made (`GAME_DESIGN.md`); start at step 0, performance foundations (`docs/performance.md`: Mobile renderer, half-rate unit tick, kinematic units, benchmark), then step 1, the scale reference level (`levels/atoll/`), where the user picks the map size.
+2. **Battlefield plan** (`docs/plans/battlefield.md`): a full-scale level with sculpted heightmap terrain (atoll, mountains, plains, shores), hovering motherships, flat income and custom squads in production lines, carryalls (para-drop, side gunners), the war-table strategy view with tilt-shift. Decisions are made (`GAME_DESIGN.md`); step 0 (performance foundations) is done, so start at step 1, the scale reference level (`levels/atoll/`), where the user picks the map size.
 
 **Levels:** once `levels/atoll/` exists it's the main scene and the only maintained level; sandbox, Mars and island are frozen unless the user asks.
 

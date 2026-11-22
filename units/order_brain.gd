@@ -18,7 +18,12 @@ var _registry: UnitRegistry
 var _active: Order
 var _facing := Vector3.ZERO
 ## Attack-move: the enemy being fought, where the fight began, and an enemy given up on (leash).
-var _engaged: Unit
+var _engaged_id: int = 0
+var _engaged: Unit:
+	get:
+		return _registry.get_unit(_engaged_id) if _engaged_id != 0 else null
+	set(value):
+		_engaged_id = value.id if value else 0
 var _engaged_from := Vector3.ZERO
 var _given_up_id: int = 0
 
@@ -82,10 +87,11 @@ func _move(delta: float) -> Vector3:
 
 
 func _attack_move(order: Order, delta: float) -> Vector3:
-	if _engaged and (not _engaged.alive or _engaged_from.distance_to(_unit.global_position) > _unit.stats.leash_distance):
-		if _engaged.alive and not _weapon.in_range(_engaged):
-			_given_up_id = _engaged.id # Leash: don't chase this one again unless it comes into range.
-		_engaged = null
+	var engaged: Unit = _engaged
+	if _engaged_id != 0 and (engaged == null or _engaged_from.distance_to(_unit.global_position) > _unit.stats.leash_distance):
+		if engaged and not _weapon.in_range(engaged):
+			_given_up_id = _engaged_id # Leash: don't chase this one again unless it comes into range.
+		_engaged_id = 0
 		_nav.go_to(order.target_position, _unit.stats.arrive_distance)
 	if _engaged == null:
 		var found: Unit = _targeting.in_range

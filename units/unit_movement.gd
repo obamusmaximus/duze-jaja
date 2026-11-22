@@ -1,26 +1,35 @@
 class_name UnitMovement
 extends Node
-## Moves the unit on the fixed tick: turns toward the velocity its brain wants (or the facing it wants while
-## standing) at `turn_rate`, moves faster the more it already faces that way (turning on the spot first), adds
-## separation from nearby units (soft collision: units push apart instead of blocking each other, so crowds never
-## lock up), and falls under gravity. Walls and buildings block it hard (move_and_slide).
+## Moves the unit. Two halves, both driven by the UnitRegistry (units have no `_physics_process`, `docs/performance.md`):
+## - `decide(delta)` runs at the unit's own rate (half the physics rate, so `delta` is two ticks): asks the brain for
+##   a velocity and facing, adds separation from nearby units (soft collision: units push apart instead of blocking
+##   each other, so crowds never lock up) and works out the wanted turn and flat velocity.
+## - `integrate(delta)` runs every physics tick (so physics interpolation shows smooth motion): turns at `turn_rate`
+##   and moves the body.
+## Ground units move kinematically: height from the map model (`MapGrid.surface_height`), walls and buildings from its
+## cells (a blocked cell stops a move, which then slides along it); the physics engine solves nothing. Flyers fly
+## straight over the ground. `physical` brings back `move_and_slide` (gravity, collision) for direct control.
 
 ## Neighbours are searched within the unit's radius plus this (metres): covers other units up to about this radius.
 const NEIGHBOUR_MARGIN: float = 1.5
+## A standing unit re-checks its ground this often (decisions).
+const REST_CHECK_TICKS: int = 15
 
 ## Where the wanted velocity comes from. Swappable (order brain now, direct control later).
 var brain: UnitBrain
+## Moves with `move_and_slide` instead of kinematically (direct control; the unit then runs every tick).
+var physical: bool = false
 
 var _body: Unit
 var _stats: UnitStats
 var _registry: UnitRegistry
 var _gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 var _neighbours: Array[Unit] = []
-## Ticks spent standing still; physics runs only every REST_CHECK_TICKS of them (to notice ground going away).
+## Decisions spent standing still.
 var _rest_ticks: int = 0
-
-## A standing unit re-checks its ground this often (ticks).
-const REST_CHECK_TICKS: int = 30
+## The flat velocity decided last (metres per second), and the yaw the unit wants to turn to (NAN: none).
+var _flat := Vector3.ZERO
+var _target_yaw: float = NAN
 
 
 func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitRegistry) -> void:
@@ -29,10 +38,12 @@ func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitR
 	brain = start_brain
 	_registry = registry
 	snap_to_altitude()
+	if not stats.flying and registry.map and registry.map.is_built():
+		_body.global_position.y = registry.map.surface_height(_body.global_position)
 
 
-## One physics tick.
-func step(delta: float) -> void:
+## One decision (the unit's own tick; `delta` is the time since its last one).
+func decide(delta: float) -> void:
 	var wanted := Vector3.ZERO
 	var facing := Vector3.ZERO
 	if brain:
@@ -42,31 +53,30 @@ func step(delta: float) -> void:
 	facing.y = 0.0
 	if wanted.length_squared() > 0.0001:
 		facing = wanted
+	_target_yaw = atan2(-facing.x, -facing.z) if facing.length_squared() > 0.0001 else NAN
 	var flat := Vector3.ZERO
-	if facing.length_squared() > 0.0001:
-		var target_yaw: float = atan2(-facing.x, -facing.z)
-		_body.rotation.y = rotate_toward(_body.rotation.y, target_yaw, deg_to_rad(_stats.turn_rate) * delta)
 	if wanted.length_squared() > 0.0001:
 		var forward: Vector3 = -_body.global_basis.z
 		flat = wanted.limit_length(_stats.speed) * clampf(forward.dot(wanted.normalized()), 0.0, 1.0)
-	flat = (flat + _separation() * _stats.speed).limit_length(_stats.speed)
-	if _stats.flying:
-		_fly(flat, delta)
-		return
-	var on_floor: bool = _body.is_on_floor()
-	if on_floor and flat.length_squared() < 0.0001:
-		_body.velocity = Vector3.ZERO
+	_flat = (flat + _separation() * _stats.speed).limit_length(_stats.speed)
+	if _flat.length_squared() < 0.0001:
 		_rest_ticks += 1
-		if _rest_ticks % REST_CHECK_TICKS != 0:
-			return # Standing still on the ground: nothing for physics to do (most of an army, most of the time).
+		if _rest_ticks % REST_CHECK_TICKS == 0:
+			_settle()
 	else:
 		_rest_ticks = 0
-	var velocity: Vector3 = _body.velocity
-	velocity.x = flat.x
-	velocity.z = flat.z
-	velocity.y = 0.0 if on_floor else velocity.y - _gravity * delta
-	_body.velocity = velocity
-	_body.move_and_slide()
+
+
+## Every physics tick: turn and move by what was decided.
+func integrate(delta: float) -> void:
+	if not is_nan(_target_yaw):
+		_body.rotation.y = rotate_toward(_body.rotation.y, _target_yaw, deg_to_rad(_stats.turn_rate) * delta)
+	if physical:
+		_move_physical(delta)
+	elif _stats.flying:
+		_fly(delta)
+	elif _flat.length_squared() > 0.0001:
+		_walk(delta)
 
 
 ## The height a flyer keeps above sea level over ground at `ground` (metres): `flight_height` plus a share of the
@@ -83,15 +93,61 @@ func snap_to_altitude() -> void:
 	_body.global_position.y = altitude_for(ground)
 
 
+## Kinematic walk: slide along blocked cells, follow the ground height.
+func _walk(delta: float) -> void:
+	var map: MapGrid = _registry.map
+	var position: Vector3 = _body.global_position
+	if map == null or not map.is_built():
+		return
+	var step := Vector3(_flat.x, 0.0, _flat.z) * delta
+	var inside_wall: bool = map.is_blocked(map.cell_of(position))
+	var moved: Vector3 = position + step
+	if not inside_wall and map.is_blocked(map.cell_of(moved)):
+		var along_x := Vector3(position.x + step.x, position.y, position.z)
+		var along_z := Vector3(position.x, position.y, position.z + step.z)
+		if not map.is_blocked(map.cell_of(along_x)):
+			moved = along_x
+		elif not map.is_blocked(map.cell_of(along_z)):
+			moved = along_z
+		else:
+			return
+	moved.y = map.surface_height(moved)
+	_body.global_position = moved
+
+
+## Standing: take the ground's height again, and step out of a cell that became blocked under the unit.
+func _settle() -> void:
+	var map: MapGrid = _registry.map
+	if _stats.flying or map == null or not map.is_built():
+		return
+	var position: Vector3 = _body.global_position
+	var cell: Vector2i = map.cell_of(position)
+	if map.is_blocked(cell):
+		var out: Vector2i = map.nearest_walkable(cell)
+		position = map.cell_center(out)
+	position.y = map.surface_height(position)
+	_body.global_position = position
+
+
 ## Flyers: no gravity and no walls. Height follows the altitude over the ground below, at most `flight_climb_rate`.
-func _fly(flat: Vector3, delta: float) -> void:
+func _fly(delta: float) -> void:
 	var position: Vector3 = _body.global_position
 	var ground: float = _registry.map.ground_height(position) if _registry.map else MapGrid.SEA_LEVEL
 	var climb: float = clampf((altitude_for(ground) - position.y) / delta, -_stats.flight_climb_rate,
 		_stats.flight_climb_rate)
-	_body.velocity = Vector3(flat.x, climb, flat.z)
+	position += Vector3(_flat.x, climb, _flat.z) * delta
+	_body.global_position = position
+	_body.set_hover(position.y - ground)
+
+
+## Direct control: the physics body moves and falls (`_flat` is the wanted velocity).
+func _move_physical(delta: float) -> void:
+	var velocity: Vector3 = _body.velocity
+	velocity.x = _flat.x
+	velocity.z = _flat.z
+	velocity.y = 0.0 if _body.is_on_floor() else velocity.y - _gravity * delta
+	_body.velocity = velocity
 	_body.move_and_slide()
-	_body.set_hover(_body.global_position.y - ground)
 
 
 ## Push away from overlapping units, stronger the deeper the overlap. Flyers only push other flyers, and ground units

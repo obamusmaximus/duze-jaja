@@ -7,8 +7,19 @@ extends Node
 ##   doomed by shots in flight (no overkill), nearest first.
 ## - `in_sight`: the nearest enemy within `sight_range`.
 
-var in_range: Unit
-var in_sight: Unit
+## Held as ids; the properties resolve them (null once the unit is gone).
+var in_range: Unit:
+	get:
+		return _registry.get_unit(_in_range_id) if _in_range_id != 0 else null
+	set(value):
+		_in_range_id = value.id if value else 0
+var in_sight: Unit:
+	get:
+		return _registry.get_unit(_in_sight_id) if _in_sight_id != 0 else null
+	set(value):
+		_in_sight_id = value.id if value else 0
+var _in_range_id: int = 0
+var _in_sight_id: int = 0
 
 var _unit: Unit
 var _registry: UnitRegistry
@@ -28,17 +39,19 @@ func setup(unit: Unit, registry: UnitRegistry, weapon: Weapon) -> void:
 ## Health.damaged: remember who hit us, and look again at once if it isn't the current target.
 func note_attacker(_amount: float, source_id: int) -> void:
 	_last_attacker_id = source_id
-	if in_range == null or in_range.id != source_id:
+	if _in_range_id != source_id:
 		_timer = 0.0
 
 
 func step(delta: float) -> void:
 	_timer -= delta
-	if in_range and not (in_range.alive and _weapon.in_range(in_range)):
-		in_range = null
+	var ranged: Unit = in_range
+	if _in_range_id != 0 and not (ranged and _weapon.in_range(ranged)):
+		_in_range_id = 0
 		_timer = 0.0
-	if in_sight and not (in_sight.alive and _within(in_sight, _unit.stats.sight_range)):
-		in_sight = null
+	var sighted: Unit = in_sight
+	if _in_sight_id != 0 and not (sighted and _within(sighted, _unit.stats.sight_range)):
+		_in_sight_id = 0
 	if _timer > 0.0:
 		return
 	_timer = _unit.stats.scan_interval
