@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="HudLayout" format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud_placement.gd" id="1_kqsky"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/minimap_module.tscn" id="2_0tfdc"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/selection_module.tscn" id="3_nivct"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/command_module.tscn" id="4_0rsso"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/clock_module.tscn" id="5_2rxx4"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/force_module.tscn" id="6_x7574"]
+[ext_resource type="Script" path="res://ui/hud/hud_layout.gd" id="7_sijb7"]
+
+[sub_resource type="Resource" id="Resource_83yrc"]
+script = ExtResource("1_kqsky")
+module = ExtResource("2_0tfdc")
+section = 6
+
+[sub_resource type="Resource" id="Resource_ubok3"]
+script = ExtResource("1_kqsky")
+module = ExtResource("3_nivct")
+expand = true
+
+[sub_resource type="Resource" id="Resource_aor2l"]
+script = ExtResource("1_kqsky")
+module = ExtResource("4_0rsso")
+section = 8
+
+[sub_resource type="Resource" id="Resource_7i2mq"]
+script = ExtResource("1_kqsky")
+module = ExtResource("5_2rxx4")
+section = 0
+
+[sub_resource type="Resource" id="Resource_l40mc"]
+script = ExtResource("1_kqsky")
+module = ExtResource("6_x7574")
+section = 2
+
+[resource]
+script = ExtResource("7_sijb7")
+placements = Array[ExtResource("1_kqsky")]([SubResource("Resource_83yrc"), SubResource("Resource_ubok3"), SubResource("Resource_aor2l"), SubResource("Resource_7i2mq"), SubResource("Resource_l40mc")])

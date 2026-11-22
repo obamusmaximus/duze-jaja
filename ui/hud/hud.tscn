@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
+[ext_resource type="Resource" path="res://tuning/ui_default.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://ui/hud/layouts/generals.tres" id="3_layout"]
+
+[node name="Hud" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_hud")
+stats = ExtResource("2_stats")
+layout = ExtResource("3_layout")
