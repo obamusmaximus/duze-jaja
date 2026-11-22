@@ -15,7 +15,7 @@ Every step follows `CLAUDE.md`: tunables in a stats class in `tuning/` with a `*
 - `camera/camera_rig.tscn` + scripts. A root `Node3D` at the **focus point** on the ground; yaw turns the root; the `Camera3D` child sits at `distance` along the pitched arm. Pitch comes from the distance: blend `pitch_near` to `pitch_far` by `(distance - min_distance) / (max_distance - min_distance)` raised to `pitch_curve`.
 - Keep target values (focus, yaw, distance) apart from the current ones, and ease the current toward the target with the `*_smoothing` rates (frame-rate independent: `1 - exp(-rate * delta)`).
 - Split by job: input reading (`CameraInput`), pan, rotate, zoom, ground-height follow (raycast down on layer 1, smoothed by `height_follow_smoothing`), map bounds clamp.
-- Input actions to add: `camera_pan_left/right/forward/back` (arrows), `camera_drag` (RMB), `camera_rotate` (MMB), `camera_zoom_in/out` (wheel), `camera_reset` (key to confirm). Edge scrolling uses the mouse position against `edge_margin_px` (scale it from the 2560x1440 base to the real window).
+- Input actions to add: `camera_pan_left/right/forward/back` (arrows), `camera_drag` (RMB), `camera_rotate` (MMB), `camera_zoom_in/out` (wheel), `camera_reset` (key to confirm). Edge scrolling uses the mouse position against `edge_margin_px` (scale it from the 1920x1080 base to the real window).
 - **Map bounds:** the level hands the rig a `Rect2` (`setup(bounds)`); the focus point is clamped inside it.
 - Public API for later steps: `focus_on(position: Vector3)` (control-group jumps, minimap click, alerts), `reset()`.
 - Probe: focus point, yaw, distance, pitch.
@@ -70,7 +70,7 @@ Every step follows `CLAUDE.md`: tunables in a stats class in `tuning/` with a `*
 - Health bars over units (shown when damaged or selected), death removal.
 - Probe events: `attack`, `death`.
 
-## 9. HUD shell  [ ]
+## 9. HUD shell  [~]  (selection panel, minimap and command grid placeholder built: `docs/mechanics/ui.md`; enemy inspect and camera clearing the bar open)
 - Bottom-right panel with the selection (count and type icons, or one unit's health). A placeholder minimap frame with click-to-move-camera and the camera's view cone. No sidebar or production yet: that's after the groundwork (`GAME_DESIGN.md`, "Production").
 
 ## After the groundwork (not planned here)

@@ -14,6 +14,7 @@
 - **One scene per object**, and **group files by feature** (e.g. `units/` holds unit scenes and scripts).
 - **All tunable numbers live in stats resources in `tuning/`** (one class per owner, each with a `*_default.tres`), never as `@export`s on gameplay scripts. Add a tunable as an `@export` in the right class, inside an `@export_group` (it becomes a sub-label in the tuning panel) and with a `##` doc comment (it becomes the tooltip). Owners hold the resource and hand it to their parts through `setup()`; parts read `stats.x`. Parts that cache a value listen to the resource's `changed` signal so live edits apply. A new stats class needs listing in `TuningPanel.TABS`. A unit type is a stats class; a variant of it is just another `.tres`.
 - **The `.tres` files are the source of truth.** The user tunes live and saves them between sessions, so values change between prompts. That is normal: don't be surprised by a changed value, don't "fix", reset or revert it. Never write tunable values into the docs (name the parameter), and treat any number in a doc as possibly stale.
+- **Colours, spacing and type sizes come from `UiTokens`**, never a literal in a script or scene; UI nodes take a theme variation, not per-node overrides (`docs/mechanics/ui.md`).
 - **Use named input actions** from the Input Map, never raw keys. Current actions: `pause` (Esc), `save_playtest_log` (L); the camera's are listed in `docs/mechanics/camera.md`, selection and order keys in `rts_controls.md`, slow time's in `debug_tools.md`.
 - **Movement and raycasts go in `_physics_process`**, not `_process`.
 - **Keep the simulation apart from views** (`GAME_DESIGN.md`, "Multiplayer and simulation"). Units, orders, pathing, combat and map changes run on the fixed tick and never read a camera, the mouse, the selection or the HUD, so a headless server can run them. Views, players and AI change the game only by sending `Order` data through `CommandIssuer`. Never assume the map is fixed: it changes during a match.
@@ -23,6 +24,7 @@
 
 ## Session workflow
 - **`STATUS.md` is imported at the end of this file**, so it is already loaded at the start of every session.
+- **Building anything visible in the world** (models, materials, levels, effects)? Follow the prototyping rules in `docs/style_guide.md` first.
 - **Working on a mechanic? Read its doc in `docs/mechanics/`** (the glossary below says which) before touching its scripts, and read only the scripts it lists unless the task needs more.
 - **Building groundwork?** `docs/plans/groundwork.md` is the build order; tick a step there when it lands.
 - **Writing a headless test?** Read `docs/testing.md` first.
@@ -43,6 +45,10 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`props.md`]** prop, prop type, model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
 - **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander
+- **[`ui.md`]** tokens (`UiTokens`), face, game theme, theme variation, hatching, stat bar, command grid, HUD, HUD layout, section, band, HUD module, minimap, selection module
+- **[`audio.md`]** cue (`SfxCue`), `Sfx`, bus, listener, combat effects (muzzle flash, sparks, death burst)
+- **[`terrain.md`]** terrain layout, tile, height level, ramp, cliff, terrain editor (F2)
+- **[`water.md`]** water body, shore (rects), carrier (base), island level
 - **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe, slow time
 
 - **Dev-only tools live in `debug/`** (one subfolder per tool) and their scripts start their doc comment with "Debug:". Gameplay must never depend on them; they hook in through groups and signals.

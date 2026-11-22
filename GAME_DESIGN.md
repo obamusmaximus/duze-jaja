@@ -9,7 +9,7 @@ A top-down 3D real-time strategy game built, to start with, along the lines of R
 
 ## Decided
 - **Reference games: Red Alert 3 and C&C3: Tiberium Wars.** When a detail isn't settled here, do what they do, and note it here once it's built.
-- **Army and base scale**, not hero or squad play.
+- **Army and base scale** in the command views, not hero or squad play (first-person players lead at most a squad, below, "Roles").
 - **Camera: free, in the RA3 / C&C3 style** (below).
 - **Control scheme: the RA3 / C&C3 left-click scheme** (below).
 - **Maps change during a match** (below): this rules out anything that assumes a fixed map.
@@ -19,6 +19,30 @@ A top-down 3D real-time strategy game built, to start with, along the lines of R
 - **Pathing on our own grid** (below).
 - **AI commanders are layered and hand-authored** (below). No LLM or learned layer: out of scope.
 - **Single player can pause.** A slow-time control exists as a dev tool from the start, and may become a mechanic.
+- **Setting: carrier warfare over islands** (below, "A typical match").
+- **Roles split command** between a strategist, company commanders and first-person players (below, "Roles").
+
+## A typical match (Decided unless marked)
+The reference level to orient on while iterating (`levels/island/green_island.tscn` is its first draft).
+- **Each side's main base is a carrier**, anchored off the island. It's static: its distance from the island sets how long reinforcements take to arrive, so map layout is mostly a question of travel times. Units spawn on it until a forward spawn exists. It's where the commander "is".
+- **No land link between carrier and island.** Everything reaches the island by air or sea, and so will the eventual carrier assault.
+- **The carrier in each view:** a simple base object in the command views; a detailed, futuristic, multifunctional space in first person (air units launched from internal catapults, transports assembling on the flight deck, ships launching from below). The interior is a view: the simulation only knows where and when a unit appears.
+- **Forward bases:** the carrier can detach two pieces of itself that fly quickly to a point on the map and become hovering forward bases, as huge as the carrier.
+- **Scale is emphasised:** the carrier should look like it could host a whole force (within reason). The strategy view should feel like Battlefield's 3D overhead spawn map, not a near-isometric RTS.
+- **The island battle is over capture points** (radar arrays, launch platforms). Capturing one gives static defences and a forward spawn point.
+- **Win condition (for now): tickets.** Holding points earns tickets; the first side to reach the target wins.
+- **Later:** a carrier assault, in the style of Battlefield 2142's Titan mode (holding points lets you take the fight to the enemy carrier), possibly including infiltrating it in first person. So the carrier should become a unit with separate parts (hangar, catapults, decks, forward-base pieces) that each have their own health, rather than one health bar.
+- **Snowballing is a known risk.** Points are not the economy (yet) for that reason, and the defences and forward spawn they give must not make a held point too hard to retake.
+
+## Roles (Decided: compartmentalized command; first-person squads are a leaning)
+In multiplayer one side can be several players, each in one role:
+1. **Strategist** (strategy view): decides strategy and how units are distributed among the commanders.
+2. **Company commanders** (RTS view): run their part of the battlefield with the units assigned to them.
+3. **First-person players:** take over a single unit, possibly leading an AI squad, for Battlefield-style play. A player-controlled unit will nearly always outplay its AI equivalent, and that's intended.
+
+What this means for the build:
+- **Every role can be a player or the AI.** The AI commander's layers line up with the roles (strategy layer, managers and squads, single unit brains), so empty roles and single player are covered by the same AI.
+- **Ordering rights sit below the team:** a unit belongs to a team and is assigned to a controller (a player or an AI). `CommandIssuer`'s team check becomes "may this controller order this unit".
 
 ## Changing maps (Decided)
 Parts of the map can appear and disappear, walls can block the way, and elevation can change, all during a match.
@@ -28,8 +52,8 @@ Parts of the map can appear and disappear, walls can block the way, and elevatio
 
 ## Views (Decided: three views of one match)
 In one match the commander switches freely between:
-1. **RTS view:** the camera and controls below, for micro.
-2. **Strategy view:** the whole map at once, simplified (2D or isometric 3D, undecided), for big-picture command.
+1. **RTS view:** the camera and controls below. A tactical, company-commander view, for micro.
+2. **Strategy view:** a separate view of the whole map, simplified (2D or isometric 3D, undecided), for big-picture command and unit distribution. It should feel like Battlefield's overhead spawn map.
 3. **First-person:** inhabit any own unit on the map and control it directly.
 
 What this means for the build:
@@ -74,7 +98,7 @@ A perspective camera that orbits a focus point on the ground. Tunables: `CameraS
 - **Lopsided view:** a tilted camera sees further up the screen than down it. Rotation lets the player fix that themselves, so maps don't need to work around it.
 
 ## Controls (Decided: the RA3 / C&C3 left-click scheme)
-Left-click both selects and gives orders; right-click clears the selection. RA3 and C&C3 also offered a right-click-orders scheme as an option; we may add that later as a setting.
+Left-click selects and right-click gives orders (the StarCraft scheme, changed from RA3 left-click orders); clicking empty ground clears the selection. RA3 and C&C3 also offered a right-click-orders scheme as an option; we may add that later as a setting.
 
 | Input | Does |
 |---|---|
@@ -83,7 +107,7 @@ Left-click both selects and gives orders; right-click clears the selection. RA3 
 | Shift + left-click / drag | Add to or remove from the selection |
 | Double-click a unit | Select all own units of that type on screen |
 | Left-click ground / enemy (with a selection) | Move there / attack it (the cursor shows which) |
-| Right-click | Clear the selection |
+| Right-click | Order: move, attack an enemy (attack-move when armed) |
 | Right-drag | Drag-pan the camera |
 | Middle-drag | Rotate the camera |
 | Mouse wheel | Zoom |
@@ -101,8 +125,12 @@ The hotkeys in this table follow how we remember RA3 and C&C3; the exact keys an
 **Production (leaning: the C&C model):** construction and unit production are queued from a sidebar, not by selecting the building, and new structures are placed near existing ones. This shapes the HUD layout, but it isn't part of the groundwork.
 
 ## Open questions
-- **Economy:** C&C-style harvested resource (leaning, from the reference games), captured points, or both?
-- **Setting and look.**
+- **Economy:** not the capture points (snowball risk). Then what? A flat income per side that the strategist hands out to commanders would fit the roles; a harvested resource is still possible.
+- **Look:** the setting is decided; how the world art shows scale (haze, detail density, slow heavy motion) against the style guide's flat look is open.
+- **Map scale:** a carrier that could host a force is likely a few hundred metres long, so a match map is likely kilometres, not hundreds of metres. That affects grid size and network relevance.
+- **Capture points:** how capturing works (presence, timers, contesting); whether radar arrays and launch platforms do different things; whether a point's defences switch sides on capture or must be rebuilt.
+- **Forward bases:** can they be shot down in transit, moved once placed, or rebuilt after they're lost? Where may they be placed?
+- **Carrier assault:** how points open it up, and what "winning" the assault means (destroyed, boarded, captured).
 - **Modes besides multiplayer:** AI skirmish, campaign missions?
 - **Networking model:** server-authoritative is the leaning (above); confirm before networking is built. Hosting: a player hosts, or dedicated servers, or both?
 - **Strategy view:** 2D or isometric 3D? What exactly can the guidelines (Leitlinien) say?
