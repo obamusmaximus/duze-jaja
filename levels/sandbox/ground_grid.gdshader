@@ -4,8 +4,8 @@
 shader_type spatial;
 render_mode diffuse_lambert, specular_disabled;
 
-uniform vec3 base_color : source_color = vec3(0.50, 0.50, 0.49);
-uniform vec3 line_color : source_color = vec3(0.30, 0.30, 0.30);
+uniform vec3 base_color : source_color = vec3(0.541, 0.541, 0.525); // concrete grey #8A8A86
+uniform vec3 line_color : source_color = vec3(0.35, 0.35, 0.34);
 uniform float coarse_cell : hint_range(1.0, 50.0) = 10.0;
 uniform float coarse_width : hint_range(0.01, 1.0) = 0.12;
 uniform float fine_cell : hint_range(0.5, 20.0) = 2.0;

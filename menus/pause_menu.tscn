@@ -15,7 +15,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.55)
+color = Color(0.051, 0.051, 0.063, 0.7)
 
 [node name="Center" type="CenterContainer" parent="."]
 unique_name_in_owner = true
@@ -33,39 +33,39 @@ layout_mode = 2
 [node name="Margin" type="MarginContainer" parent="Center/MainPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
 [node name="Column" type="VBoxContainer" parent="Center/MainPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="Title" type="Label" parent="Center/MainPanel/Margin/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Paused"
+theme_type_variation = &"LabelHeading"
+text = "PAUSED"
 horizontal_alignment = 1
 
 [node name="ResumeButton" type="Button" parent="Center/MainPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Resume"
+text = "RESUME"
 
 [node name="OptionsButton" type="Button" parent="Center/MainPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Options"
+text = "OPTIONS"
 
 [node name="TuningButton" type="Button" parent="Center/MainPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Tuning (debug)"
+text = "TUNING (DEBUG)"
 
 [node name="QuitButton" type="Button" parent="Center/MainPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Quit"
+text = "QUIT"
 
 [node name="TuningPanel" parent="Center" instance=ExtResource("2_tuning")]
 unique_name_in_owner = true
@@ -74,33 +74,33 @@ layout_mode = 2
 [node name="OptionsPanel" type="PanelContainer" parent="Center"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(420, 0)
+custom_minimum_size = Vector2(416, 0)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/OptionsPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
 [node name="Column" type="VBoxContainer" parent="Center/OptionsPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="Title" type="Label" parent="Center/OptionsPanel/Margin/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Options"
+theme_type_variation = &"LabelHeading"
+text = "OPTIONS"
 horizontal_alignment = 1
 
 [node name="VolumeRow" type="HBoxContainer" parent="Center/OptionsPanel/Margin/Column"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="Center/OptionsPanel/Margin/Column/VolumeRow"]
-custom_minimum_size = Vector2(130, 0)
+custom_minimum_size = Vector2(128, 0)
 layout_mode = 2
-text = "Volume"
+text = "VOLUME"
 
 [node name="VolumeSlider" type="HSlider" parent="Center/OptionsPanel/Margin/Column/VolumeRow"]
 unique_name_in_owner = true
@@ -114,9 +114,9 @@ value = 1.0
 [node name="FullscreenCheck" type="CheckButton" parent="Center/OptionsPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Fullscreen"
+text = "FULLSCREEN"
 
 [node name="BackButton" type="Button" parent="Center/OptionsPanel/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Back"
+text = "BACK"

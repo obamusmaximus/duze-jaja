@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://menus/pause_menu.tscn" id="pause"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="hud"]
 [ext_resource type="Script" path="res://levels/sandbox/sandbox.gd" id="level"]
 [ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="rig"]
 [ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
@@ -30,16 +31,14 @@
 [ext_resource type="Resource" path="res://tuning/prop_structure.tres" id="prop_structure"]
 [ext_resource type="Resource" path="res://tuning/prop_turret_double.tres" id="prop_turret_double"]
 [ext_resource type="Resource" path="res://tuning/prop_turret_single.tres" id="prop_turret_single"]
+[ext_resource type="Script" path="res://audio/game_sound.gd" id="game_sound"]
+[ext_resource type="Script" path="res://fx/combat_effects.gd" id="combat_fx"]
+[ext_resource type="Resource" path="res://tuning/fx_default.tres" id="fx_stats"]
 [ext_resource type="Resource" path="res://tuning/unit_rover.tres" id="unit_rover"]
 [ext_resource type="Resource" path="res://tuning/unit_skiff.tres" id="unit_skiff"]
 [ext_resource type="Resource" path="res://tuning/unit_trooper.tres" id="unit_trooper"]
-
-[sub_resource type="Environment" id="Env"]
-background_mode = 1
-background_color = Color(0.05, 0.05, 0.06, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.9, 0.9, 0.92, 1)
-ambient_light_energy = 0.5
+[ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
+[ext_resource type="Resource" path="res://tuning/light_void.tres" id="light_stats"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
 size = Vector2(200, 200)
@@ -53,14 +52,8 @@ size = Vector3(200, 1, 200)
 [node name="SpaceDemo" type="Node3D"]
 script = ExtResource("level")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Env")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 20, 0)
-light_color = Color(1, 0.98, 0.95, 1)
-light_energy = 1.15
-shadow_enabled = true
+[node name="WorldLight" parent="." instance=ExtResource("world_light")]
+stats = ExtResource("light_stats")
 
 [node name="Ground" type="StaticBody3D" parent="."]
 
@@ -85,6 +78,13 @@ stats = ExtResource("map_stats")
 
 [node name="Shots" type="Node" parent="."]
 script = ExtResource("shots")
+
+[node name="GameSound" type="Node" parent="."]
+script = ExtResource("game_sound")
+
+[node name="CombatEffects" type="Node3D" parent="."]
+script = ExtResource("combat_fx")
+stats = ExtResource("fx_stats")
 
 [node name="ShotView" type="Node3D" parent="."]
 script = ExtResource("shot_view")
@@ -246,5 +246,7 @@ script = ExtResource("issuer")
 stats = ExtResource("order_stats")
 
 [node name="RtsPlayer" parent="." instance=ExtResource("player")]
+
+[node name="Hud" parent="." instance=ExtResource("hud")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("pause")]
