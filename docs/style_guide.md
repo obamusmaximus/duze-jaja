@@ -93,7 +93,7 @@ Prototype art is built so the artist pass can replace it without touching gamepl
 
 ## Kept for the artist pass
 Prototypes build working stand-ins for all of these; the real versions wait:
-- Final models for the mothership, forward bases, carryalls, capture points and units, and the mothership interior.
+- Final models for the mothership, forward bases, carryalls, capture points and units, and the mothership interior. Stand-ins until then: the mothership, IFV and tank are primitive prototypes, and the carryall is the Space Kit's `craft_cargoA` at true scale (`docs/plans/battlefield.md` steps 6, 7 and 9).
 - The war table's final look (table model of the map, unit tokens).
 - The graphic layer: type on objects (hull numbers, labels), faction insignia, logos, decal sheets.
 - Texturing approach (if any beyond flat colour), wear and dirt.

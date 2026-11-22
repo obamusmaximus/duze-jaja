@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1_stats")
-tint_tiles = true
 cliff_role = 12
+tint_tiles = true

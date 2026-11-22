@@ -34,7 +34,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif Input.is_action_pressed(&"camera_rotate"):
 			rotate_moved.emit(motion.relative)
 		return
-	if event.is_action_pressed(&"camera_zoom_in"):
+	if event is InputEventPanGesture: # Two-finger trackpad scroll: up zooms in.
+		zoom_notches.emit((event as InputEventPanGesture).delta.y * _stats.trackpad_zoom_notches)
+	elif event is InputEventMagnifyGesture: # Pinch: spreading the fingers zooms in.
+		zoom_notches.emit(-log((event as InputEventMagnifyGesture).factor) * _stats.trackpad_pinch_notches)
+	elif event.is_action_pressed(&"camera_zoom_in"):
 		zoom_notches.emit(-_wheel_factor(event))
 	elif event.is_action_pressed(&"camera_zoom_out"):
 		zoom_notches.emit(_wheel_factor(event))

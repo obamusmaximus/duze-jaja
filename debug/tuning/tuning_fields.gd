@@ -91,6 +91,8 @@ static func _make_row(resource: Resource, info: Dictionary, tooltips: Dictionary
 			editor = picker
 		TYPE_PACKED_FLOAT32_ARRAY:
 			editor = _array_editor(resource, prop, value)
+		TYPE_VECTOR2, TYPE_VECTOR3:
+			editor = _vector_editor(resource, prop, value)
 		_:
 			return null
 	var row := PanelContainer.new()
@@ -188,6 +190,30 @@ static func _number_editor(resource: Resource, prop: String, info: Dictionary, v
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_child(slider)
 	box.add_child(spin)
+	return box
+
+
+## One spin box per component, for a Vector2 or Vector3.
+static func _vector_editor(resource: Resource, prop: String, value: Variant) -> Control:
+	var box := HBoxContainer.new()
+	box.theme_type_variation = &"TuningTightH"
+	var count: int = 2 if value is Vector2 else 3
+	for i: int in count:
+		var spin := SpinBox.new()
+		spin.allow_greater = true
+		spin.allow_lesser = true
+		spin.min_value = -1.0e9
+		spin.max_value = 1.0e9
+		spin.step = 0.1
+		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		spin.get_line_edit().alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		spin.value = value[i]
+		spin.value_changed.connect(func(v: float) -> void:
+			var current: Variant = resource.get(prop)
+			current[i] = v
+			_apply(resource, prop, current))
+		box.add_child(spin)
 	return box
 
 

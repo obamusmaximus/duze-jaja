@@ -1,0 +1,105 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://menus/pause_menu.tscn" id="pause"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="hud"]
+[ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="rig"]
+[ext_resource type="PackedScene" path="res://units/unit.tscn" id="unit"]
+[ext_resource type="Script" path="res://selection/selection.gd" id="selection"]
+[ext_resource type="Script" path="res://orders/command_issuer.gd" id="issuer"]
+[ext_resource type="Resource" path="res://tuning/order_default.tres" id="order_stats"]
+[ext_resource type="PackedScene" path="res://player/rts_player.tscn" id="player"]
+[ext_resource type="Script" path="res://map/path_service.gd" id="paths"]
+[ext_resource type="Resource" path="res://tuning/map_default.tres" id="map_stats"]
+[ext_resource type="Script" path="res://combat/shots.gd" id="shots"]
+[ext_resource type="Script" path="res://combat/shot_view.gd" id="shot_view"]
+[ext_resource type="Script" path="res://audio/game_sound.gd" id="game_sound"]
+[ext_resource type="Script" path="res://fx/combat_effects.gd" id="combat_fx"]
+[ext_resource type="Resource" path="res://tuning/fx_default.tres" id="fx_stats"]
+
+[ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
+[ext_resource type="Resource" path="res://tuning/light_day.tres" id="light_stats"]
+[ext_resource type="Script" path="res://levels/atoll/atoll_level.gd" id="level"]
+[ext_resource type="Script" path="res://levels/atoll/atoll_land.gd" id="land"]
+[ext_resource type="Script" path="res://levels/atoll/mothership_box.gd" id="ship"]
+[ext_resource type="Script" path="res://debug/battlefield/battlefield_readout.gd" id="readout"]
+[ext_resource type="Script" path="res://debug/map_view/map_grid_view.gd" id="grid_view"]
+[ext_resource type="Resource" path="res://tuning/battlefield_default.tres" id="bf_stats"]
+[ext_resource type="Resource" path="res://tuning/camera_atoll.tres" id="cam_stats"]
+[ext_resource type="Script" path="res://water/water_body.gd" id="water_body"]
+[ext_resource type="Resource" path="res://tuning/water_default.tres" id="water_stats"]
+[ext_resource type="Script" path="res://map/map_grid.gd" id="map"]
+[ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
+
+[node name="Atoll" type="Node3D"]
+script = ExtResource("level")
+battlefield = ExtResource("bf_stats")
+camera_yaw = 0.0
+
+[node name="WorldLight" parent="." instance=ExtResource("world_light")]
+stats = ExtResource("light_stats")
+
+[node name="Water" type="MeshInstance3D" parent="."]
+script = ExtResource("water_body")
+size = Vector2(3400, 2400)
+stats = ExtResource("water_stats")
+
+[node name="Land" type="StaticBody3D" parent="."]
+script = ExtResource("land")
+stats = ExtResource("bf_stats")
+
+[node name="MothershipWest" type="Node3D" parent="."]
+script = ExtResource("ship")
+stats = ExtResource("bf_stats")
+
+[node name="MothershipEast" type="Node3D" parent="."]
+script = ExtResource("ship")
+team = 1
+stats = ExtResource("bf_stats")
+
+[node name="CameraRig" parent="." instance=ExtResource("rig")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 160)
+stats = ExtResource("cam_stats")
+
+[node name="MapGrid" type="Node" parent="."]
+script = ExtResource("map")
+stats = ExtResource("map_stats")
+
+[node name="PathService" type="Node" parent="."]
+script = ExtResource("paths")
+stats = ExtResource("map_stats")
+
+[node name="Shots" type="Node" parent="."]
+script = ExtResource("shots")
+
+[node name="GameSound" type="Node" parent="."]
+script = ExtResource("game_sound")
+
+[node name="CombatEffects" type="Node3D" parent="."]
+script = ExtResource("combat_fx")
+stats = ExtResource("fx_stats")
+
+[node name="ShotView" type="Node3D" parent="."]
+script = ExtResource("shot_view")
+
+[node name="DebugMapGridView" type="MultiMeshInstance3D" parent="."]
+script = ExtResource("grid_view")
+
+[node name="Units" type="Node3D" parent="."]
+script = ExtResource("registry")
+
+[node name="Selection" type="Node" parent="."]
+script = ExtResource("selection")
+
+[node name="CommandIssuer" type="Node" parent="."]
+script = ExtResource("issuer")
+stats = ExtResource("order_stats")
+
+[node name="RtsPlayer" parent="." instance=ExtResource("player")]
+
+[node name="Hud" parent="." instance=ExtResource("hud")]
+
+[node name="BattlefieldReadout" type="CanvasLayer" parent="."]
+script = ExtResource("readout")
+stats = ExtResource("bf_stats")
+
+[node name="PauseMenu" parent="." instance=ExtResource("pause")]

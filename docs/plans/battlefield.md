@@ -31,7 +31,7 @@ The rules are in `docs/performance.md`; this step puts the existing code on them
 - **Landed (see `units.md`, `pathing.md` "Measured"):** Mobile renderer, registry loop at half rate with per-tick integration, kinematic ground units, ids in selection/groups/targets, `debug/benchmark/benchmark.gd`. The Mobile look of water, materials, lights and UI is for the user's playtest.
 - **Done when:** the benchmark shows the per-unit cost down from today's (`pathing.md`, "Measured"), units still path, fight and look smooth, and the numbers are in the mechanic docs.
 
-## 1. Scale reference level  [ ]
+## 1. Scale reference level  [x]
 `levels/atoll/` starts here and becomes the main scene.
 - A flat seabed, primitive island blocks (an atoll ring, a big island, a few small ones), two hovering mothership boxes, 100 units, the sea at full size.
 - `BattlefieldStats` (Map tab): map extent, the motherships' standoff distance and altitude, a test flyer speed. Island blocks and motherships follow live edits.
@@ -63,18 +63,25 @@ Sculpting happens in an external tool; we build only what the game needs anyway.
 ## 5. Atoll blockout  [ ]
 - The sculpted atoll replaces the primitive blocks: reef ring, lagoon, main islands with a mountain, plains and beaches, smaller islands around, open sea to each mothership.
 - Capture points as markers only. No props or detail beyond what reads the forms.
+- Plants and rocks, when needed: copy them from the Kenney Nature Kit the user already downloaded (`~/Downloads/kenney_nature-kit`) into `assets/kenney_nature_kit/`; don't download anything (`assets/README.md`, "Planned imports").
 - **Done when:** travel times and lines of sight can be judged with today's units dropped in.
 
 ## 6. Hovering mothership  [ ]  (parallel from step 2)
 - `Carrier` becomes `Mothership` (`bases/`, group `motherships`): in the air, no ground footprint, doesn't block the grid. Its position is simulation state, so relocation can come later.
-- Primitive placeholder at true scale (`*_proto.tscn` through the stats' model, style guide prototyping rules).
+- Primitive placeholder at true scale, `bases/models/mothership_proto.tscn` (style guide prototyping rules). It's built from primitives, not Kenney parts, because nothing in the Space Kit reads as a hull that size.
+  - **Shape:** a long hull with a wedged prow, carryall pads on top, production bays as doors underneath, a naval drop bay at the stern (reserved), and engine pods with downward thrusters. Space Kit turrets and dishes may go on as fittings at plausible sizes.
+  - **Showing the hover:** a soft ground shadow (a decal under the hull), since sun shadows are off at far zoom (`docs/performance.md`); thruster glow is an effect. A slow bob is in the view only, never in the simulation.
+  - **Cost:** a few meshes, one per palette role, merged when built; collision is a few boxes on the Building layer.
+  - **Size** is a `MothershipStats` tunable, set on the scale reference level.
+- Sound: a low drone loop from the synth tool (`tools/audio_synth/`).
 - Named attachment points: production bays, carryall pads, a naval drop bay (reserved), the forward-base pieces (reserved).
 - `MothershipStats`: production lines, pads; later health per part.
 - **Done when:** both motherships hover in the battlefield level and read as huge from near and far.
 
 ## 7. Unit cargo classes  [ ]
 - `UnitStats` gains a cargo class (infantry or machinery) and a slot size (an IFV takes half a carryall's machinery slots, a tank all of them).
-- Placeholder types: infantry, IFV, tank.
+- **True scale first:** the trooper and rover are scaled up today (the trooper stands far taller than a person). Bring them back to true scale (style rule 6; the base plate keeps them readable), so cargo sizes look right.
+- Placeholder types: infantry (the Space Kit astronaut), and an IFV and a tank as primitive prototypes (`units/models/ifv_proto.tscn`, `tank_proto.tscn`): an IFV on six wheels, a tank on tracks with a long gun, told apart by silhouette. Kenney has no fitting military vehicles.
 - **Done when:** the three types exist with their slots and fight like the others.
 
 ## 8. Income and squad production  [ ]  (after 6, 7)
@@ -88,6 +95,7 @@ Sculpting happens in an external tool; we build only what the game needs anyway.
 - **Done when:** several lines build squads at once from the HUD, and a headless test queues and cancels through `CommandIssuer` and checks the bank.
 
 ## 9. Carryalls  [ ]  (after 5, 8)
+- **Placeholder model:** the Space Kit's `craft_cargoA`, scaled in its `.tres` to true size (its cargo hold fits a tank). Flyers don't use the grid, so its size costs nothing there. `craft_cargoB` stays free for a variant. Sound: a synthesized rotor or engine loop.
 - A large flyer with a `Cargo` component: infantry and machinery slots. **Carried units are data:** loading stores each unit's id, type, health, squad and controller and removes its node the way death does (no death event); para-drop or landing spawns it again with the same id. Everything already copes with units leaving, and state that holds ids (step 0) gets them back. A richer carried state can come with first-person play.
 - Orders:
   - **Pick-up:** lands on a valid landing zone (flat, walkable, big enough) or a mothership pad.
@@ -137,4 +145,4 @@ Both motherships producing, several carryalls flying, a 100-unit fight on the at
 - **Strategy outlines' vocabulary** (the guidelines, Leitlinien): what they can say and how the AI reads them.
 
 ## Measured
-(Filled in by step 1.)
+Step 1, headless, M1: default map 3000 x 2000 m, grid over 1100 x 1100 m at 1 m cells (1.21M cells): **build 1.9 s, about 170 MB static memory** for the whole level load (2.2 s). Gridding the whole map would be 6M cells: roughly 10 s and 850 MB, so the grid stays land-only. 100 units ordered across the island: 2.4 ms per tick, 1.7 ms in the unit loop. Frame time, depth precision and haze from high up need a rendered run: read them off the readout in game and note them here.

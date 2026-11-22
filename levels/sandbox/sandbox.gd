@@ -41,7 +41,7 @@ func _ready() -> void:
 	_hud.setup(_selection, PLAYER_TEAM, map_area, _camera_rig)
 	# The ground's collision is only queryable once the physics server has stepped.
 	await get_tree().physics_frame
-	_map.build(map_area)
+	_map.build(_grid_area())
 	get_tree().call_group(&"props", "block_in", _map)
 	_paths.setup(_map)
 	_shots.setup(_units)
@@ -58,6 +58,11 @@ func _ready() -> void:
 		_terrain.changed_area.connect(_on_terrain_changed)
 		if _terrain_editor:
 			_terrain_editor.setup(_terrain)
+
+
+## The part of the ground (x, z) the map grid covers. Levels whose land is smaller than the map override it.
+func _grid_area() -> Rect2:
+	return map_area
 
 
 ## The terrain was edited: once physics has the new shapes, the map grid re-reads the ground there.

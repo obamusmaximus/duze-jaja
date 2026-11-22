@@ -41,9 +41,13 @@ extends Resource
 ## Closest camera distance from the focus point, in metres.
 @export_range(2.0, 100.0, 0.5) var min_distance: float = 12.0
 ## Farthest camera distance from the focus point, in metres.
-@export_range(10.0, 400.0, 1.0) var max_distance: float = 70.0
+@export_range(10.0, 4000.0, 1.0) var max_distance: float = 70.0
+## Zoom notches per unit of two-finger trackpad scroll (fallback without a mouse wheel).
+@export_range(0.05, 5.0, 0.05) var trackpad_zoom_notches: float = 0.5
+## Zoom notches per unit of log pinch scale on a trackpad: higher zooms more for the same pinch.
+@export_range(1.0, 40.0, 0.5) var trackpad_pinch_notches: float = 8.0
 ## The distance a level starts at and the reset action returns to.
-@export_range(2.0, 400.0, 0.5) var default_distance: float = 40.0
+@export_range(2.0, 4000.0, 0.5) var default_distance: float = 40.0
 ## Fraction of the current distance one mouse-wheel notch zooms by, so each notch feels the same at every zoom.
 @export_range(0.01, 0.5, 0.01) var zoom_step: float = 0.12
 ## How quickly the distance catches up with its target (per second). 0 means instant.

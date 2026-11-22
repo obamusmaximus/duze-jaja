@@ -13,4 +13,10 @@ Third-party art. Each pack lives in its own folder with its license file next to
 
 - **Scale:** Kenney's kits are not built to one scale (a rover is 0.35 m, a hangar 3 m, in model units). Each use sets its own `model_scale` in its stats `.tres`.
 - **Origins:** the meshes sit offset from their origin on a tile grid. Always show a model through `ModelFit` (`props/model_fit.gd`), which centres it and puts its base on the ground.
+- **Downloads fail** (Kenney links often give 404s to agents). Before downloading, check `~/Downloads` for packs the user already has, and copy from there. If a pack isn't there, ask the user to download it.
+- **Planned imports:**
+  - Kenney Nature Kit, for atoll plants and rocks (battlefield step 5). It's in `~/Downloads/kenney_nature-kit`.
+  - Kenney Space Station Kit, interior pieces for the mothership interior once first person comes. It's in `~/Downloads/kenney_space-station-kit.zip`.
+  - A boat pack for naval units, later. The user downloads it.
+  - Mothership, IFV and tank are primitive prototypes, not packs (`docs/plans/battlefield.md` steps 6 and 7).
 - **Adding a pack:** put it in `assets/<pack>/` with its license, add a row here, run `godot --headless --import`.

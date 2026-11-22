@@ -29,6 +29,13 @@ func _ready() -> void:
 	_apply()
 
 
+## Resizes the sheet (metres, x and z) and re-cuts its quads.
+func set_size(new_size: Vector2) -> void:
+	size = new_size
+	_plane.size = size
+	_apply_mesh()
+
+
 ## Sets the shore (world x, z rectangles): the foam, the calm and the waves' damping measure from these.
 func set_shore(rects: Array[Rect2]) -> void:
 	_shore = rects.slice(0, MAX_RECTS)

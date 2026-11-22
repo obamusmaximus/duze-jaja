@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="PropStats" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PropStats" format=3]
 
 [ext_resource type="Script" path="res://tuning/prop_stats.gd" id="1_stats"]
 [ext_resource type="PackedScene" path="res://assets/kenney_space_kit/rocks_smallA.glb" id="2_model"]
