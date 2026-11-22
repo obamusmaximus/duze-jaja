@@ -1,0 +1,325 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://menus/pause_menu.tscn" id="pause"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="hud"]
+[ext_resource type="Script" path="res://levels/sandbox/sandbox.gd" id="level"]
+[ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="rig"]
+[ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
+[ext_resource type="PackedScene" path="res://units/unit.tscn" id="unit"]
+[ext_resource type="Script" path="res://selection/selection.gd" id="selection"]
+[ext_resource type="Script" path="res://orders/command_issuer.gd" id="issuer"]
+[ext_resource type="Resource" path="res://tuning/order_default.tres" id="order_stats"]
+[ext_resource type="PackedScene" path="res://player/rts_player.tscn" id="player"]
+[ext_resource type="Script" path="res://map/map_grid.gd" id="map"]
+[ext_resource type="Script" path="res://map/path_service.gd" id="paths"]
+[ext_resource type="Resource" path="res://tuning/map_default.tres" id="map_stats"]
+[ext_resource type="Script" path="res://combat/shots.gd" id="shots"]
+[ext_resource type="Script" path="res://combat/shot_view.gd" id="shot_view"]
+[ext_resource type="Script" path="res://debug/map_view/map_grid_view.gd" id="grid_view"]
+[ext_resource type="Shader" path="res://levels/sandbox/ground_grid.gdshader" id="ground_shader"]
+[ext_resource type="PackedScene" path="res://props/prop.tscn" id="prop"]
+[ext_resource type="Resource" path="res://tuning/prop_crater.tres" id="prop_crater"]
+[ext_resource type="Resource" path="res://tuning/prop_crystals.tres" id="prop_crystals"]
+[ext_resource type="Resource" path="res://tuning/prop_dish.tres" id="prop_dish"]
+[ext_resource type="Resource" path="res://tuning/prop_generator.tres" id="prop_generator"]
+[ext_resource type="Resource" path="res://tuning/prop_hangar_large.tres" id="prop_hangar_large"]
+[ext_resource type="Resource" path="res://tuning/prop_hangar_round.tres" id="prop_hangar_round"]
+[ext_resource type="Resource" path="res://tuning/prop_hangar_small.tres" id="prop_hangar_small"]
+[ext_resource type="Resource" path="res://tuning/prop_rock_a.tres" id="prop_rock_a"]
+[ext_resource type="Resource" path="res://tuning/prop_rock_b.tres" id="prop_rock_b"]
+[ext_resource type="Resource" path="res://tuning/prop_rocks_small.tres" id="prop_rocks_small"]
+[ext_resource type="Resource" path="res://tuning/prop_structure.tres" id="prop_structure"]
+[ext_resource type="Resource" path="res://tuning/prop_turret_double.tres" id="prop_turret_double"]
+[ext_resource type="Resource" path="res://tuning/prop_turret_single.tres" id="prop_turret_single"]
+[ext_resource type="Script" path="res://audio/game_sound.gd" id="game_sound"]
+[ext_resource type="Script" path="res://fx/combat_effects.gd" id="combat_fx"]
+[ext_resource type="Resource" path="res://tuning/fx_default.tres" id="fx_stats"]
+[ext_resource type="Script" path="res://terrain/terrain_map.gd" id="terrain_map"]
+[ext_resource type="Script" path="res://debug/terrain_editor/terrain_editor.gd" id="terrain_editor"]
+[ext_resource type="Resource" path="res://levels/mars/mars_outpost_terrain.tres" id="terrain_layout"]
+[ext_resource type="Resource" path="res://tuning/terrain_default.tres" id="terrain_stats"]
+[ext_resource type="Resource" path="res://tuning/unit_rover.tres" id="unit_rover"]
+[ext_resource type="Resource" path="res://tuning/unit_skiff.tres" id="unit_skiff"]
+[ext_resource type="Resource" path="res://tuning/unit_trooper.tres" id="unit_trooper"]
+[ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
+[ext_resource type="Resource" path="res://tuning/light_void.tres" id="light_stats"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(200, 200)
+
+[sub_resource type="ShaderMaterial" id="Mat_ground"]
+shader = ExtResource("ground_shader")
+shader_parameter/base_color = Color(0.3, 0.2, 0.17, 1)
+shader_parameter/line_color = Color(0.24, 0.16, 0.13, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_ground"]
+size = Vector3(200, 1, 200)
+
+[node name="MarsOutpost" type="Node3D"]
+script = ExtResource("level")
+ambient_cue = &"ambient_mars_wind"
+
+[node name="WorldLight" parent="." instance=ExtResource("world_light")]
+stats = ExtResource("light_stats")
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.03, 0)
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("Mat_ground")
+
+[node name="Shape" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("Shape_ground")
+
+[node name="CameraRig" parent="." instance=ExtResource("rig")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 4, 22)
+
+[node name="MapGrid" type="Node" parent="."]
+script = ExtResource("map")
+stats = ExtResource("map_stats")
+
+[node name="PathService" type="Node" parent="."]
+script = ExtResource("paths")
+stats = ExtResource("map_stats")
+
+[node name="Shots" type="Node" parent="."]
+script = ExtResource("shots")
+
+[node name="GameSound" type="Node" parent="."]
+script = ExtResource("game_sound")
+
+[node name="CombatEffects" type="Node3D" parent="."]
+script = ExtResource("combat_fx")
+stats = ExtResource("fx_stats")
+
+[node name="ShotView" type="Node3D" parent="."]
+script = ExtResource("shot_view")
+
+[node name="DebugMapGridView" type="MultiMeshInstance3D" parent="."]
+script = ExtResource("grid_view")
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("terrain_map")
+layout = ExtResource("terrain_layout")
+stats = ExtResource("terrain_stats")
+
+[node name="TerrainEditor" type="Node" parent="."]
+script = ExtResource("terrain_editor")
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="AllyHangarLarge1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 4, 14)
+stats = ExtResource("prop_hangar_large")
+
+[node name="EnemyHangarLarge1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 40, 4, -14)
+stats = ExtResource("prop_hangar_large")
+
+[node name="AllyGenerator1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 4, 35)
+stats = ExtResource("prop_generator")
+
+[node name="EnemyGenerator1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 4, -35)
+stats = ExtResource("prop_generator")
+
+[node name="AllyDish1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 4, 33)
+stats = ExtResource("prop_dish")
+
+[node name="EnemyDish1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 45, 4, -33)
+stats = ExtResource("prop_dish")
+
+[node name="AllyTurretSingle1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 4, 12)
+stats = ExtResource("prop_turret_single")
+
+[node name="EnemyTurretSingle1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 21, 4, -12)
+stats = ExtResource("prop_turret_single")
+
+[node name="AllyTurretSingle2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 4, 37)
+stats = ExtResource("prop_turret_single")
+
+[node name="EnemyTurretSingle2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 21, 4, -37)
+stats = ExtResource("prop_turret_single")
+
+[node name="AllyStructure1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 4, 13)
+stats = ExtResource("prop_structure")
+
+[node name="EnemyStructure1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 30, 4, -13)
+stats = ExtResource("prop_structure")
+
+[node name="AllyHangarRound1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 4, 24)
+stats = ExtResource("prop_hangar_round")
+
+[node name="EnemyHangarRound1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 42, 4, -24)
+stats = ExtResource("prop_hangar_round")
+
+[node name="AllyHangarSmall1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 4, 38)
+stats = ExtResource("prop_hangar_small")
+
+[node name="EnemyHangarSmall1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 33, 4, -38)
+stats = ExtResource("prop_hangar_small")
+
+[node name="AllyTurretDouble1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 4, 25)
+stats = ExtResource("prop_turret_double")
+
+[node name="EnemyTurretDouble1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 19, 4, -25)
+stats = ExtResource("prop_turret_double")
+
+[node name="RockA1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -14)
+stats = ExtResource("prop_rock_a")
+
+[node name="RockB1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -30)
+stats = ExtResource("prop_rock_b")
+
+[node name="RockA2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 14)
+stats = ExtResource("prop_rock_a")
+
+[node name="RockB2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 30)
+stats = ExtResource("prop_rock_b")
+
+[node name="RocksSmall1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, -4)
+stats = ExtResource("prop_rocks_small")
+
+[node name="RocksSmall2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 4)
+stats = ExtResource("prop_rocks_small")
+
+[node name="Crystals1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 10)
+stats = ExtResource("prop_crystals")
+
+[node name="Crystals2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, -10)
+stats = ExtResource("prop_crystals")
+
+[node name="RockA3" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 24)
+stats = ExtResource("prop_rock_a")
+
+[node name="RockB3" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -26)
+stats = ExtResource("prop_rock_b")
+
+[node name="RockB4" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, -24)
+stats = ExtResource("prop_rock_b")
+
+[node name="RockA4" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 26)
+stats = ExtResource("prop_rock_a")
+
+[node name="Crater1" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 12)
+stats = ExtResource("prop_crater")
+
+[node name="Crater2" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -12)
+stats = ExtResource("prop_crater")
+
+[node name="Crater3" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34, 0, -14)
+stats = ExtResource("prop_crater")
+
+[node name="Crater4" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 0, 16)
+stats = ExtResource("prop_crater")
+
+[node name="Crater5" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 40)
+stats = ExtResource("prop_crater")
+
+[node name="Crater6" parent="Props" instance=ExtResource("prop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -40)
+stats = ExtResource("prop_crater")
+
+[node name="Units" type="Node3D" parent="."]
+script = ExtResource("registry")
+
+[node name="AllyTrooper1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34, 4.3, 28)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 4.3, -28)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyTrooper2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31, 4.3, 28)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 4.3, -28)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyTrooper3" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 4.3, 28)
+stats = ExtResource("unit_trooper")
+
+[node name="EnemyTrooper3" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 4.3, -28)
+stats = ExtResource("unit_trooper")
+team = 1
+
+[node name="AllyRover1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 4.3, 32)
+stats = ExtResource("unit_rover")
+
+[node name="EnemyRover1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33, 4.3, -32)
+stats = ExtResource("unit_rover")
+team = 1
+
+[node name="AllyRover2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.5, 4.3, 32)
+stats = ExtResource("unit_rover")
+
+[node name="EnemyRover2" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.5, 4.3, -32)
+stats = ExtResource("unit_rover")
+team = 1
+
+[node name="AllySkiff1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -37, 4.3, 19)
+stats = ExtResource("unit_skiff")
+
+[node name="EnemySkiff1" parent="Units" instance=ExtResource("unit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 4.3, -19)
+stats = ExtResource("unit_skiff")
+team = 1
+
+[node name="Selection" type="Node" parent="."]
+script = ExtResource("selection")
+
+[node name="CommandIssuer" type="Node" parent="."]
+script = ExtResource("issuer")
+stats = ExtResource("order_stats")
+
+[node name="RtsPlayer" parent="." instance=ExtResource("player")]
+
+[node name="Hud" parent="." instance=ExtResource("hud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("pause")]
