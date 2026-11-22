@@ -20,8 +20,9 @@ const TABS: Dictionary = {
 	"Controls": ["PlayerControlStats", "UiStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }
-const MAX_TAB_HEIGHT: float = 460.0
-const MAX_WIDTH: float = 1160.0
+## Share of the viewport the panel takes, and the width below which the preview column is dropped.
+const SCREEN_SHARE: Vector2 = Vector2(0.9, 0.88)
+const PREVIEW_MIN_PANEL_WIDTH: float = 1100.0
 
 var _built: bool = false
 ## Stats class name to the resources of that class found in TUNING_DIR.
@@ -51,13 +52,12 @@ func open() -> void:
 	_back_button.grab_focus()
 
 
-## Sizes the panel to fit the screen, allowing for the menu scale.
+## Sizes the panel to a share of the screen, allowing for the menu scale. The tabs take whatever height is left.
 func fit_to_screen() -> void:
 	var menu_scale: Vector2 = get_global_transform().get_scale().max(Vector2(0.01, 0.01))
 	var room: Vector2 = get_viewport_rect().size / menu_scale
-	_tabs.custom_minimum_size.y = clampf(room.y - 220.0, 200.0, MAX_TAB_HEIGHT)
-	custom_minimum_size.x = clampf(room.x - 40.0, 400.0, MAX_WIDTH)
-	_preview.visible = custom_minimum_size.x >= MAX_WIDTH * 0.8 # Too narrow: the rows need the room.
+	custom_minimum_size = (room * SCREEN_SHARE).floor()
+	_preview.visible = custom_minimum_size.x >= PREVIEW_MIN_PANEL_WIDTH # Too narrow: the rows need the room.
 
 
 func _build() -> void:
@@ -69,8 +69,10 @@ func _build() -> void:
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		var column := VBoxContainer.new()
 		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		column.theme_type_variation = &"TuningGapV"
 		scroll.add_child(column)
 		_tabs.add_child(scroll)
+		_tabs.set_tab_title(_tabs.get_tab_count() - 1, tab_name.to_upper())
 		_fill_tab(scroll)
 
 
@@ -98,11 +100,13 @@ func _fill_tab(scroll: ScrollContainer) -> void:
 	var shown: Array[Resource] = []
 	for stats_class: String in TABS[scroll.name]:
 		for resource: Resource in _by_class.get(stats_class, []):
+			var strip := PanelContainer.new()
+			strip.theme_type_variation = &"TuningResourceStrip"
 			var header := Label.new()
-			header.text = resource.resource_path.get_file()
-			header.add_theme_font_size_override("font_size", 18)
-			header.add_theme_color_override("font_color", Color(1.0, 0.8, 0.45))
-			column.add_child(header)
+			header.text = resource.resource_path.get_file().to_upper()
+			header.theme_type_variation = &"TuningResourceLabel"
+			strip.add_child(header)
+			column.add_child(strip)
 			column.add_child(TuningFields.build(resource, _preview.show_for))
 			shown.append(resource)
 	scroll.set_meta("resources", shown)

@@ -9,6 +9,7 @@ Third-party art. Each pack lives in its own folder with its license file next to
 | `kenney_space_kit/` | Kenney, "Space Kit" 2.0 (https://kenney.nl/assets/space-kit), the glTF (`.glb`) models only | CC0 1.0 (`License.txt`) | Placeholder units, buildings and map scenery (`props.md`, `UnitStats` "Look"), terrain tiles (`terrain.md`) |
 
 | `fonts/` | "Anybody" by Etcetera Type Co (https://github.com/Etcetera-Type-Co/Anybody), variable font `anybody_variable.ttf` from google/fonts | SIL OFL 1.1 (`OFL.txt`; keep it next to the font) | The UI's one type family (`docs/mechanics/ui.md`) |
+| `fonts/` | "IBM Plex Sans" by IBM (https://github.com/IBM/plex), variable font `ibm_plex_sans_variable.ttf` from google/fonts | SIL OFL 1.1 (`OFL_IBM_Plex_Sans.txt`) | Reading face of dev tools (the tuning panel); Anybody stays for structure |
 
 - **Scale:** Kenney's kits are not built to one scale (a rover is 0.35 m, a hangar 3 m, in model units). Each use sets its own `model_scale` in its stats `.tres`.
 - **Origins:** the meshes sit offset from their origin on a tile grid. Always show a model through `ModelFit` (`props/model_fit.gd`), which centres it and puts its base on the ground.

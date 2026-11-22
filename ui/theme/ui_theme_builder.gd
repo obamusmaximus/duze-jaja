@@ -46,12 +46,13 @@ static func hatch(fill: Color, line: Color, border: Color = Color(0, 0, 0, 0), m
 
 ## One face of the type family: (width, weight) on Anybody's axes, with tabular figures. Falls back to the system
 ## sans if the font file is missing.
-static func face(axes: Vector2i) -> Font:
-	if _faces.has(axes):
-		return _faces[axes]
+static func face(axes: Vector2i, path: String = UiTokens.FONT_PATH) -> Font:
+	var key: String = "%s %s" % [path, axes]
+	if _faces.has(key):
+		return _faces[key]
 	var variation := FontVariation.new()
-	_faces[axes] = variation
-	var file: Font = load(UiTokens.FONT_PATH) if ResourceLoader.exists(UiTokens.FONT_PATH) else null
+	_faces[key] = variation
+	var file: Font = load(path) if ResourceLoader.exists(path) else null
 	if file == null:
 		var system := SystemFont.new()
 		system.font_names = PackedStringArray(["Helvetica Neue", "Arial", "Liberation Sans"])

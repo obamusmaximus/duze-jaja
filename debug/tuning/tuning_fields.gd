@@ -7,15 +7,25 @@ extends RefCounted
 ## No resource needs to be registered: add an `@export` to a stats script and it shows up here.
 ## Hovering a row, or focusing its editor, calls `on_hover(resource, prop, description)` (the panel's preview).
 
-const LABEL_WIDTH: float = 190.0
-const SLIDER_WIDTH: float = 220.0
-const NUMBER_WIDTH: float = 110.0
+## Row columns share the row by stretch ratio, so a long label never pushes the slider. Widths are minimums only.
+const LABEL_RATIO: float = 4.0
+const EDITOR_RATIO: float = 6.0
+const SLIDER_RATIO: float = 2.0
+const NUMBER_RATIO: float = 1.0
+const NUMBER_MIN_WIDTH: float = 112.0
+const SLIDER_MIN_WIDTH: float = 96.0
+const ARRAY_BOX_MIN_WIDTH: float = 88.0
+## The row that is showing in the preview, so it can be marked. One per built column.
+const ACTIVE_ROW_VARIATION: StringName = &"TuningRowActive"
+const ROW_VARIATION: StringName = &"TuningRow"
 
 
 ## A VBoxContainer holding one foldable section per `@export_group` of `resource`.
 static func build(resource: Resource, on_hover: Callable = Callable()) -> Control:
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.theme_type_variation = &"TuningTightV"
+	var active: Array[Control] = []
 	var tooltips: Dictionary = _read_tooltips(resource.get_script() as Script)
 	var group_title: String = "General"
 	var body: VBoxContainer = null
@@ -24,12 +34,12 @@ static func build(resource: Resource, on_hover: Callable = Callable()) -> Contro
 			group_title = str(info["name"])
 			body = null  # The section is only made once a row needs it, so empty groups don't show.
 			continue
-		var row: Control = _make_row(resource, info, tooltips, on_hover)
+		var row: Control = _make_row(resource, info, tooltips, on_hover, active)
 		if row == null:
 			continue
 		if body == null:
 			var section := FoldableContainer.new()
-			section.title = group_title
+			section.title = group_title.to_upper()
 			body = VBoxContainer.new()
 			section.add_child(body)
 			column.add_child(section)
@@ -61,7 +71,7 @@ static func copy_values(source: Resource, target: Resource) -> void:
 	target.emit_changed()
 
 
-static func _make_row(resource: Resource, info: Dictionary, tooltips: Dictionary, on_hover: Callable) -> Control:
+static func _make_row(resource: Resource, info: Dictionary, tooltips: Dictionary, on_hover: Callable, active: Array[Control]) -> Control:
 	var prop: String = info["name"]
 	var value: Variant = resource.get(prop)
 	var editor: Control
@@ -83,21 +93,49 @@ static func _make_row(resource: Resource, info: Dictionary, tooltips: Dictionary
 			editor = _array_editor(resource, prop, value)
 		_:
 			return null
-	var row := HBoxContainer.new()
+	var row := PanelContainer.new()
+	row.theme_type_variation = ROW_VARIATION
+	row.custom_minimum_size.y = UiTokens.px(UiTokens.TOOL_ROW_UNITS)
+	var cells := HBoxContainer.new()
+	cells.theme_type_variation = &"TuningGapH"
+	row.add_child(cells)
 	var label := Label.new()
 	label.text = prop.capitalize()
-	label.custom_minimum_size.x = LABEL_WIDTH
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_FILL
+	label.size_flags_stretch_ratio = LABEL_RATIO
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.clip_text = true
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	label.mouse_filter = Control.MOUSE_FILTER_PASS
 	label.tooltip_text = str(tooltips.get(prop, ""))
 	row.tooltip_text = label.tooltip_text
-	row.add_child(label)
-	row.add_child(editor)
+	cells.add_child(label)
+	var editor_cell: Control = editor
+	if editor is Button: # A checkbox or colour swatch keeps its own size at the left of the editor column.
+		editor_cell = HBoxContainer.new()
+		editor_cell.add_child(editor)
+		editor.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	editor_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	editor_cell.size_flags_stretch_ratio = EDITOR_RATIO
+	cells.add_child(editor_cell)
 	if on_hover.is_valid():
 		row.mouse_filter = Control.MOUSE_FILTER_PASS
-		var show: Callable = on_hover.bind(resource, prop, label.tooltip_text)
+		var show: Callable = func() -> void:
+			_mark_active(row, active)
+			on_hover.call(resource, prop, label.tooltip_text)
 		row.mouse_entered.connect(show)
 		_connect_focus(editor, show)
 	return row
+
+
+## Marks `row` as the one in the preview and clears the mark on the previous one.
+static func _mark_active(row: Control, active: Array[Control]) -> void:
+	if not active.is_empty() and is_instance_valid(active[0]):
+		active[0].theme_type_variation = ROW_VARIATION
+	active.clear()
+	active.append(row)
+	row.theme_type_variation = ACTIVE_ROW_VARIATION
 
 
 ## Calls `show` when `control` or any control inside it takes focus.
@@ -118,9 +156,10 @@ static func _number_editor(resource: Resource, prop: String, info: Dictionary, v
 	slider.step = bounds.z
 	slider.allow_greater = true
 	slider.allow_lesser = true
-	slider.custom_minimum_size.x = SLIDER_WIDTH
+	slider.custom_minimum_size.x = SLIDER_MIN_WIDTH
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_stretch_ratio = SLIDER_RATIO
 	slider.value = value
 
 	var spin := SpinBox.new()
@@ -130,7 +169,11 @@ static func _number_editor(resource: Resource, prop: String, info: Dictionary, v
 	spin.max_value = 1.0e9
 	spin.step = 1.0 if is_int else maxf(bounds.z * 0.1, 0.00001)
 	spin.custom_arrow_step = bounds.z
-	spin.custom_minimum_size.x = NUMBER_WIDTH
+	spin.custom_minimum_size.x = NUMBER_MIN_WIDTH
+	spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	spin.size_flags_stretch_ratio = NUMBER_RATIO
+	spin.get_line_edit().alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	spin.value = value
 
 	slider.value_changed.connect(func(v: float) -> void:
@@ -141,6 +184,7 @@ static func _number_editor(resource: Resource, prop: String, info: Dictionary, v
 		_apply(resource, prop, int(roundf(v)) if is_int else v))
 
 	var box := HBoxContainer.new()
+	box.theme_type_variation = &"TuningGapH"
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_child(slider)
 	box.add_child(spin)
@@ -149,6 +193,7 @@ static func _number_editor(resource: Resource, prop: String, info: Dictionary, v
 
 static func _array_editor(resource: Resource, prop: String, value: PackedFloat32Array) -> Control:
 	var box := HBoxContainer.new()
+	box.theme_type_variation = &"TuningTightH"
 	for i: int in value.size():
 		var spin := SpinBox.new()
 		spin.allow_greater = true
@@ -156,7 +201,10 @@ static func _array_editor(resource: Resource, prop: String, value: PackedFloat32
 		spin.min_value = -1.0e9
 		spin.max_value = 1.0e9
 		spin.step = 0.1
-		spin.custom_minimum_size.x = 80.0
+		spin.custom_minimum_size.x = ARRAY_BOX_MIN_WIDTH
+		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		spin.get_line_edit().alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		spin.value = value[i]
 		spin.value_changed.connect(func(v: float) -> void:
 			var items := PackedFloat32Array(resource.get(prop))

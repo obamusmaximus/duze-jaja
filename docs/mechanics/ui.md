@@ -32,5 +32,5 @@ The look of every 2D surface, built from the style guide (`docs/style_guide.md`)
 - The command grid is an empty placeholder; no enemy inspect, no alert area. The selection module's single view leaves room under the chips.
 - Attack and attack-move markers share orange; a shape cue is still open. Cyan/violet needs the colour-blind check.
 - The camera does not keep clear of framed bands yet (`band_rects()` is there for it).
-- The debug tuning panel inherits the theme but its own header colours are per-node overrides.
+
 - Level art off the palette: ground reads bone-white under the sun; sea and foliage on the green island sit near the cyan and green accents (`docs/style_guide.md`, Open).

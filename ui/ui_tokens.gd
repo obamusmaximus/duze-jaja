@@ -107,6 +107,25 @@ const FACE_WIDE: Vector2i = Vector2i(150, 850)
 ## Big figures (the match clock): tall, narrow and heavy.
 const FACE_DISPLAY: Vector2i = Vector2i(50, 900)
 
+# The tool scale, for dense dev tools such as the tuning panel (`docs/plans/tuning_panel_redesign.md`). The HUD scale
+# above is sized to read in a small play window; tools run at full screen and need many rows. Nothing below 18.
+const TEXT_TOOL_SMALL: int = 18
+const TEXT_TOOL: int = 20
+const TEXT_TOOL_HEADING: int = 24
+## Height of one row of a tool list, in base units.
+const TOOL_ROW_UNITS: int = 5
+
+# The tool reading face: IBM Plex Sans (OFL, `assets/fonts/`), a variable font with a width axis (85 to 100) and a
+# weight axis (100 to 700). Anybody keeps the structure (tabs, titles, headers); Plex carries labels, figures
+# and descriptions. Each face is (width, weight).
+const TOOL_FONT_PATH: String = "res://assets/fonts/ibm_plex_sans_variable.ttf"
+## Row labels, descriptions, figures (tabular).
+const FACE_TOOL: Vector2i = Vector2i(100, 400)
+## Buttons and emphasis.
+const FACE_TOOL_STRONG: Vector2i = Vector2i(100, 600)
+## Upper-case structure labels (tabs, group and file headers): a little narrow and heavy.
+const FACE_TOOL_CAPS: Vector2i = Vector2i(90, 700)
+
 ## Diagonal hatching of empty slots: line spacing and line width in pixels.
 const HATCH_SPACING: int = 10
 const HATCH_WIDTH: int = 2

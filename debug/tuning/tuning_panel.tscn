@@ -2,108 +2,122 @@
 
 [ext_resource type="Script" path="res://debug/tuning/tuning_panel.gd" id="1_panel"]
 [ext_resource type="Script" path="res://debug/tuning/tuning_preview.gd" id="2_preview"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_holder"]
+[ext_resource type="Theme" path="res://debug/tuning/tuning_theme.tres" id="3_theme"]
 
 [node name="TuningPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(1160, 0)
 visible = false
+theme = ExtResource("3_theme")
+theme_type_variation = &"PanelDeep"
 script = ExtResource("1_panel")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_type_variation = &"TuningMargin"
 
 [node name="Column" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"TuningGapV"
 
-[node name="Title" type="Label" parent="Margin/Column"]
+[node name="TitleStrip" type="PanelContainer" parent="Margin/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Tuning"
-horizontal_alignment = 1
+theme_type_variation = &"TuningTitleStrip"
+
+[node name="Title" type="Label" parent="Margin/Column/TitleStrip"]
+layout_mode = 2
+theme_type_variation = &"TuningTitle"
+text = "TUNING"
 
 [node name="Body" type="HBoxContainer" parent="Margin/Column"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 16
+theme_type_variation = &"TuningGapH"
 
 [node name="Tabs" type="TabContainer" parent="Margin/Column/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 440)
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+size_flags_stretch_ratio = 68.0
 
 [node name="Preview" type="VBoxContainer" parent="Margin/Column/Body"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 0)
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 32.0
+theme_type_variation = &"TuningGapV"
 script = ExtResource("2_preview")
 
-[node name="PreviewTitle" type="Label" parent="Margin/Column/Body/Preview"]
+[node name="PreviewCard" type="PanelContainer" parent="Margin/Column/Body/Preview"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"TuningCard"
+
+[node name="CardMargin" type="MarginContainer" parent="Margin/Column/Body/Preview/PreviewCard"]
+layout_mode = 2
+theme_type_variation = &"TuningCardMargin"
+
+[node name="CardColumn" type="VBoxContainer" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin"]
+layout_mode = 2
+theme_type_variation = &"TuningGapV"
+
+[node name="PreviewTitle" type="Label" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin/CardColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.8, 0.45, 1)
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"TuningPreviewTitle"
 text = "Hover a setting"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="VisualHolder" type="PanelContainer" parent="Margin/Column/Body/Preview"]
+[node name="VisualHolder" type="PanelContainer" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin/CardColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 240)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_holder")
+theme_type_variation = &"PanelClear"
 
-[node name="NoVisual" type="Label" parent="Margin/Column/Body/Preview/VisualHolder"]
+[node name="NoVisual" type="Label" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin/CardColumn/VisualHolder"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.6, 0.68, 0.7)
+theme_type_variation = &"TuningMuted"
 text = "No diagram for this one"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DescriptionScroll" type="ScrollContainer" parent="Margin/Column/Body/Preview"]
+[node name="DescriptionScroll" type="ScrollContainer" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin/CardColumn"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="PreviewDescription" type="Label" parent="Margin/Column/Body/Preview/DescriptionScroll"]
+[node name="PreviewDescription" type="Label" parent="Margin/Column/Body/Preview/PreviewCard/CardMargin/CardColumn/DescriptionScroll"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"TuningDescription"
 autowrap_mode = 3
 
-[node name="Status" type="Label" parent="Margin/Column"]
+[node name="Footer" type="HBoxContainer" parent="Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"TuningGapH"
+
+[node name="Status" type="Label" parent="Margin/Column/Footer"]
 unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Buttons" type="HBoxContainer" parent="Margin/Column"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SaveButton" type="Button" parent="Margin/Column/Buttons"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Save tab to .tres"
-
-[node name="ResetButton" type="Button" parent="Margin/Column/Buttons"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Reset tab"
-
-[node name="Spacer" type="Control" parent="Margin/Column/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"TuningMuted"
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="BackButton" type="Button" parent="Margin/Column/Buttons"]
+[node name="ResetButton" type="Button" parent="Margin/Column/Footer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Back"
+text = "RESET TAB"
+
+[node name="SaveButton" type="Button" parent="Margin/Column/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SAVE TAB TO .TRES"
+
+[node name="BackButton" type="Button" parent="Margin/Column/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BACK"
