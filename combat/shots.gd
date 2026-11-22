@@ -7,6 +7,10 @@ extends Node
 
 ## A shot was fired: `instant` ones only, for tracers (projectiles are drawn from `positions()`).
 signal fired(from: Vector3, to: Vector3)
+## Any shot was fired (instant or projectile), from the muzzle; for sound and flashes.
+signal shot_fired(from: Vector3, weapon: WeaponStats)
+## A shot landed on a unit, at its centre; for sound and sparks.
+signal shot_hit(at: Vector3, weapon: WeaponStats)
 signal playtest_event(event: StringName, data: Dictionary)
 
 ## Projectiles closer than this (metres) to their aim point hit.
@@ -19,6 +23,8 @@ var _targets := PackedInt32Array()
 var _sources := PackedInt32Array()
 var _damages := PackedFloat32Array()
 var _speeds := PackedFloat32Array()
+## The weapon each shot came from (for its hit effects).
+var _weapons: Array[WeaponStats] = []
 ## Source unit id to the id of the target it last fired at.
 var _last_target: Dictionary = {}
 
@@ -33,8 +39,10 @@ func fire(source: Unit, target: Unit, weapon: WeaponStats) -> void:
 		_last_target[source.id] = target.id
 		playtest_event.emit(&"attack", {"unit": source.id, "target": target.id})
 	var muzzle: Vector3 = source.center() - source.global_basis.z * source.stats.radius
+	shot_fired.emit(muzzle, weapon)
 	if not weapon.projectile:
 		fired.emit(muzzle, target.center())
+		shot_hit.emit(target.center(), weapon)
 		target.health.damage(weapon.damage, source.id)
 		return
 	_positions.append(muzzle)
@@ -43,6 +51,7 @@ func fire(source: Unit, target: Unit, weapon: WeaponStats) -> void:
 	_sources.append(source.id)
 	_damages.append(weapon.damage)
 	_speeds.append(weapon.projectile_speed)
+	_weapons.append(weapon)
 	target.health.incoming += weapon.damage
 
 
@@ -66,6 +75,7 @@ func _physics_process(delta: float) -> void:
 		if to_aim.length() <= step + HIT_DISTANCE:
 			if target:
 				target.health.incoming = maxf(target.health.incoming - _damages[i], 0.0)
+				shot_hit.emit(target.center(), _weapons[i])
 				target.health.damage(_damages[i], _sources[i])
 			_remove(i)
 			continue
@@ -82,9 +92,11 @@ func _remove(i: int) -> void:
 	_sources[i] = _sources[last]
 	_damages[i] = _damages[last]
 	_speeds[i] = _speeds[last]
+	_weapons[i] = _weapons[last]
 	_positions.resize(last)
 	_aims.resize(last)
 	_targets.resize(last)
 	_sources.resize(last)
 	_damages.resize(last)
 	_speeds.resize(last)
+	_weapons.resize(last)

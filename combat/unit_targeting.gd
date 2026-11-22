@@ -55,7 +55,7 @@ func _scan() -> void:
 	var best_score: float = INF
 	var nearest: float = INF
 	for other: Unit in _found:
-		if other.team == _unit.team or not other.alive:
+		if not other.alive or not _unit.can_attack(other):
 			continue
 		var distance: float = _unit.global_position.distance_to(other.global_position)
 		if distance < nearest and distance <= _unit.stats.sight_range:

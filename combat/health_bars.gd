@@ -1,15 +1,12 @@
 class_name HealthBars
 extends Control
-## Visual only: a health bar over every unit that is damaged or selected, all drawn by this one Control from the
+## Visual only: a flat health bar over every unit that is damaged or selected, all drawn by this one Control from the
 ## units' screen positions (no node per bar).
 
 const BAR_SIZE: Vector2 = Vector2(64.0, 8.0)
+const BORDER: float = 2.0
 ## Metres above the unit's top.
 const LIFT: float = 0.5
-const BACK_COLOR: Color = Color(0.0, 0.0, 0.0, 0.6)
-const FULL_COLOR: Color = Color(0.3, 0.9, 0.3)
-const HALF_COLOR: Color = Color(0.95, 0.8, 0.2)
-const LOW_COLOR: Color = Color(0.95, 0.25, 0.2)
 
 
 func _ready() -> void:
@@ -38,12 +35,11 @@ func _draw() -> void:
 			continue
 		var fraction: float = unit.health.fraction()
 		var back := Rect2(point - Vector2(BAR_SIZE.x * 0.5, BAR_SIZE.y), BAR_SIZE)
-		draw_rect(back.grow(1.0), BACK_COLOR)
+		draw_rect(back.grow(BORDER), UiTokens.BLACK)
 		var fill := Rect2(back.position, Vector2(BAR_SIZE.x * fraction, BAR_SIZE.y))
-		draw_rect(fill, _color(fraction))
+		draw_rect(fill, _color(unit.team, fraction))
 
 
-func _color(fraction: float) -> Color:
-	if fraction > 0.5:
-		return HALF_COLOR.lerp(FULL_COLOR, (fraction - 0.5) * 2.0)
-	return LOW_COLOR.lerp(HALF_COLOR, fraction * 2.0)
+## The unit's team colour, safety orange when low (flat, one colour per meaning).
+func _color(team: int, fraction: float) -> Color:
+	return UiTokens.ORANGE if fraction <= UiTokens.LOW_HEALTH else UiTokens.team_color(team)

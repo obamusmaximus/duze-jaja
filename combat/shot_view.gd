@@ -4,8 +4,8 @@ extends Node3D
 ## that fade quickly, all in one ImmediateMesh.
 
 const PROJECTILE_RADIUS: float = 0.12
-const PROJECTILE_COLOR: Color = Color(1.0, 0.85, 0.4)
-const TRACER_COLOR: Color = Color(1.0, 0.95, 0.7)
+const PROJECTILE_COLOR: Color = UiTokens.ORANGE
+const TRACER_COLOR: Color = UiTokens.OFF_WHITE
 const TRACER_SECONDS: float = 0.08
 
 var _shots: Shots

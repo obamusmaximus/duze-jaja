@@ -16,6 +16,7 @@ Health, weapons, target finding, shots and how units fight under each order. Tun
   - Idle: holds its ground, faces and fires at `in_range`.
   - Stop: clears the queue, leaving the unit idle.
 - **Views:** `ShotView` draws projectiles with one MultiMesh and tracers with one ImmediateMesh. `HealthBars` (in `RtsPlayer`) draws every damaged or selected unit's bar from one Control.
+- **Signals for views:** `Shots.shot_fired(from, weapon)` and `shot_hit(at, weapon)` (every shot, instant or projectile) feed sound and particles (`audio.md`); `WeaponStats` names the cues and effect size.
 - **Probe events:** `attack` (Shots: a unit opens fire on a new target), `death` (UnitRegistry: unit, team, killer).
 
 ## Settled
@@ -25,5 +26,6 @@ Health, weapons, target finding, shots and how units fight under each order. Tun
 
 ## Known issues
 - No force-fire (Ctrl+click), no turrets (fire arc only), no armour types or splash.
+- Air: a flyer is a target only for units flagged `anti_air` (`UnitStats` "Combat"). Everything else ignores it (`Unit.can_attack`). Weapons themselves don't yet filter by air, and the first-person control mode, where most weapons can hit air, isn't built.
 - Projectiles always hit (homing); there is no dodging or missing.
-- Dead units vanish at once: no death effect or wreck.
+- Dead units vanish at once, with an explosion effect and sound (`audio.md`) but no wreck.

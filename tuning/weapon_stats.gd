@@ -19,3 +19,11 @@ extends Resource
 @export var projectile: bool = true
 ## Flight speed of the projectile, in metres per second.
 @export_range(1.0, 300.0, 1.0) var projectile_speed: float = 40.0
+
+@export_group("Sound and effects")
+## Sound cue played at the muzzle when it fires (a `SfxCue` id, see tuning/sfx_library.tres). Empty: silent.
+@export var fire_cue: StringName = &"laser_small"
+## Sound cue played where a shot lands.
+@export var hit_cue: StringName = &"hit_spark"
+## Size of the muzzle flash and impact sparks, as a multiple of the normal size.
+@export_range(0.2, 4.0, 0.05) var effect_scale: float = 1.0
