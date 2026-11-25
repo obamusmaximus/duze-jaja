@@ -2,7 +2,7 @@
 
 Health, weapons, target finding, shots and how units fight under each order. Tunables: `WeaponStats` (`tuning/weapon_default.tres`), `UnitStats` "Combat" (`max_health`, `weapon`, `sight_range`, `leash_distance`, `scan_interval`), both on the Units tab.
 
-**Scripts:** `combat/health.gd`, `weapon.gd`, `unit_targeting.gd`, `shots.gd`, `shot_view.gd`, `health_bars.gd`; `units/order_brain.gd` (behaviour by order).
+**Scripts:** `combat/health.gd`, `weapon.gd`, `unit_targeting.gd`, `shots.gd`, `shot_view.gd`, `health_bars.gd`; `units/order_brain.gd` (behaviour by order), `units/attack_run.gd` (fixed-wing passes).
 
 ## How it works
 - **`Health`:** `current`, `damage(amount, source_id)`, signals `damaged` and `died(killer_id)`; `Unit.die()` sets `alive = false`, turns off its collision, emits `died` and frees the unit at the end of the frame. Everything that holds units checks `alive`. `incoming` is damage from projectiles in flight; `is_doomed()` when it covers the remaining health.
@@ -14,12 +14,14 @@ Health, weapons, target finding, shots and how units fight under each order. Tun
   - Attack: chases (navigator `follow`) into range, stands, faces the target and fires; done when the target is gone.
   - Attack-move: fights anything within `sight_range`, chasing at most `leash_distance` from where the fight began. An enemy it gave up on is ignored unless it comes into range. Then it carries on to the point.
   - Idle: holds its ground, faces and fires at `in_range`.
+  - Fixed-wing flyers (`units.md`) can't stand: fighting (attack or attack-move), they make **attack passes** (`AttackRun`): run in, firing when the target is in range and arc; break off within `flight_pass_break_distance` (or once past it in weapon reach); fly straight out to `flight_pass_distance`; come round again. At the map edge the way out swings back inside. Their attack-move leash measures how far the **enemy** is from where the fight began, since the passes swing wide. Idle, they keep circling and fire only at what crosses their arc. Hover flyers (VTOL) stop in range and fire.
   - Stop: clears the queue, leaving the unit idle.
 - **Views:** `ShotView` draws projectiles with one MultiMesh and tracers with one ImmediateMesh. `HealthBars` (in `RtsPlayer`) draws every damaged or selected unit's bar from one Control.
 - **Signals for views:** `Shots.shot_fired(from, weapon)` and `shot_hit(at, weapon)` (every shot, instant or projectile) feed sound and particles (`audio.md`); `WeaponStats` names the cues and effect size.
 - **Probe events:** `attack` (Shots: a unit opens fire on a new target), `death` (UnitRegistry: unit, team, killer).
 
 ## Settled
+- Headless (a fighter on one tough ground target, 40 s): 6 passes, about 5 hits each, never farther out than `flight_pass_distance` plus the turn; a VTOL hovers in place and fires. A target at the map edge is still hit.
 - Headless: 5 attack-moving units against 5 idle ones resolve in about 13 s; the idle side returns fire; the survivors carry on to the goal. A unit leashed off a fleeing enemy finishes its move.
 
 ## Tried and passed on

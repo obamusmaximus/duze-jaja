@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://ui/hud/modules/command_module.tscn" id="4_0rsso"]
 [ext_resource type="PackedScene" path="res://ui/hud/modules/clock_module.tscn" id="5_2rxx4"]
 [ext_resource type="PackedScene" path="res://ui/hud/modules/force_module.tscn" id="6_x7574"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/production_module.tscn" id="90_prod"]
 [ext_resource type="Script" path="res://ui/hud/hud_layout.gd" id="7_sijb7"]
 
 [sub_resource type="Resource" id="Resource_83yrc"]
@@ -33,6 +34,11 @@ script = ExtResource("1_kqsky")
 module = ExtResource("6_x7574")
 section = 2
 
+[sub_resource type="Resource" id="Resource_prod"]
+script = ExtResource("1_kqsky")
+module = ExtResource("90_prod")
+section = 3
+
 [resource]
 script = ExtResource("7_sijb7")
-placements = Array[ExtResource("1_kqsky")]([SubResource("Resource_83yrc"), SubResource("Resource_ubok3"), SubResource("Resource_aor2l"), SubResource("Resource_7i2mq"), SubResource("Resource_l40mc")])
+placements = Array[ExtResource("1_kqsky")]([SubResource("Resource_83yrc"), SubResource("Resource_ubok3"), SubResource("Resource_aor2l"), SubResource("Resource_7i2mq"), SubResource("Resource_l40mc"), SubResource("Resource_prod")])

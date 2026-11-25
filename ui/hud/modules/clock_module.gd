@@ -1,23 +1,21 @@
 class_name ClockModule
 extends HudModule
-## HUD module: match time in big condensed figures. Counts game time (slows with slow time), from when the HUD was
-## built.
+## HUD module: match time, a small caption and condensed figures on one line, no header. Counts game time (slows
+## with slow time), from when the HUD was built.
 
 var _elapsed: float = 0.0
 var _since_refresh: float = 0.0
-var _figures := HudModule.label("00:00", &"LabelDisplay")
-
-
-func _title() -> String:
-	return "MATCH TIME"
-
-
-func _header_style() -> StringName:
-	return &"ModuleHeaderAccent"
+var _figures := HudModule.label("00:00", &"LabelDisplaySmall")
 
 
 func _build() -> void:
-	content.add_child(_figures)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", UiTokens.UNIT)
+	var caption := HudModule.label("T", &"LabelCaption")
+	caption.size_flags_vertical = Control.SIZE_SHRINK_END
+	row.add_child(caption)
+	row.add_child(_figures)
+	content.add_child(row)
 
 
 func _process(delta: float) -> void:

@@ -35,6 +35,21 @@ func _ready() -> void:
 	_apply()
 
 
+## The level's environment, for a view that wants its own copy (the bird's-eye camera).
+func environment() -> Environment:
+	return _environment
+
+
+## The sun, for effects that lean away from it (the bird's-eye clouds).
+func sun() -> DirectionalLight3D:
+	return _sun
+
+
+## Turns the sun's shadows on or off (the bird's-eye view sees kilometres, beyond the shadow map).
+func set_shadows(enabled: bool) -> void:
+	_sun.shadow_enabled = enabled
+
+
 func _apply() -> void:
 	_sun.rotation_degrees = Vector3(-stats.sun_elevation, stats.sun_direction, 0.0)
 	_sun.light_energy = stats.sun_energy

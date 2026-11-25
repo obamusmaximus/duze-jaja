@@ -42,6 +42,14 @@ func drag(pixels: Vector2, yaw_deg: float, distance: float) -> void:
 	target = _clamp(target + _to_ground(screen, yaw_deg) * _stats.drag_pan_per_px * _zoom_scale(distance))
 
 
+## Flies by a fly-drag `pull` (pixels, x right, y down): speed grows with the pull.
+func fly(pull: Vector2, yaw_deg: float, distance: float, delta: float) -> void:
+	if pull == Vector2.ZERO:
+		return
+	var screen := Vector2(pull.x, -pull.y)
+	target = _clamp(target + _to_ground(screen, yaw_deg) * _stats.fly_speed_per_px * _zoom_scale(distance) * delta)
+
+
 ## Heads straight for `point` (x, z).
 func jump_to(point: Vector2) -> void:
 	target = _clamp(point)

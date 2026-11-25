@@ -65,22 +65,24 @@ static func face(axes: Vector2i, path: String = UiTokens.FONT_PATH) -> Font:
 
 
 static func _panels(theme: Theme) -> void:
-	theme.set_stylebox(&"panel", &"PanelContainer", box(UiTokens.GRAPHITE, UiTokens.RULE, 2))
-	theme.set_stylebox(&"panel", &"Panel", box(UiTokens.GRAPHITE, UiTokens.RULE, 2))
+	theme.set_stylebox(&"panel", &"PanelContainer", box(UiTokens.glass(UiTokens.GRAPHITE), UiTokens.RULE, 2))
+	theme.set_stylebox(&"panel", &"Panel", box(UiTokens.glass(UiTokens.GRAPHITE), UiTokens.RULE, 2))
 	var panels: Dictionary = {
-		&"PanelDeep": box(UiTokens.BLACK, UiTokens.RULE, 2),
-		&"PanelInset": box(UiTokens.BLACK, UiTokens.RULE, 1),
+		&"PanelDeep": box(UiTokens.glass(UiTokens.BLACK), UiTokens.RULE, 2),
+		&"PanelInset": box(UiTokens.glass(UiTokens.BLACK), UiTokens.RULE, 1),
 		&"PanelLight": box(UiTokens.BONE, Color(0, 0, 0, 0), 2),
+		# The selection grid's main card: bone ringed in the warning orange at the emphasis weight.
+		&"PanelLightMain": _ringed(UiTokens.BONE, UiTokens.ORANGE),
 		&"PanelBright": box(UiTokens.OFF_WHITE, Color(0, 0, 0, 0), 2),
 		&"PanelAccent": box(UiTokens.GREEN, Color(0, 0, 0, 0), 2),
-		&"PanelHatch": hatch(UiTokens.BLACK, UiTokens.RULE, UiTokens.RULE, 1),
+		&"PanelHatch": hatch(UiTokens.glass(UiTokens.BLACK), UiTokens.RULE, UiTokens.RULE, 1),
 		&"PanelClear": StyleBoxEmpty.new(),
 		# A module: no padding of its own; its header strip and body carry the look.
 		&"ModuleFrame": StyleBoxEmpty.new(),
-		&"ModuleBody": box(UiTokens.GRAPHITE, UiTokens.RULE, 2),
+		&"ModuleBody": box(UiTokens.glass(UiTokens.GRAPHITE), UiTokens.RULE, 2),
 		&"ModuleHeader": _header(UiTokens.BONE),
 		&"ModuleHeaderAccent": _header(UiTokens.GREEN),
-		&"Tag": box(UiTokens.BLACK, UiTokens.RULE, 0.5),
+		&"Tag": box(UiTokens.glass(UiTokens.BLACK), UiTokens.RULE, 0.5),
 		&"TagLight": box(UiTokens.BONE, Color(0, 0, 0, 0), 0.5),
 		&"TagAccent": box(UiTokens.GREEN, Color(0, 0, 0, 0), 0.5),
 	}
@@ -89,13 +91,19 @@ static func _panels(theme: Theme) -> void:
 		theme.set_stylebox(&"panel", variation, panels[variation])
 	# HUD bands: deep black with a rule on the edge that faces the map.
 	for side: int in [SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT]:
-		var band := box(UiTokens.BLACK, Color(0, 0, 0, 0), 0)
+		var band := box(UiTokens.glass(UiTokens.BLACK), Color(0, 0, 0, 0), 0)
 		var inner: int = [SIDE_RIGHT, SIDE_BOTTOM, SIDE_LEFT, SIDE_TOP][side] # The opposite side.
 		band.set_border_width(inner, UiTokens.BORDER)
 		band.border_color = UiTokens.RULE
 		var variation := StringName("HudBand" + ["Left", "Top", "Right", "Bottom"][side])
 		theme.set_type_variation(variation, &"PanelContainer")
 		theme.set_stylebox(&"panel", variation, band)
+
+
+static func _ringed(fill: Color, ring: Color) -> StyleBoxFlat:
+	var style := box(fill, ring, 2)
+	style.set_border_width_all(UiTokens.ACCENT_BAR / 2)
+	return style
 
 
 static func _header(fill: Color) -> StyleBoxFlat:
@@ -125,7 +133,8 @@ static func _labels(theme: Theme) -> void:
 			[&"LabelHeading", UiTokens.FACE_WIDE, UiTokens.OFF_WHITE, UiTokens.TEXT_HEADING],
 			[&"LabelHeadingDark", UiTokens.FACE_WIDE, UiTokens.BLACK, UiTokens.TEXT_HEADING],
 			[&"LabelTitle", UiTokens.FACE_WIDE, UiTokens.OFF_WHITE, UiTokens.TEXT_TITLE],
-			[&"LabelDisplay", UiTokens.FACE_DISPLAY, UiTokens.OFF_WHITE, UiTokens.TEXT_DISPLAY]]:
+			[&"LabelDisplay", UiTokens.FACE_DISPLAY, UiTokens.OFF_WHITE, UiTokens.TEXT_DISPLAY],
+			[&"LabelDisplaySmall", UiTokens.FACE_DISPLAY, UiTokens.OFF_WHITE, UiTokens.TEXT_HEADING]]:
 		theme.set_type_variation(entry[0], &"Label")
 		theme.set_font(&"font", entry[0], face(entry[1]))
 		theme.set_color(&"font_color", entry[0], entry[2])

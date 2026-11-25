@@ -9,7 +9,7 @@
 [ext_resource type="Resource" path="res://tuning/order_default.tres" id="order_stats"]
 [ext_resource type="PackedScene" path="res://player/rts_player.tscn" id="player"]
 [ext_resource type="Script" path="res://map/path_service.gd" id="paths"]
-[ext_resource type="Resource" path="res://tuning/map_default.tres" id="map_stats"]
+[ext_resource type="Resource" path="res://tuning/map_atoll.tres" id="map_stats"]
 [ext_resource type="Script" path="res://combat/shots.gd" id="shots"]
 [ext_resource type="Script" path="res://combat/shot_view.gd" id="shot_view"]
 [ext_resource type="Script" path="res://audio/game_sound.gd" id="game_sound"]
@@ -19,20 +19,23 @@
 [ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
 [ext_resource type="Resource" path="res://tuning/light_day.tres" id="light_stats"]
 [ext_resource type="Script" path="res://levels/atoll/atoll_level.gd" id="level"]
-[ext_resource type="Script" path="res://levels/atoll/atoll_land.gd" id="land"]
-[ext_resource type="Script" path="res://levels/atoll/mothership_box.gd" id="ship"]
+[ext_resource type="Script" path="res://terrain/terrain_chunks.gd" id="chunks"]
+[ext_resource type="Resource" path="res://tuning/heightmap_atoll.tres" id="hm_stats"]
+[ext_resource type="Script" path="res://bases/mothership.gd" id="ship"]
+[ext_resource type="Resource" path="res://tuning/mothership_default.tres" id="ship_stats"]
 [ext_resource type="Script" path="res://debug/battlefield/battlefield_readout.gd" id="readout"]
 [ext_resource type="Script" path="res://debug/map_view/map_grid_view.gd" id="grid_view"]
 [ext_resource type="Resource" path="res://tuning/battlefield_default.tres" id="bf_stats"]
 [ext_resource type="Resource" path="res://tuning/camera_atoll.tres" id="cam_stats"]
 [ext_resource type="Script" path="res://water/water_body.gd" id="water_body"]
-[ext_resource type="Resource" path="res://tuning/water_default.tres" id="water_stats"]
+[ext_resource type="Resource" path="res://tuning/water_battlefield.tres" id="water_stats"]
 [ext_resource type="Script" path="res://map/map_grid.gd" id="map"]
 [ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
 
 [node name="Atoll" type="Node3D"]
 script = ExtResource("level")
 battlefield = ExtResource("bf_stats")
+heightmap = ExtResource("hm_stats")
 camera_yaw = 0.0
 
 [node name="WorldLight" parent="." instance=ExtResource("world_light")]
@@ -43,18 +46,18 @@ script = ExtResource("water_body")
 size = Vector2(3400, 2400)
 stats = ExtResource("water_stats")
 
-[node name="Land" type="StaticBody3D" parent="."]
-script = ExtResource("land")
-stats = ExtResource("bf_stats")
+[node name="TerrainChunks" type="Node3D" parent="."]
+script = ExtResource("chunks")
+stats = ExtResource("hm_stats")
 
-[node name="MothershipWest" type="Node3D" parent="."]
+[node name="MothershipWest" type="StaticBody3D" parent="."]
 script = ExtResource("ship")
-stats = ExtResource("bf_stats")
+stats = ExtResource("ship_stats")
 
-[node name="MothershipEast" type="Node3D" parent="."]
+[node name="MothershipEast" type="StaticBody3D" parent="."]
 script = ExtResource("ship")
 team = 1
-stats = ExtResource("bf_stats")
+stats = ExtResource("ship_stats")
 
 [node name="CameraRig" parent="." instance=ExtResource("rig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 160)

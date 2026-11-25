@@ -19,7 +19,7 @@ var _since: float = 0.0
 
 func _ready() -> void:
 	layer = 99
-	_label.position = Vector2(24.0, 24.0)
+	_label.position = Vector2(24.0, 96.0) # Below the HUD clock.
 	_label.add_theme_font_size_override(&"font_size", 18)
 	_label.add_theme_color_override(&"font_outline_color", Color.BLACK)
 	_label.add_theme_constant_override(&"outline_size", 5)

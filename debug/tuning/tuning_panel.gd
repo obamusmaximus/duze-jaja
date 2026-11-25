@@ -13,11 +13,11 @@ signal back_pressed
 const TUNING_DIR: String = "res://tuning/"
 ## Tab name to the stats classes shown on it.
 const TABS: Dictionary = {
-	"Camera": ["CameraStats"],
-	"Units": ["UnitStats", "WeaponStats", "OrderStats"],
-	"Map": ["BattlefieldStats", "MapStats", "PropStats", "TerrainStats", "WaterStats", "WorldLookStats", "LightStats"],
+	"Camera": ["CameraStats", "CockpitStats"],
+	"Units": ["UnitStats", "WeaponStats", "OrderStats", "CargoStats", "CarryallStats", "EconomyStats"],
+	"Map": ["BattlefieldStats", "MothershipStats", "MapStats", "WarTableStats", "BirdsEyeStats", "PropStats", "TerrainStats", "HeightmapStats", "WaterStats", "WorldLookStats", "LightStats"],
 	"Audio": ["AudioStats", "SfxCue", "FxStats"],
-	"Controls": ["PlayerControlStats", "UiStats"],
+	"Controls": ["PlayerControlStats", "StrategyControlStats", "UiStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }
 ## Share of the viewport the panel takes, and the width below which the preview column is dropped.

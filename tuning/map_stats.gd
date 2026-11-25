@@ -19,3 +19,8 @@ extends Resource
 ## Requests that start and end in the same areas this wide (metres) as a recent path reuse its middle part instead
 ## of searching again (a group order mostly shares one search). 0 turns sharing off.
 @export_range(0.0, 32.0, 0.5) var path_share_size: float = 8.0
+
+@export_group("Regions")
+## Cells per physics tick the land-region relabel after a map change may visit. The labels are stale (an order may
+## be let through or refused wrongly) until it finishes: a 1000 x 1000 grid takes about 1.2 M cells, so 60000 is 20 ticks.
+@export_range(1000, 1000000, 1000) var region_cells_per_tick: int = 60000

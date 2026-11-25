@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_rover.tres" id="2_weapon"]
+[ext_resource type="PackedScene" path="res://units/models/ifv_proto.tscn" id="3_model"]
+[ext_resource type="Texture2D" path="res://ui/icons/units/ifv.svg" id="4_icon"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "IFV"
+icon = ExtResource("4_icon")
+speed = 8.0
+radius = 1.7
+height = 2.8
+cargo_class = 2
+cargo_slots = 2
+model = ExtResource("3_model")
+max_health = 220.0
+weapon = ExtResource("2_weapon")
+death_cue = &"death_large"
+death_effect_scale = 1.6
+cost = 300
+build_time = 25.0

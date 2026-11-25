@@ -11,8 +11,34 @@ uniform float foam_width = 5.0;
 uniform float shore_calm_reach = 25.0;
 uniform float shore_calm_level = 0.35;
 
+// The baked shore field (ShoreField): red is the signed distance (m), green the water depth (m). Used instead of the
+// rectangles when `use_field` is set (a heightmap level). The texture covers `field_origin` (world x, z of texel 0's
+// centre) in steps of `field_texel` metres.
+uniform sampler2D shore_field : filter_linear, repeat_disable;
+uniform bool use_field = false;
+uniform vec2 field_origin = vec2(0.0);
+uniform float field_texel = 4.0;
+uniform float reef_depth = 8.0;
+uniform float reef_strength = 0.7;
+
+vec2 field_at(vec2 p) {
+	vec2 size = vec2(textureSize(shore_field, 0));
+	return textureLod(shore_field, ((p - field_origin) / field_texel + 0.5) / size, 0.0).rg;
+}
+
+// How much of the shallow colour shallow water shows over the reef: 1 at no depth, 0 at `reef_depth`, 0 without a field.
+float reef_amount(vec2 p) {
+	if (!use_field) {
+		return 0.0;
+	}
+	return (1.0 - smoothstep(0.0, max(reef_depth, 0.01), field_at(p).g)) * reef_strength;
+}
+
 // Signed distance (m) from world point `p` (x, z) to the nearest shore: negative inside.
 float island_distance(vec2 p) {
+	if (use_field) {
+		return field_at(p).r;
+	}
 	float best = 100000.0;
 	for (int i = 0; i < MAX_SHORE_RECTS; i++) {
 		if (i >= shore_rect_count) {

@@ -14,6 +14,7 @@ render_mode cull_back;
 #include "res://water/shore.gdshaderinc"
 #include "res://water/foam.gdshaderinc"
 #include "res://water/shading.gdshaderinc"
+#include "res://views/birds_eye/cloud.gdshaderinc"
 
 // 1 lights every triangle flat (facets), 0 lights it smooth from the analytic normal.
 uniform float facet_amount = 1.0;
@@ -23,10 +24,26 @@ varying float wave_height_at;
 // One height per triangle (its first vertex's), so the crest tint steps by facet.
 varying flat float facet_height;
 
+// The dense patch that follows the camera (WaterBody): waves fade to nothing at its edge so it meets the flat far sheet
+// (`wave_gain` 0) without a step. `patch_half` 0 means one sheet: no fade.
+uniform float wave_gain = 1.0;
+// The far sheet lies this far (m) under the sea level, below any trough of the dense patch.
+uniform float vertex_drop = 0.0;
+uniform vec2 patch_center = vec2(0.0);
+uniform float patch_half = 0.0;
+
+float patch_fade(vec2 p) {
+	if (patch_half <= 0.0) {
+		return 1.0;
+	}
+	vec2 d = abs(p - patch_center);
+	return 1.0 - smoothstep(patch_half * 0.7, patch_half, max(d.x, d.y));
+}
+
 void vertex() {
 	vec3 world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	vec3 wave = wave_sum(world.xz, TIME) * wave_scale(island_distance(world.xz));
-	VERTEX.y += wave.x;
+	vec3 wave = wave_sum(world.xz, TIME) * wave_scale(island_distance(world.xz)) * wave_gain * patch_fade(world.xz);
+	VERTEX.y += wave.x - vertex_drop;
 	NORMAL = normalize(vec3(-wave.y, 1.0, -wave.z));
 	wave_height_at = wave.x;
 	facet_height = wave.x;
@@ -44,8 +61,10 @@ void fragment() {
 	vec2 world_xz = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
 	float shore_m = island_distance(world_xz);
 	float foam = max(foam_mask(world_xz, shore_factor(shore_m), TIME), foam_bands(world_xz, shore_m, TIME));
-	ALBEDO = mix(shallow_color.rgb * tone, foam_color.rgb, foam);
-	EMISSION = mix(deep_color.rgb * tone, foam_color.rgb * foam_glow, foam);
+	float cloud_light = cloud_shade(world_xz);
+	ALBEDO = mix(shallow_color.rgb * tone, foam_color.rgb, foam) * cloud_light;
+	vec3 body = mix(deep_color.rgb, shallow_color.rgb, reef_amount(world_xz));
+	EMISSION = mix(body * tone, foam_color.rgb * foam_glow, foam) * cloud_light;
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;
 }

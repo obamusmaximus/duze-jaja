@@ -1,12 +1,15 @@
-[gd_resource type="Resource" script_class="UnitStats" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="UnitStats" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
 [ext_resource type="Resource" path="res://tuning/weapon_skiff.tres" id="2_weapon"]
 [ext_resource type="PackedScene" path="res://assets/kenney_space_kit/craft_speederA.glb" id="3_model"]
 
+[ext_resource type="Texture2D" path="res://ui/icons/units/skiff.svg" id="4_icon"]
+
 [resource]
 script = ExtResource("1_stats")
 display_name = "Skiff"
+icon = ExtResource("4_icon")
 speed = 12.0
 radius = 1.5
 height = 1.3

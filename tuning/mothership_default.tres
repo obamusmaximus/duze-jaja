@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="MothershipStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/mothership_stats.gd" id="1_stats"]
+[ext_resource type="PackedScene" path="res://bases/models/mothership_proto.tscn" id="2_model"]
+
+[resource]
+script = ExtResource("1_stats")
+model = ExtResource("2_model")

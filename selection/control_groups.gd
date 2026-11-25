@@ -29,7 +29,8 @@ func setup(stats: PlayerControlStats, selection: Selection, camera_rig: CameraRi
 
 func _unhandled_input(event: InputEvent) -> void:
 	for number: int in GROUP_COUNT:
-		if event.is_action_pressed(StringName("control_group_%d" % number)):
+		var action := StringName("control_group_%d" % number)
+		if InputMap.has_action(action) and event.is_action_pressed(action):
 			get_viewport().set_input_as_handled()
 			if Input.is_action_pressed(&"control_group_set"):
 				store(number)

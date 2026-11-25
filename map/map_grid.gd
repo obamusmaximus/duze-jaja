@@ -18,6 +18,9 @@ const SIDES: Array = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(
 
 @export var stats: MapStats
 
+## The open air over the whole map: where flyers move (no cells, paths or regions).
+var air := AirLayer.new(self)
+
 ## One point per cell, solid where paths may not go (clearance included). Read-only outside this class.
 var astar := AStarGrid2D.new()
 ## The map area (world x, z).
@@ -26,6 +29,9 @@ var bounds: Rect2
 var size: Vector2i = Vector2i.ZERO
 var cell_size: float = 1.0
 
+## Heightmap data to read the ground from instead of casting rays at colliders (null: rays). Heights below the sea level
+## are no ground, so the grid stays land only.
+var terrain: TerrainHeights
 var _heights := PackedFloat32Array()
 ## 1 where the ground is too steep (or missing), or an obstacle covers the cell.
 var _blocked := PackedByteArray()
@@ -40,6 +46,8 @@ var _built: bool = false
 ## The settings the grid was built with: cell size, slope limit, clearance.
 var _built_shape := Vector3.ZERO
 var _rebuild_pending: bool = false
+## The connected land masses (`LandRegions`): relabelled after every map change.
+var regions := LandRegions.new()
 
 
 func _ready() -> void:
@@ -74,6 +82,7 @@ func build(area: Rect2) -> void:
 	var all := Rect2i(Vector2i.ZERO, size)
 	_sample(all)
 	_refresh(all)
+	regions.label_all(_walkable, size)
 	cells_changed.emit(bounds, true)
 
 
@@ -87,6 +96,7 @@ func set_blocked(area: Rect2, blocked: bool) -> void:
 	if not _built:
 		return
 	_refresh(_cells_in(area))
+	regions.restart(_walkable, size)
 	cells_changed.emit(area, not blocked)
 	playtest_event.emit(&"map_change", {"area": [area.position, area.end], "blocked": blocked})
 
@@ -98,6 +108,7 @@ func resample(area: Rect2) -> void:
 	var cells: Rect2i = _cells_in(area).grow(1).intersection(astar.region)
 	_sample(cells)
 	_refresh(cells)
+	regions.restart(_walkable, size)
 	cells_changed.emit(area, true)
 	playtest_event.emit(&"map_change", {"area": [area.position, area.end], "resampled": true})
 
@@ -152,6 +163,14 @@ func surface_height(point: Vector3) -> float:
 				sum += height * w
 				weight += w
 	return sum / weight if weight > 0.0 else centre
+
+
+## The land region of the walkable cell nearest `point`, looking up to `rings` cells out; 0 when none is there.
+func region_at_point(point: Vector3, rings: int = 6) -> int:
+	if not _built:
+		return 0
+	var cell: Vector2i = nearest_walkable(cell_of(point), rings)
+	return regions.region_at(cell) if cell.x >= 0 else 0
 
 
 func is_walkable(cell: Vector2i) -> bool:
@@ -227,6 +246,9 @@ static func segment_hits_rect(a: Vector2, b: Vector2, area: Rect2) -> bool:
 
 
 func _sample(cells: Rect2i) -> void:
+	if terrain != null:
+		_sample_data(cells)
+		return
 	var space: PhysicsDirectSpaceState3D = get_viewport().world_3d.direct_space_state
 	var query := PhysicsRayQueryParameters3D.new()
 	query.collision_mask = WORLD_MASK
@@ -237,6 +259,15 @@ func _sample(cells: Rect2i) -> void:
 			query.to = Vector3(centre.x, RAY_BOTTOM, centre.y)
 			var hit: Dictionary = space.intersect_ray(query)
 			_heights[y * size.x + x] = (hit["position"] as Vector3).y if not hit.is_empty() else NAN
+
+
+## Reads the ground height of `cells` from the heightmap data: no ray, no wait for physics.
+func _sample_data(cells: Rect2i) -> void:
+	for y: int in range(cells.position.y, cells.end.y):
+		var z: float = bounds.position.y + (y + 0.5) * cell_size
+		for x: int in range(cells.position.x, cells.end.x):
+			var height: float = terrain.height_at(bounds.position.x + (x + 0.5) * cell_size, z)
+			_heights[y * size.x + x] = height if height >= SEA_LEVEL else NAN
 
 
 ## Recomputes what is blocked in `cells` (and their rim, whose slope depends on them), then path walkability
@@ -311,6 +342,8 @@ func _on_stats_changed() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if regions.running:
+		regions.step(stats.region_cells_per_tick)
 	if _rebuild_pending:
 		_rebuild_pending = false
 		build(bounds)

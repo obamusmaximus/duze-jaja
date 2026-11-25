@@ -1,5 +1,5 @@
 extends StaticBody3D
-## Debug: a wall across the sandbox that `debug_toggle_wall` (F3) raises and lowers during play, to test changing
+## Debug: a wall across the sandbox that `debug_toggle_wall` (7) raises and lowers during play, to test changing
 ## maps: raised, it blocks its cells in the MapGrid (found through the `map_grid` group) and collides on the World
 ## layer; units whose path crosses it re-path and go around. Units caught inside when it rises are pushed out by
 ## physics. Its area is its BoxShape3D's footprint (keep the wall unrotated).

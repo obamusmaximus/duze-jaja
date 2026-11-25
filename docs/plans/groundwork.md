@@ -70,7 +70,7 @@ Every step follows `CLAUDE.md`: tunables in a stats class in `tuning/` with a `*
 - Health bars over units (shown when damaged or selected), death removal.
 - Probe events: `attack`, `death`.
 
-## 9. HUD shell  [~]  (selection panel, minimap and command grid placeholder built: `docs/mechanics/ui.md`; enemy inspect and camera clearing the bar open)
+## 9. HUD shell  [x]  (selection panel with enemy inspect, minimap and command grid placeholder: `docs/mechanics/ui.md`)
 - Bottom-right panel with the selection (count and type icons, or one unit's health). A placeholder minimap frame with click-to-move-camera and the camera's view cone. No sidebar or production yet: that's after the groundwork (`GAME_DESIGN.md`, "Production").
 
 ## After the groundwork (not planned here)

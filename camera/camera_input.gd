@@ -17,6 +17,9 @@ var _stats: CameraStats
 ## so the last position says which). Lets the edge scroll without confining the cursor.
 var _last_mouse: Vector2 = Vector2(-1.0, -1.0)
 var _mouse_left_window: bool = false
+## Fly drag: where the drag button went down (viewport units), and whether it is down.
+var _fly_anchor: Vector2
+var _flying: bool = false
 
 
 func setup(stats: CameraStats) -> void:
@@ -30,12 +33,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		_mouse_left_window = false
 		_last_mouse = motion.position
 		if Input.is_action_pressed(&"camera_drag"):
-			drag_moved.emit(motion.relative)
+			if _stats.drag_mode == CameraStats.DragMode.GRAB:
+				drag_moved.emit(motion.relative)
 		elif Input.is_action_pressed(&"camera_rotate"):
 			rotate_moved.emit(motion.relative)
 		return
-	if event is InputEventPanGesture: # Two-finger trackpad scroll: up zooms in.
-		zoom_notches.emit((event as InputEventPanGesture).delta.y * _stats.trackpad_zoom_notches)
+	if event.is_action(&"camera_drag") and event is InputEventMouseButton:
+		_flying = event.is_pressed() and _stats.drag_mode == CameraStats.DragMode.FLY
+		if _flying:
+			_fly_anchor = (event as InputEventMouseButton).position
+	if event is InputEventPanGesture:
+		var gesture := event as InputEventPanGesture
+		if gesture.alt_pressed: # Option + two-finger scroll turns the camera (a trackpad has no middle button).
+			rotate_moved.emit(Vector2(gesture.delta.x * _stats.trackpad_rotate_px, 0.0))
+		else: # Two-finger trackpad scroll: up zooms in.
+			zoom_notches.emit(gesture.delta.y * _stats.trackpad_zoom_notches)
 	elif event is InputEventMagnifyGesture: # Pinch: spreading the fingers zooms in.
 		zoom_notches.emit(-log((event as InputEventMagnifyGesture).factor) * _stats.trackpad_pinch_notches)
 	elif event.is_action_pressed(&"camera_zoom_in"):
@@ -52,6 +64,26 @@ func pan_direction() -> Vector2:
 	if _stats.edge_scroll_enabled and not _mouse_busy():
 		direction += _edge_direction()
 	return direction.limit_length(1.0)
+
+
+## Fly drag: the pull of the cursor from the anchor, pixels (x right, y down), dead zone taken off and the length
+## capped; zero when not flying or not pulled past the dead zone.
+func fly_pull() -> Vector2:
+	if not _flying or _stats == null:
+		return Vector2.ZERO
+	var pull: Vector2 = get_viewport().get_mouse_position() - _fly_anchor
+	var length: float = pull.length()
+	if length <= _stats.fly_deadzone_px:
+		return Vector2.ZERO
+	return pull / length * minf(length - _stats.fly_deadzone_px, _stats.fly_max_px)
+
+
+func fly_anchor() -> Vector2:
+	return _fly_anchor
+
+
+func is_flying() -> bool:
+	return _flying
 
 
 ## Wanted rotation this frame from the rotate keys: -1 left, 1 right.
@@ -107,6 +139,8 @@ func _notification(what: int) -> void:
 func _confine(on: bool) -> void:
 	if _stats == null or DisplayServer.get_name() == "headless":
 		return
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		return # A first-person view holds the mouse and frees it itself.
 	var want: Input.MouseMode = Input.MOUSE_MODE_CONFINED if on and _stats.confine_mouse else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode != want:
 		Input.mouse_mode = want

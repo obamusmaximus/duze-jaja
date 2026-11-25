@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/hud/modules/production_module.gd" id="1_module"]
+
+[node name="ProductionModule" type="PanelContainer"]
+script = ExtResource("1_module")

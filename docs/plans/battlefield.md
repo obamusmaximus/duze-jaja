@@ -39,34 +39,45 @@ The rules are in `docs/performance.md`; this step puts the existing code on them
 - Measure: frame time with water and far plane at full size, `MapGrid` memory and build time, depth precision at far zoom, haze and shadows from high up. Write the numbers under "Measured".
 - **Done when:** the user picks the map size on it.
 
-## 2. Heightmap terrain  [ ]
+## 2. Heightmap terrain  [x]
 - `TerrainHeights` resource: heights at their own spacing (a tunable, coarser than the map grid), seabed included (below sea level is water depth), a surface role per sample (grass, sand, stone, soil by slope and height unless painted). Stored compactly, not one float per metre.
 - `TerrainChunks`: mesh (flat-shaded facets, palette roles through `WorldMaterials`) and `HeightMapShape3D` collision on layer 1, per chunk; a change rebuilds only its chunks and emits the area; far chunks use a coarser mesh.
 - `MapGrid` reads heights from the data instead of a ray per cell.
+- **Landed (see `heightmap.md`):** `TerrainHeights`, `TerrainChunks` (two mesh levels, `HeightMapShape3D`, budgeted rebuild queue), `MapGrid.terrain`, test level `levels/heightmap_test/`. Shared chunk index for the grid and regions comes with step 4.
 - **Done when:** a test heightmap renders, collides, units path over it, and a scripted change rebuilds one chunk and re-paths the units crossing it.
 
-## 3. Heightmap import, runtime brushes and the far camera  [ ]
-Sculpting happens in an external tool; we build only what the game needs anyway.
+## 3. Heightmap import, runtime brushes and the far camera  [x]
+Sculpting happens in an external tool; we build only what the game needs anyway. **Too big for one session, so split:** **3a** import, auto-reload, save to PNG, starter heightmap `[x]` (a 16-bit PNG codec of our own, since Godot saves 8-bit only; `HeightmapReloader`, keys F6 reload and F7 save, starter at `levels/heightmap_test/heightmap.png`; see `heightmap.md`); **3b** runtime brushes plus the height-band overlay `[x]` (F8 to F10, see `heightmap.md`); **3c** the far camera rig `[x]` (far and near planes follow the zoom; presets with a large `max_distance`; see `camera.md`); **3d** the Krita reference layer script `[x]` (F11, `ReferenceLayer`, see `heightmap.md`). The bullets below are the full list.
 - **Authoring outside:** Blender (sculpt a subdivided plane, bake its height to a 16-bit image) or Krita (paint a 16-bit greyscale image). Both are free and run on macOS.
 - **Import:** a 16-bit PNG or EXR becomes the level's `TerrainHeights` (heights scaled by a tunable range, sea level a tunable); surface roles come from slope and height. A debug key re-imports the file in game, so edit, save, re-import is the loop.
 - **Runtime brushes:** raise, lower, flatten, crater through the same map-change call gameplay uses (landing pads, craters, ground changing during play). No editor UI beyond a debug key and radius; no undo (re-import instead).
-- **Far camera rig** (pan, rotate, zoom out to about two thirds of the map); the strategy view's zoom handover reuses it (step 10).
+- **Height encoding:** black is `min_height`, white is `min_height + height_range` (both tunable, so white is never the scene's highest point by accident). Sea level is 0 m (`MapGrid.SEA_LEVEL`), so its grey is `-min_height / height_range`. Proposed start: black -50 m, white +150 m, sea level at 25% grey. Krita: 16-bit greyscale, no colour-profile conversion (a gamma curve would bend the heights); write the exact settings into `docs/mechanics/heightmap.md` when it lands.
+- **Auto-reload:** the game watches the PNG and re-imports on save, no key needed; only the changed chunks rebuild.
+- **Save back to PNG:** a debug key writes the current `TerrainHeights`, in-game brush edits included, to a 16-bit PNG, so brush work survives a re-import and can go back into Krita.
+- **Height colour bands:** a debug overlay colours the ground by height with a contour line every 10 m, so the waterline and slopes read while painting.
+- **Starter heightmap:** a generated rough atoll ring (from the step 2 test map generator) saved as a PNG to open in Krita, so the user edits a working example rather than a blank canvas.
+- **Krita reference layer:** a script generates a transparent PNG at the heightmap's pixel size from the same data the game uses (`BattlefieldStats`, mothership data): labelled grid every 100 m, scale bar, map edge, mothership footprints at hover position, atoll ring radius, a unit-sized dot and a 100-unit squad blob, and a grey-value ruler marking sea level. It lives on its own layer above the painting and is never exported with it; regenerate it when the map size or mothership data changes.
+- **Far camera rig** (pan, rotate, zoom out to about two thirds of the map); the bird's-eye rig reuses it (step 10).
 - Terrain addons (Terrain3D, HTerrain) do in-editor sculpting but bring their own map model to keep in sync with ours; using one needs the user's OK (`CLAUDE.md`, "Dependencies").
+- **Not now (revisit on a concrete need):** a measure tool (click two points, distance and unit travel time); a second image for surface-role paint where slope and height pick wrongly. No custom map editor: Krita and Blender paint better, and an editor is only worth it for placing objects (capture points, spawns, props), starting as a simple marker file.
+- **Working tip:** block out coarse first (about 875 x 500 px at 4 m spacing, big soft brush), detail after.
 - **Done when:** an atoll blocked out in Blender or Krita shows in game within a minute of saving, and a brush changes it during play with units re-pathing.
 
-## 4. Water and pathing at full size  [ ]  (parallel with 3)
+## 4. Water and pathing at full size  [x]  (parallel with 3)
+**Landed (see `water.md`, `pathing.md`):** dense camera patch over a flat far sheet, `ShoreField` baked from the heightmap (distance and depth, settled local re-bake, lighter reef), land regions with order refusal. **Not done:** the grid is not chunked (one array measured fine at 1.26 M cells), and the atoll level's shore is still rectangles until step 5 gives it a heightmap.
 - **Water:** a dense grid following the camera plus a flat far plane (or LOD rings). Shore distance and depth baked from the heightmap into a low-resolution texture, re-baked locally on change, replacing `set_shore(rects)` (capped at 48). Shallow water over the reef reads lighter.
 - **Map grid:** land only, in the shared chunks (`docs/performance.md`), built and rebuilt alone; a coarse chunk-to-chunk level only if one island is still too big for one search. Measure first.
 - **Land regions:** every walkable cell carries a region id (one per connected land mass), refreshed locally on map changes. `CommandIssuer` refuses a ground move to another region (amphibious units excepted), so no search ever crosses the sea.
 - **Done when:** the numbers from step 1 are within budget at full size.
 
-## 5. Atoll blockout  [ ]
+## 5. Atoll blockout  [x]
 - The sculpted atoll replaces the primitive blocks: reef ring, lagoon, main islands with a mountain, plains and beaches, smaller islands around, open sea to each mothership.
 - Capture points as markers only. No props or detail beyond what reads the forms.
 - Plants and rocks, when needed: copy them from the Kenney Nature Kit the user already downloaded (`~/Downloads/kenney_nature-kit`) into `assets/kenney_nature_kit/`; don't download anything (`assets/README.md`, "Planned imports").
+- **Landed (see `battlefield.md`):** `levels/atoll/` runs on `TerrainChunks` over `levels/atoll/heightmap.png`, generated once by `AtollBlockout` and edited in Krita from then on; shore field, grid and land regions follow the heights; ten capture markers. Plants and rocks not added.
 - **Done when:** travel times and lines of sight can be judged with today's units dropped in.
 
-## 6. Hovering mothership  [ ]  (parallel from step 2)
+## 6. Hovering mothership  [x]  (parallel from step 2)
 - `Carrier` becomes `Mothership` (`bases/`, group `motherships`): in the air, no ground footprint, doesn't block the grid. Its position is simulation state, so relocation can come later.
 - Primitive placeholder at true scale, `bases/models/mothership_proto.tscn` (style guide prototyping rules). It's built from primitives, not Kenney parts, because nothing in the Space Kit reads as a hull that size.
   - **Shape:** a long hull with a wedged prow, carryall pads on top, production bays as doors underneath, a naval drop bay at the stern (reserved), and engine pods with downward thrusters. Space Kit turrets and dishes may go on as fittings at plausible sizes.
@@ -76,15 +87,17 @@ Sculpting happens in an external tool; we build only what the game needs anyway.
 - Sound: a low drone loop from the synth tool (`tools/audio_synth/`).
 - Named attachment points: production bays, carryall pads, a naval drop bay (reserved), the forward-base pieces (reserved).
 - `MothershipStats`: production lines, pads; later health per part.
+- **Landed (see `battlefield.md`):** `Mothership` + `MothershipProto` + `MothershipStats`, long side to the atoll. **Not done:** thruster glow, drone sound, bob, per-part health.
 - **Done when:** both motherships hover in the battlefield level and read as huge from near and far.
 
-## 7. Unit cargo classes  [ ]
+## 7. Unit cargo classes  [x]
 - `UnitStats` gains a cargo class (infantry or machinery) and a slot size (an IFV takes half a carryall's machinery slots, a tank all of them).
 - **True scale first:** the trooper and rover are scaled up today (the trooper stands far taller than a person). Bring them back to true scale (style rule 6; the base plate keeps them readable), so cargo sizes look right.
 - Placeholder types: infantry (the Space Kit astronaut), and an IFV and a tank as primitive prototypes (`units/models/ifv_proto.tscn`, `tank_proto.tscn`): an IFV on six wheels, a tank on tracks with a long gun, told apart by silhouette. Kenney has no fitting military vehicles.
+- **Landed (see `cargo.md`):** `UnitStats` cargo class and slots, `Cargo` hold with `CargoEntry` data, `CargoStats`, unit icons (SVG, `UnitStats.icon`, `UnitIcon`), `CargoView` in the selection module, IFV and tank prototypes, trooper and rover at true scale, a test carryall per team on the atoll. **Not done:** actually loading units (step 9).
 - **Done when:** the three types exist with their slots and fight like the others.
 
-## 8. Income and squad production  [ ]  (after 6, 7)
+## 8. Income and squad production  [x]  (after 6, 7)
 - `EconomyStats`: flat income per side, the bank. `UnitStats` gains a cost.
 - **Squad spec** (plain data): unit type ids, a job (scout, patrol, guard, covert, assault), a name. Presets are `SquadStats` `.tres` (fireteam, anti-air, motorized division, covert insertion). Cost and build time come from the units. Size capped at one carryall's slots by default; a larger cap is a tunable.
 - `ProductionLine` per mothership bay: a queue on the fixed tick; finished squads wait aboard.
@@ -92,9 +105,10 @@ Sculpting happens in an external tool; we build only what the game needs anyway.
 - **Squad identity:** `SquadRegistry` (squad id, team, members, job); each unit carries its squad id; members stay selectable one by one.
 - **HUD (first pass):** a squad builder (presets, custom pick within the slot rules), the production lines, the bank.
 - Probe events: `produce`, `squad_ready`, `income`.
+- **Landed (see `economy.md`):** all of it except the anti-air preset (no AA unit yet) and the `income` HUD graph; squads wait aboard as data until step 9.
 - **Done when:** several lines build squads at once from the HUD, and a headless test queues and cancels through `CommandIssuer` and checks the bank.
 
-## 9. Carryalls  [ ]  (after 5, 8)
+## 9. Carryalls  [x]  (after 5, 8)
 - **Placeholder model:** the Space Kit's `craft_cargoA`, scaled in its `.tres` to true size (its cargo hold fits a tank). Flyers don't use the grid, so its size costs nothing there. `craft_cargoB` stays free for a variant. Sound: a synthesized rotor or engine loop.
 - A large flyer with a `Cargo` component: infantry and machinery slots. **Carried units are data:** loading stores each unit's id, type, health, squad and controller and removes its node the way death does (no death event); para-drop or landing spawns it again with the same id. Everything already copes with units leaving, and state that holds ids (step 0) gets them back. A richer carried state can come with first-person play.
 - Orders:
@@ -104,21 +118,17 @@ Sculpting happens in an external tool; we build only what the game needs anyway.
 - **Side gunners:** two carried units fire their own weapons from mount points on the carryall.
 - **Autopilot:** an order-following brain for RTS commands. Piloting is the existing brain swap, built with first person.
 - Probe events: `load`, `drop`, `unload`.
+- **Landed (see `carryall.md`):** carryall comes free with a squad job and is loaded unit by unit on a mothership pad, takeoff interrupts the job with a partial refund, deliver by landing (returns beside the mothership, never onto a pad), `CarryallFleet` list with states for the strategy view, side gunners (ground only, infantry). **Not done:** para-drop, picking units up again / exfil, pick-up on landing zones, gunner mount points, sound.
 - **Done when:** a squad built aboard reaches the atoll from one deliver order, by para-drop or landing, and a carryall picks it up again.
 
-## 10. Strategy view: the war table  [ ]  (after 2, 8, 9)
-- **`ViewSwitcher`** (a named action); switching never changes game state.
-- **The table:** a simplified model of the map drawn from `TerrainHeights` in its own scene and visual layer, never the live level, redrawn by chunk on map changes. Squad tokens (low-res scaled-up models or icons, Homeworld style).
-- **Tilt-shift:** try the Mobile renderer's camera depth of field first (near and far blur around a focus band); a hand-written post shader only if that doesn't read as tilt-shift. Heavy here.
-- **Zoom handover:** zooming in past a threshold switches to the RTS rig at that point.
-- **HUD overlay:** squad builder and production, landing zone assignment (deliver orders), team **map markers**, **strategy outlines** (areas or arrows with a label, stored as data the AI will read).
-- Markers and outlines are team data through the issuer path, so they can go over the network.
-- **Done when:** a match's production, deliveries and markers can be run from the war table, and zooming in drops into the live battle.
+## 10. Strategy views  [x]  (after 2, 8, 9)
+Built; the mechanics are in `docs/mechanics/war_table.md`, `birds_eye.md`, `ui.md`, `rts_controls.md`. The views are separate modes: V flies between the RTS and bird's-eye views, B cuts to the table and back, and zooming never changes view.
+- **10a War table:** simplified map model in tiles on its own layer, squad tokens, tilt-shift blur.
+- **10b Bird's-eye view:** live high view with post shader, clouds and cloud shadows, baked terrain light, far sea ring (design and build order: `docs/plans/birds_eye.md`).
+- **10c Strategy HUD:** two HUDs swapped on the view change, RA3-style selection panel, unit blips, picking, map markers, carryall list, SET LZ, EXFIL NEAREST, strategy outlines. Open parts (marker and exfil behaviour, unit pick-up) are in `docs/plans/backlog.md`.
 
-## 11. Tilt-shift at far RTS zoom  [ ]
-- The same shader in the RTS view, strength following the zoom (`CameraStats`), so the RTS view blends into the war table.
-
-## 12. Full-scale check  [ ]
+## 11. Full-scale check  [ ]
+(The old step 11, tilt-shift at far RTS zoom, was dropped: the RTS view and the strategy views stay clearly separate modes.)
 Both motherships producing, several carryalls flying, a 100-unit fight on the atoll, units spread elsewhere. Frame time headless and rendered, noted in the mechanic docs.
 
 ## Risks and likely setbacks
@@ -129,7 +139,6 @@ Both motherships producing, several carryalls flying, a 100-unit fight on the at
 - **Terrain rebuild hitches** during play need a per-tick budget, as paths have.
 - **Carried units** leave and re-enter the world; anything still holding a node reference instead of an id will break there.
 - **The war table must follow live map changes**, redrawn from the data chunk by chunk.
-- **The zoom handover** between two cameras must feel like one continuous zoom.
 - **Para-drop on a sculpted coast:** thin land and reef edges leave few walkable cells to land on.
 - **Side gunners on a moving flyer:** fire arcs and targeting from a mount that moves and turns (`combat.md`).
 - **Heightmap data size:** keep the spacing coarse and storage compact.

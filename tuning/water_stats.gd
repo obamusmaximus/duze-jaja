@@ -9,6 +9,26 @@ extends Resource
 ## Size of one quad of the water mesh (m). The facets are the look: bigger is chunkier and cheaper.
 @export_range(1.0, 20.0, 0.5) var quad_size: float = 4.0
 
+@export_group("Level of detail")
+## Side (m) of the dense patch of water that follows the camera's view; the rest of the sea is a flat sheet of coarse
+## quads. 0 keeps one sheet of `quad_size` quads over the whole level (small levels).
+@export_range(0.0, 3000.0, 50.0) var near_size: float = 0.0
+## Size of one quad of the flat far sheet (m), used when the dense patch is on.
+@export_range(8.0, 200.0, 4.0) var far_quad_size: float = 48.0
+
+@export_group("Shore field")
+## Metres per texel of the baked shore distance and depth texture (a heightmap level). Smaller is a sharper coast and a
+## costlier bake.
+@export_range(2.0, 16.0, 1.0) var field_texel: float = 4.0
+## How far from the shore (m) the baked distance is kept; beyond it the sea counts as open. Keep it above `calm_end`.
+@export_range(100.0, 2000.0, 20.0) var field_reach: float = 640.0
+## Seconds without a ground change before the shore field is re-baked (a brush stroke re-bakes once).
+@export_range(0.1, 5.0, 0.1) var field_settle: float = 0.6
+## Water shallower than this (m) over the reef reads lighter.
+@export_range(0.5, 40.0, 0.5) var reef_depth: float = 8.0
+## How much of the shallow colour the reef shows at zero depth.
+@export_range(0.0, 1.0, 0.01) var reef_strength: float = 0.7
+
 @export_group("Waves")
 ## Number of summed sine waves. Each next one is shorter, lower and turned a little.
 @export_range(1, 6, 1) var wave_count: int = 4

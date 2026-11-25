@@ -6,6 +6,8 @@ extends UnitBrain
 ## - Attack: chases its target until in range, faces it and fires; done when the target is gone.
 ## - Attack-move: goes there, but fights anything it meets on the way (enemies within `sight_range`), chasing at most
 ##   `leash_distance` from where it met them, so it can't be kited away; then carries on.
+## - Deliver (carryalls): the carryall flies, lands, unloads and lifts off (`Carryall.deliver`).
+## - Fixed wings can't stand: whenever one of the above has it fight, it makes attack passes (`AttackRun`).
 ## - Idle (no orders): holds its ground, faces and fires at enemies in range, the one that hit it last first.
 ## Stop clears the queue, which makes the unit idle. Simulation.
 
@@ -26,6 +28,8 @@ var _engaged: Unit:
 		_engaged_id = value.id if value else 0
 var _engaged_from := Vector3.ZERO
 var _given_up_id: int = 0
+## A fixed wing's passes over what it fights.
+var _attack_run := AttackRun.new()
 
 
 func setup(unit: Unit, queue: OrderQueue, navigator: UnitNavigator, targeting: UnitTargeting, weapon: Weapon,
@@ -44,6 +48,8 @@ func wanted_facing() -> Vector3:
 
 func wanted_velocity(delta: float) -> Vector3:
 	_facing = Vector3.ZERO
+	if _unit.carryall != null and _unit.carryall.leaving():
+		return _unit.carryall.leave_velocity() # Off the pad first, level with the deck.
 	var order: Order = _queue.current()
 	while order and order.kind == Order.Kind.STOP:
 		_queue.finish()
@@ -62,6 +68,12 @@ func wanted_velocity(delta: float) -> Vector3:
 			return _fight(target, delta)
 		Order.Kind.ATTACK_MOVE:
 			return _attack_move(order, delta)
+		Order.Kind.DELIVER:
+			var carryall: Carryall = _unit.carryall
+			if carryall == null:
+				return _finish()
+			var velocity: Vector3 = carryall.deliver(_nav, delta)
+			return _finish() if carryall.delivery_finished else velocity
 	return _finish()
 
 
@@ -70,8 +82,12 @@ func _start(order: Order) -> void:
 	_engaged = null
 	_given_up_id = 0
 	_weapon.target = null
+	if _unit.carryall != null:
+		_unit.carryall.order_started(order)
 	if order == null:
 		_nav.stop()
+	elif order.kind == Order.Kind.DELIVER:
+		_nav.go_to(_unit.carryall.landing_point(), _unit.carryall.stats.land_arrive_radius)
 	elif order.kind == Order.Kind.MOVE or order.kind == Order.Kind.ATTACK_MOVE:
 		_nav.go_to(order.target_position, _unit.stats.arrive_distance)
 	else:
@@ -88,7 +104,7 @@ func _move(delta: float) -> Vector3:
 
 func _attack_move(order: Order, delta: float) -> Vector3:
 	var engaged: Unit = _engaged
-	if _engaged_id != 0 and (engaged == null or _engaged_from.distance_to(_unit.global_position) > _unit.stats.leash_distance):
+	if _engaged_id != 0 and (engaged == null or _leashed(engaged)):
 		if engaged and not _weapon.in_range(engaged):
 			_given_up_id = _engaged_id # Leash: don't chase this one again unless it comes into range.
 		_engaged_id = 0
@@ -105,6 +121,15 @@ func _attack_move(order: Order, delta: float) -> Vector3:
 	return _move(delta)
 
 
+## Whether the fight has gone too far from where it began. A fixed wing's passes swing wide, so for it the enemy's
+## distance counts, not its own.
+func _leashed(engaged: Unit) -> bool:
+	var wing: FlightAutopilot = _unit.movement.autopilot
+	var at: Vector3 = engaged.global_position if wing != null and wing.is_fixed_wing() else _unit.global_position
+	var from_start := Vector2(at.x - _engaged_from.x, at.z - _engaged_from.z)
+	return from_start.length() > _unit.stats.leash_distance
+
+
 ## Chase `target` into range, then stand, face it and let the weapon fire.
 func _fight(target: Unit, delta: float) -> Vector3:
 	_weapon.target = target
@@ -112,6 +137,10 @@ func _fight(target: Unit, delta: float) -> Vector3:
 	if not _weapon.has_weapon():
 		_nav.follow(target.global_position, _unit.stats.radius + target.stats.radius + 1.0)
 		return _nav.wanted_velocity(delta)
+	var wing: FlightAutopilot = _unit.movement.autopilot
+	if wing != null and wing.is_fixed_wing():
+		_nav.stop() # It can't stand and fire: it makes attack passes.
+		return _attack_run.velocity(wing, _unit, target)
 	if _weapon.in_range(target):
 		_nav.stop()
 		_facing = to_target

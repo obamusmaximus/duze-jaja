@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_fighter.tres" id="2_weapon"]
+[ext_resource type="PackedScene" path="res://assets/kenney_space_kit/craft_speederA.glb" id="3_model"]
+[ext_resource type="Texture2D" path="res://ui/icons/units/fighter.svg" id="4_icon"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Fighter"
+icon = ExtResource("4_icon")
+speed = 32.0
+turn_rate = 75.0
+radius = 1.5
+height = 1.0
+flying = true
+flight_style = 1
+flight_acceleration = 10.0
+flight_min_speed = 18.0
+flight_height = 28.0
+flight_min_clearance = 8.0
+flight_climb_rate = 14.0
+flight_max_bank_deg = 70.0
+model = ExtResource("3_model")
+model_scale = 1.9
+max_health = 50.0
+anti_air = true
+weapon = ExtResource("2_weapon")
+sight_range = 40.0
+leash_distance = 90.0

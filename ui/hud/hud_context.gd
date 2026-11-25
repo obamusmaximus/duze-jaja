@@ -9,3 +9,5 @@ var team: int = 0
 var area: Rect2
 var rig: CameraRig
 var stats: UiStats
+## What the strategist's next ground click does (the commands panel arms it, `StrategyControl` spends it).
+var tools: StrategyTools

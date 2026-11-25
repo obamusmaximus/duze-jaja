@@ -7,8 +7,8 @@ extends Node
 ## - `integrate(delta)` runs every physics tick (so physics interpolation shows smooth motion): turns at `turn_rate`
 ##   and moves the body.
 ## Ground units move kinematically: height from the map model (`MapGrid.surface_height`), walls and buildings from its
-## cells (a blocked cell stops a move, which then slides along it); the physics engine solves nothing. Flyers fly
-## straight over the ground. `physical` brings back `move_and_slide` (gravity, collision) for direct control.
+## cells (a blocked cell stops a move, which then slides along it); the physics engine solves nothing. Flyers are
+## flown by their `autopilot` (`FlightAutopilot`). `physical` brings back `move_and_slide` (gravity, collision) for direct control.
 
 ## Neighbours are searched within the unit's radius plus this (metres): covers other units up to about this radius.
 const NEIGHBOUR_MARGIN: float = 1.5
@@ -19,6 +19,11 @@ const REST_CHECK_TICKS: int = 15
 var brain: UnitBrain
 ## Moves with `move_and_slide` instead of kinematically (direct control; the unit then runs every tick).
 var physical: bool = false
+## Flyers: a height above sea level to hold instead of the usual altitude over the ground (a carryall on its pad or
+## landed); NAN for none.
+var altitude_override: float = NAN
+## Flies a flyer (null on a ground unit, and before the unit joins a match with a map).
+var autopilot: FlightAutopilot
 
 var _body: Unit
 var _stats: UnitStats
@@ -37,7 +42,9 @@ func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitR
 	_stats = stats
 	brain = start_brain
 	_registry = registry
-	snap_to_altitude()
+	if stats.flying and registry.map:
+		autopilot = FlightAutopilot.new(body, stats, registry.map.air)
+		autopilot.snap_to_altitude(altitude_override)
 	if not stats.flying and registry.map and registry.map.is_built():
 		_body.global_position.y = registry.map.surface_height(_body.global_position)
 
@@ -51,6 +58,9 @@ func decide(delta: float) -> void:
 		facing = brain.wanted_facing()
 	wanted.y = 0.0
 	facing.y = 0.0
+	if autopilot:
+		autopilot.command(wanted, facing, _separation() * _stats.speed)
+		return
 	if wanted.length_squared() > 0.0001:
 		facing = wanted
 	_target_yaw = atan2(-facing.x, -facing.z) if facing.length_squared() > 0.0001 else NAN
@@ -69,28 +79,20 @@ func decide(delta: float) -> void:
 
 ## Every physics tick: turn and move by what was decided.
 func integrate(delta: float) -> void:
+	if autopilot:
+		autopilot.step(delta, altitude_override)
+		return
 	if not is_nan(_target_yaw):
 		_body.rotation.y = rotate_toward(_body.rotation.y, _target_yaw, deg_to_rad(_stats.turn_rate) * delta)
 	if physical:
 		_move_physical(delta)
-	elif _stats.flying:
-		_fly(delta)
 	elif _flat.length_squared() > 0.0001:
 		_walk(delta)
 
 
-## The height a flyer keeps above sea level over ground at `ground` (metres): `flight_height` plus a share of the
-## ground's rise, but never less than `flight_min_clearance` above the ground itself.
+## The usual height above sea level over ground at `ground` (`FlightAutopilot.altitude_for`). Flyers only.
 func altitude_for(ground: float) -> float:
-	return maxf(ground + _stats.flight_min_clearance, _stats.flight_height + _stats.flight_terrain_follow * ground)
-
-
-## Puts a flyer at its altitude at once (it is placed on the ground in the level).
-func snap_to_altitude() -> void:
-	if not _stats.flying or _registry == null or _registry.map == null:
-		return
-	var ground: float = _registry.map.ground_height(_body.global_position)
-	_body.global_position.y = altitude_for(ground)
+	return autopilot.altitude_for(ground)
 
 
 ## Kinematic walk: slide along blocked cells, follow the ground height.
@@ -129,17 +131,6 @@ func _settle() -> void:
 	_body.global_position = position
 
 
-## Flyers: no gravity and no walls. Height follows the altitude over the ground below, at most `flight_climb_rate`.
-func _fly(delta: float) -> void:
-	var position: Vector3 = _body.global_position
-	var ground: float = _registry.map.ground_height(position) if _registry.map else MapGrid.SEA_LEVEL
-	var climb: float = clampf((altitude_for(ground) - position.y) / delta, -_stats.flight_climb_rate,
-		_stats.flight_climb_rate)
-	position += Vector3(_flat.x, climb, _flat.z) * delta
-	_body.global_position = position
-	_body.set_hover(position.y - ground)
-
-
 ## Direct control: the physics body moves and falls (`_flat` is the wanted velocity).
 func _move_physical(delta: float) -> void:
 	var velocity: Vector3 = _body.velocity
@@ -151,7 +142,8 @@ func _move_physical(delta: float) -> void:
 
 
 ## Push away from overlapping units, stronger the deeper the overlap. Flyers only push other flyers, and ground units
-## only the ground ones: the air and the ground don't block each other.
+## only the ground ones: the air and the ground don't block each other. Flyers more than `flight_separation_height`
+## apart in height pass over each other.
 func _separation() -> Vector3:
 	if _registry == null or _stats.separation_strength <= 0.0:
 		return Vector3.ZERO
@@ -160,6 +152,8 @@ func _separation() -> Vector3:
 	var push := Vector3.ZERO
 	for other: Unit in _neighbours:
 		if other == _body or other.is_flying() != _body.is_flying():
+			continue
+		if _stats.flying and absf(position.y - other.global_position.y) > _stats.flight_separation_height:
 			continue
 		var away := Vector3(position.x - other.global_position.x, 0.0, position.z - other.global_position.z)
 		var distance: float = away.length()

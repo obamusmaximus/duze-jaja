@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="HudLayout" format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud_placement.gd" id="1_place"]
+[ext_resource type="Script" path="res://ui/hud/hud_layout.gd" id="2_layout"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/minimap_module.tscn" id="3_minimap"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/selection_module.tscn" id="4_selection"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/clock_module.tscn" id="5_clock"]
+
+[sub_resource type="Resource" id="Resource_minimap"]
+script = ExtResource("1_place")
+module = ExtResource("3_minimap")
+section = 2
+
+[sub_resource type="Resource" id="Resource_selection"]
+script = ExtResource("1_place")
+module = ExtResource("4_selection")
+section = 8
+
+[sub_resource type="Resource" id="Resource_clock"]
+script = ExtResource("1_place")
+module = ExtResource("5_clock")
+section = 0
+
+[resource]
+script = ExtResource("2_layout")
+bands = 0
+placements = Array[ExtResource("1_place")]([SubResource("Resource_minimap"), SubResource("Resource_selection"), SubResource("Resource_clock")])

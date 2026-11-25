@@ -3,7 +3,7 @@
 ## Project
 - **Engine:** Godot 4 (project is on 4.7, Jolt physics; GL Compatibility renderer until `docs/plans/battlefield.md` step 0 switches it to Mobile). Use Godot 4 APIs only. Don't use Godot 3 patterns such as `KinematicBody`, `yield`, or `export var`.
 - **Language:** GDScript only.
-- **Genre:** Top-down 3D real-time strategy, built along the lines of Red Alert 3 / C&C3 (free camera, left-click control scheme; see `GAME_DESIGN.md`). Groundwork build order: `docs/plans/groundwork.md`.
+- **Genre:** Top-down 3D real-time strategy, built along the lines of Red Alert 3 / C&C3 (free camera, left-click control scheme; see `GAME_DESIGN.md`). Build order: `docs/plans/roadmap.md`.
 
 ## Code conventions
 - **Use typed GDScript everywhere.** Give types to variables, parameters, return values, and `@export`s (e.g. `var speed: float = 5.0`, `func move() -> void:`). Use `:=` when the type is obvious.
@@ -15,7 +15,7 @@
 - **All tunable numbers live in stats resources in `tuning/`** (one class per owner, each with a `*_default.tres`), never as `@export`s on gameplay scripts. Add a tunable as an `@export` in the right class, inside an `@export_group` (it becomes a sub-label in the tuning panel) and with a `##` doc comment (it becomes the tooltip). Owners hold the resource and hand it to their parts through `setup()`; parts read `stats.x`. Parts that cache a value listen to the resource's `changed` signal so live edits apply. A new stats class needs listing in `TuningPanel.TABS`. A unit type is a stats class; a variant of it is just another `.tres`.
 - **The `.tres` files are the source of truth.** The user tunes live and saves them between sessions, so values change between prompts. That is normal: don't be surprised by a changed value, don't "fix", reset or revert it. Never write tunable values into the docs (name the parameter), and treat any number in a doc as possibly stale.
 - **Colours, spacing and type sizes come from `UiTokens`**, never a literal in a script or scene; UI nodes take a theme variation, not per-node overrides (`docs/mechanics/ui.md`).
-- **Use named input actions** from the Input Map, never raw keys. Current actions: `pause` (Esc), `save_playtest_log` (L); the camera's are listed in `docs/mechanics/camera.md`, selection and order keys in `rts_controls.md`, slow time's in `debug_tools.md`.
+- **Use named input actions** from the Input Map, never raw keys. Current actions: `pause` (Esc), `save_playtest_log` (L); the camera's are listed in `docs/mechanics/camera.md`, selection and order keys in `rts_controls.md`, the pilot's in `cockpit.md`, slow time's in `debug_tools.md`.
 - **Movement and raycasts go in `_physics_process`**, not `_process`.
 - **Keep the simulation apart from views** (`GAME_DESIGN.md`, "Multiplayer and simulation"). Units, orders, pathing, combat and map changes run on the fixed tick and never read a camera, the mouse, the selection or the HUD, so a headless server can run them. Views, players and AI change the game only by sending `Order` data through `CommandIssuer`. Never assume the map is fixed: it changes during a match.
 - **Collision layers:** 1 World, 2 Unit, 3 Building, 4 Projectile. Use these when setting `collision_layer` and `collision_mask`. The names are set in `project.godot`.
@@ -26,7 +26,7 @@
 - **`STATUS.md` is imported at the end of this file**, so it is already loaded at the start of every session.
 - **Building anything visible in the world** (models, materials, levels, effects)? Follow the prototyping rules in `docs/style_guide.md` first.
 - **Working on a mechanic? Read its doc in `docs/mechanics/`** (the glossary below says which) before touching its scripts, and read only the scripts it lists unless the task needs more.
-- **Building groundwork?** `docs/plans/groundwork.md` is the build order; tick a step there when it lands.
+- **What to build next:** `docs/plans/roadmap.md` names the next plan step. Tick the step in its plan when it lands and move the roadmap on.
 - **Writing a headless test?** Read `docs/testing.md` first.
 - **Building anything that runs every tick, scales with units or map size, or draws a lot?** Follow `docs/performance.md` (target: an M1 with 8 GB).
 - **At the end of a task, update the mechanic's doc, then `STATUS.md`.** Follow the documenting principles in `docs/mechanics/README.md`.
@@ -40,7 +40,7 @@ The user's plan has limited usage; spend it on the work, not on reading and re-c
 - **One plan step per session.** Read the step, its mechanic doc and the scripts the doc lists; nothing else unless the task needs it. `GAME_DESIGN.md` and `docs/style_guide.md` are long: grep them and read only the section needed.
 - **Don't re-read** a file already read this session unless it changed; grep a big file before reading a range of it.
 - **Ask every blocking question at once, at the start.** Otherwise pick the sensible default, say so in one line, and carry on.
-- **No screenshots or browser checks unless the user asks:** the user playtests. Verify headless.
+- **Verify visible changes yourself** (run the game and take a screenshot) before reporting them done; use headless tests for logic.
 - **Short test output** (`docs/testing.md`).
 - **Edit docs in place** with small edits; don't rewrite a doc to change a few lines.
 - **No subagents or parallel sessions unless the user asks.**
@@ -55,12 +55,16 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`pathing.md`]** map grid (map model), cell, clearance, path service, shared path, navigator, separation (soft collision), crowd arrival, stuck, map change
 - **[`combat.md`]** health, weapon, fire arc, targeting, doomed (overkill), shots, return fire, hold ground, leash
 - **[`orders.md`]** order, `CommandIssuer`, order queue, group move, waypoint, attack-move
+- **[`cargo.md`]** cargo class, slot, hold, cargo entry, unit icon
+- **[`cockpit.md`]** cockpit mount, anchor camera, aim, free look
+- **[`carryall.md`]** carryall, pad, deliver, side gunner, fleet (the carryall list), carryall state
 - **[`props.md`]** prop, prop type, model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
-- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, carryall, cargo slots (infantry, machinery), landing zone (LZ), para-drop, side gunner, autopilot, war table (the strategy view), map marker, strategy outline
+- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, cargo slots (infantry, machinery), landing zone (LZ), para-drop, autopilot, war table (the strategy view), map marker, strategy outline
 - **[`ui.md`]** tokens (`UiTokens`), face, game theme, theme variation, hatching, stat bar, command grid, HUD, HUD layout, section, band, HUD module, minimap, selection module
 - **[`audio.md`]** cue (`SfxCue`), `Sfx`, bus, listener, combat effects (muzzle flash, sparks, death burst)
 - **[`terrain.md`]** terrain layout, tile, height level, ramp, cliff, terrain editor (F2)
+- **[`heightmap.md`]** heightmap (`TerrainHeights`), sample, spacing, chunk, level of detail (LOD), surface role
 - **[`water.md`]** water body, shore (rects), carrier (base), island level
 - **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe, slow time
 

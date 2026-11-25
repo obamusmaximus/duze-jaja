@@ -14,6 +14,14 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 
 
+## The RTS player is off in the strategy views, where the bars would hang in the air: hide with it.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DISABLED:
+		hide()
+	elif what == NOTIFICATION_ENABLED:
+		show()
+
+
 func _process(_delta: float) -> void:
 	queue_redraw()
 

@@ -30,8 +30,16 @@ func setup(team: int, selection: Selection, issuer: CommandIssuer, stats: Player
 	_selection.changed.connect(_on_selection_changed)
 
 
+## Switched off with the RTS controls: nothing stays armed and the cursor goes back to the arrow.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DISABLED and _selection != null:
+		attack_move_armed = false
+		_cursor = Input.CURSOR_ARROW
+		Input.set_default_cursor_shape(_cursor)
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if _selection.is_empty():
+	if _selection == null or _selection.is_empty(): # Input can arrive before `setup` (the level loads for a while).
 		return
 	if event.is_action_pressed(&"order_attack_move"):
 		attack_move_armed = true
@@ -42,12 +50,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## A move click: a selection of only loaded carryalls delivers (land, unload, fly home) instead of just flying there.
 func move(point: Vector3) -> void:
+	if _only_loaded_carryalls():
+		_send(Order.deliver(_team, _selection.ids(), point), point, MOVE_COLOR)
+		return
 	_send(Order.move(_team, _selection.ids(), point, _queued()), point, MOVE_COLOR)
 
 
 func attack(target: Unit) -> void:
-	_send(Order.attack(_team, _selection.ids(), target.id, _queued()), target.global_position, ATTACK_COLOR)
+	_send(Order.attack(_team, _selection.ids(), target.id, _queued()), target.ground_point(), ATTACK_COLOR)
 
 
 func attack_move(point: Vector3) -> void:
@@ -80,6 +92,14 @@ func _send(order: Order, marker_point: Vector3, color: Color) -> void:
 	marker.setup(color, _stats.order_marker_seconds)
 	_markers.add_child(marker)
 	marker.global_position = marker_point + Vector3.UP * 0.05
+
+
+func _only_loaded_carryalls() -> bool:
+	var units: Array[Unit] = _selection.units
+	for unit: Unit in units:
+		if unit.carryall == null or unit.cargo.entries.is_empty():
+			return false
+	return not units.is_empty()
 
 
 func _queued() -> bool:

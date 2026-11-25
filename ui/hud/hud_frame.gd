@@ -14,6 +14,8 @@ var _sections: Dictionary = {}
 ## Band (`HudLayout.BAND_*`) to its panel and margin.
 var _bands: Dictionary = {}
 var _modules: Array[HudModule] = []
+## One glitch trace per module, in layout order (`HudSwap` runs them).
+var reveals: Array[HudReveal] = []
 
 
 func build(layout: HudLayout, context: HudContext) -> void:
@@ -124,9 +126,26 @@ func _add_module(placement: HudPlacement, section: int) -> void:
 	box.add_child(module)
 	module.bind(_context)
 	_modules.append(module)
+	var reveal := HudReveal.new(module, _side_of(section))
+	reveal.apply_stats(_context.stats)
+	reveals.append(reveal)
+
+
+## The screen edge a section's modules trace in from: corners and sides from their side, the middle row from its edge.
+static func _side_of(section: int) -> Side:
+	match section:
+		SECTION.TOP_LEFT, SECTION.LEFT, SECTION.BOTTOM_LEFT:
+			return SIDE_LEFT
+		SECTION.TOP:
+			return SIDE_TOP
+		SECTION.TOP_RIGHT, SECTION.RIGHT, SECTION.BOTTOM_RIGHT:
+			return SIDE_RIGHT
+	return SIDE_BOTTOM
 
 
 func _apply() -> void:
+	for reveal: HudReveal in reveals:
+		reveal.apply_stats(_context.stats)
 	var gap: int = UiTokens.px(_context.stats.gap_units)
 	for box: BoxContainer in _sections.values():
 		box.add_theme_constant_override(&"separation", gap)

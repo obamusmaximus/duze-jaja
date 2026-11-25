@@ -1,12 +1,8 @@
 class_name MinimapModule
 extends HudModule
-## HUD module: the minimap (`Minimap`) in a deep-black well, the map's size in the header note.
+## HUD module: the minimap (`Minimap`) in a deep-black well, no header.
 
 var _minimap := Minimap.new()
-
-
-func _title() -> String:
-	return "TACTICAL MAP"
 
 
 func _body_style() -> StringName:
@@ -17,7 +13,6 @@ func _build() -> void:
 	_minimap.setup(context.area, context.rig, context.stats)
 	_minimap.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	content.add_child(_minimap)
-	set_note("%d×%d M" % [roundi(context.area.size.x), roundi(context.area.size.y)])
 
 
 func _apply() -> void:

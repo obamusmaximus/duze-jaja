@@ -34,11 +34,19 @@ func step(delta: float) -> void:
 ## Degrees down from the horizon for the current distance: `pitch_near` at the closest zoom to `pitch_far` at the
 ## farthest, shaped by `pitch_curve`.
 func pitch() -> float:
+	return pitch_at(distance)
+
+
+## The pitch for a given distance.
+func pitch_at(at_distance: float) -> float:
 	var span: float = _stats.max_distance - _stats.min_distance
-	if span <= 0.0:
-		return _stats.pitch_far
-	var blend: float = clampf((distance - _stats.min_distance) / span, 0.0, 1.0)
-	return lerpf(_stats.pitch_near, _stats.pitch_far, pow(blend, _stats.pitch_curve))
+	var degrees: float = _stats.pitch_far
+	if span > 0.0:
+		var blend: float = clampf((at_distance - _stats.min_distance) / span, 0.0, 1.0)
+		degrees = lerpf(_stats.pitch_near, _stats.pitch_far, pow(blend, _stats.pitch_curve))
+	if _stats.sky_margin > 0.0:
+		degrees = maxf(degrees, minf(_stats.fov * 0.5 + _stats.sky_margin, 89.0))
+	return degrees
 
 
 func _clamp(value: float) -> float:

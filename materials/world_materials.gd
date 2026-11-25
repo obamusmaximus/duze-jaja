@@ -29,6 +29,8 @@ static var _stats: WorldLookStats
 static var _lit: Dictionary = {}
 ## Colour to its unshaded mark material.
 static var _marks: Dictionary = {}
+## Opacity to its round shadow material.
+static var _shadows: Dictionary = {}
 
 
 ## The lit material for `role`. `team` picks the livery colour; with no team (-1) livery is a dark hull tone.
@@ -50,6 +52,28 @@ static func mark(color: Color) -> StandardMaterial3D:
 		material.albedo_color = color
 		_marks[color] = material
 	return _marks[color]
+
+
+## A soft round dark patch for a flat quad on the ground (the shadow under a flyer), `opacity` at its middle.
+static func blob_shadow(opacity: float) -> StandardMaterial3D:
+	if not _shadows.has(opacity):
+		var fade := Gradient.new()
+		fade.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+		var dark := Color(UiTokens.BLACK, opacity)
+		fade.colors = PackedColorArray([dark, dark, Color(UiTokens.BLACK, 0.0)])
+		var texture := GradientTexture2D.new()
+		texture.gradient = fade
+		texture.fill = GradientTexture2D.FILL_RADIAL
+		texture.fill_from = Vector2(0.5, 0.5)
+		texture.fill_to = Vector2(1.0, 0.5)
+		texture.width = 64
+		texture.height = 64
+		var material := StandardMaterial3D.new()
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.albedo_texture = texture
+		_shadows[opacity] = material
+	return _shadows[opacity]
 
 
 ## Replaces the materials of every mesh under `model` whose imported material name has a role (IMPORTED_ROLES).
@@ -108,6 +132,7 @@ static func _color(key: Vector2i) -> Color:
 static func _shade(material: StandardMaterial3D, key: Vector2i) -> void:
 	var stats: WorldLookStats = _get_stats()
 	material.albedo_color = _color(key)
+	material.vertex_color_use_as_albedo = true # Terrain chunks carry baked light in their vertex colours (white elsewhere).
 	material.roughness = stats.roughness
 	material.metallic = 0.0
 	material.metallic_specular = stats.specular

@@ -1,5 +1,5 @@
 extends MultiMeshInstance3D
-## Debug: `debug_show_map_grid` (F4) shows the MapGrid's impassable cells as red tiles (one MultiMesh), and the paths
+## Debug: `debug_show_map_grid` (8) shows the MapGrid's impassable cells as red tiles (one MultiMesh), and the paths
 ## of the selected units as lines, kept up to date as the map changes. Finds the grid through the `map_grid` group.
 
 const BLOCKED_COLOR: Color = Color(1.0, 0.2, 0.2, 0.45)

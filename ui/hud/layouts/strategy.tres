@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="HudLayout" format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud_placement.gd" id="1_place"]
+[ext_resource type="Script" path="res://ui/hud/hud_layout.gd" id="2_layout"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/resource_module.tscn" id="3_resource"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/production_module.tscn" id="4_production"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/commands_module.tscn" id="5_commands"]
+[ext_resource type="PackedScene" path="res://ui/hud/modules/abilities_module.tscn" id="6_abilities"]
+
+[sub_resource type="Resource" id="Resource_resource"]
+script = ExtResource("1_place")
+module = ExtResource("3_resource")
+section = 5
+
+[sub_resource type="Resource" id="Resource_production"]
+script = ExtResource("1_place")
+module = ExtResource("4_production")
+section = 5
+order = 1
+
+[sub_resource type="Resource" id="Resource_commands"]
+script = ExtResource("1_place")
+module = ExtResource("5_commands")
+section = 3
+
+[sub_resource type="Resource" id="Resource_abilities"]
+script = ExtResource("1_place")
+module = ExtResource("6_abilities")
+section = 7
+
+[resource]
+script = ExtResource("2_layout")
+bands = 0
+sides_first = true
+placements = Array[ExtResource("1_place")]([SubResource("Resource_resource"), SubResource("Resource_production"), SubResource("Resource_commands"), SubResource("Resource_abilities")])

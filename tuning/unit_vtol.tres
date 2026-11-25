@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_skiff.tres" id="2_weapon"]
+[ext_resource type="PackedScene" path="res://assets/kenney_space_kit/craft_speederD.glb" id="3_model"]
+[ext_resource type="Texture2D" path="res://ui/icons/units/vtol.svg" id="4_icon"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "VTOL"
+icon = ExtResource("4_icon")
+speed = 16.0
+turn_rate = 140.0
+radius = 1.8
+height = 1.4
+flying = true
+flight_acceleration = 8.0
+flight_height = 18.0
+flight_min_clearance = 6.0
+flight_climb_rate = 8.0
+flight_max_bank_deg = 30.0
+model = ExtResource("3_model")
+model_scale = 2.3
+max_health = 140.0
+weapon = ExtResource("2_weapon")
+sight_range = 28.0

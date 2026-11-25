@@ -41,11 +41,22 @@ func setup(map_grid: MapGrid, path_service: PathService, shot_system: Shots) -> 
 	_hash.rebuild(_units)
 
 
-## Puts a new unit (team already set) into the match and returns its id.
-func add(unit: Unit) -> int:
+## Puts a new unit (team already set) into the match and returns its id. `keep_id` (a unit that left the match as
+## data) gives it that id back; ids are never reused, so it is free.
+func add(unit: Unit, keep_id: int = 0) -> int:
 	add_child(unit)
-	_register(unit)
+	_register(unit, keep_id)
 	return unit.id
+
+
+## Makes a unit of `type` for `team` at `at` and puts it into the match.
+func spawn(type: UnitStats, team: int, at: Vector3, keep_id: int = 0) -> Unit:
+	var unit: Unit = load("res://units/unit.tscn").instantiate()
+	unit.stats = type
+	unit.team = team
+	unit.position = at
+	add(unit, keep_id)
+	return unit
 
 
 ## The living unit with `id`, or null.
@@ -88,11 +99,13 @@ func _physics_process(delta: float) -> void:
 	step_usec += Time.get_ticks_usec() - started
 
 
-func _register(unit: Unit) -> void:
-	unit.setup(_next_id, self)
+func _register(unit: Unit, keep_id: int = 0) -> void:
+	var new_id: int = keep_id if keep_id != 0 and not _by_id.has(keep_id) else _next_id
+	unit.setup(new_id, self)
 	_by_id[unit.id] = unit
 	_units.append(unit)
-	_next_id += 1
+	if new_id == _next_id:
+		_next_id += 1
 	unit.died.connect(_on_died)
 	unit.tree_exiting.connect(_forget.bind(unit), CONNECT_ONE_SHOT)
 	unit_added.emit(unit)

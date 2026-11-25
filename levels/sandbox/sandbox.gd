@@ -1,7 +1,7 @@
 class_name SandboxLevel
 extends Node3D
 ## The sandbox level (the space demo level uses this script too): flat ground with a ramp up to a plateau, a debug
-## wall (F3) and a few units of two teams, for testing the groundwork. Wires the match (map grid, paths, units, shots, command issuer) and the local player's RTS
+## wall (7) and a few units of two teams, for testing the groundwork. Wires the match (map grid, paths, units, shots, command issuer) and the local player's RTS
 ## view (camera rig, selection, controls, shot view).
 
 ## The team the local player commands.
@@ -35,6 +35,7 @@ const PLAYER_TEAM: int = 0
 
 func _ready() -> void:
 	_camera_rig.setup(camera_bounds, camera_yaw)
+	_map.air.bounds = map_area
 	_issuer.setup(_units)
 	_player.setup(PLAYER_TEAM, _selection, _issuer, _camera_rig)
 	_shot_view.setup(_shots)

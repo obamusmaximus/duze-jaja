@@ -3,9 +3,17 @@ extends Resource
 ## Tunable numbers for a unit type. A unit type is a stats class or a .tres of this one (tuning/unit_default.tres);
 ## units sharing a .tres are the same type (double-click selects them together).
 
+## Which hold slots a carried unit uses (`Cargo`). None: can't be carried (flyers, boats, carryalls).
+enum CargoClass { NONE, INFANTRY, MACHINERY }
+## How the autopilot flies a flyer. Hover: slows, stops and hovers. Fixed wing: never stops, turns in arcs.
+enum FlightStyle { HOVER, FIXED_WING }
+
 @export_group("Identity")
 ## The type's name, for the HUD and the playtest log.
 @export var display_name: String = "Unit"
+## Flat white-on-clear symbol of the type, for the HUD's cargo view and the production queue. The HUD tints it.
+## None: the HUD shows the type's initial instead.
+@export var icon: Texture2D
 
 @export_group("Movement")
 ## Top speed on the ground, in metres per second.
@@ -33,10 +41,46 @@ extends Resource
 ## Height of the body, in metres.
 @export_range(0.2, 10.0, 0.1) var height: float = 1.2
 
+@export_group("Movement")
+## Crosses water: its ground moves are not refused for lying on another land mass (the land regions of `pathing.md`).
+## A flag for later naval and amphibious units; no unit sets it yet.
+@export var amphibious: bool = false
+
 @export_group("Flight")
 ## Flies: the unit keeps to the air above the ground (see `flight_height`), moves straight to its goal over anything,
 ## and is hit only by weapons and units that can attack air (`anti_air`).
 @export var flying: bool = false
+## Hover types can stop in the air (VTOLs, carryalls). Fixed wings only fly forward and orbit when idle.
+@export var flight_style: FlightStyle = FlightStyle.HOVER
+## How fast a flyer gains and loses speed, in metres per second per second.
+@export_range(0.5, 100.0, 0.5) var flight_acceleration: float = 14.0
+## Fixed wing: the slowest it can fly, in metres per second (it orbits at this speed). Top speed is `speed`.
+@export_range(1.0, 100.0, 0.5) var flight_min_speed: float = 12.0
+## Fixed wing: passing this close (metres, flat) to a move order's point counts as arrived.
+@export_range(1.0, 50.0, 0.5) var flight_arrive_radius: float = 8.0
+## Fixed wing: radius of the circle it flies while idle, in metres (never tighter than it can turn).
+@export_range(5.0, 200.0, 1.0) var flight_orbit_radius: float = 30.0
+## Seconds of flight a flyer looks ahead for rising ground, to start climbing early.
+@export_range(0.0, 40.0, 0.5) var flight_look_ahead: float = 16.0
+## Flyers further apart in height than this (metres) pass over each other instead of pushing apart.
+@export_range(0.5, 20.0, 0.5) var flight_separation_height: float = 3.0
+## Steepest bank in a turn, and lean of a hover type, in degrees. Look only.
+@export_range(0.0, 85.0, 1.0) var flight_max_bank_deg: float = 55.0
+## How quickly the airframe rolls and pitches into a new attitude (per second). Look only.
+@export_range(0.5, 20.0, 0.5) var flight_lean_rate: float = 5.0
+## Width of the line from a flyer's ground plate up to its body, in metres. Look only.
+@export_range(0.0, 1.0, 0.01) var height_line_width: float = 0.12
+## Size of the round shadow straight under a flyer, as a multiple of its radius. Look only.
+@export_range(0.0, 4.0, 0.05) var shadow_scale: float = 1.5
+## How dark that shadow is at its middle. Look only.
+@export_range(0.0, 1.0, 0.05) var shadow_opacity: float = 0.45
+## How far a flyer's plate, ring and shadow are raised over open sea, to clear the waves, in metres. Look only.
+@export_range(0.0, 3.0, 0.05) var sea_mark_lift: float = 0.8
+## Fixed wing attack pass: it breaks off when this close (metres, flat) to a ground target, or once it is behind it.
+@export_range(0.0, 100.0, 0.5) var flight_pass_break_distance: float = 10.0
+## Fixed wing attack pass: after breaking off it flies on until this far (metres, flat) from the target, then turns
+## back for the next run.
+@export_range(5.0, 300.0, 1.0) var flight_pass_distance: float = 55.0
 ## Height above sea level over flat ground, in metres, for a flyer.
 @export_range(0.0, 200.0, 0.5) var flight_height: float = 10.0
 ## Metres a flyer rises per metre the ground rises beneath it. Below 1, so it sits closer to the ground over high
@@ -46,6 +90,28 @@ extends Resource
 @export_range(0.0, 50.0, 0.5) var flight_min_clearance: float = 3.0
 ## How fast a flyer climbs or descends, in metres per second.
 @export_range(0.5, 50.0, 0.5) var flight_climb_rate: float = 6.0
+
+@export_group("Cockpit")
+## Where the pilot's eyes are in first person, from the unit's bottom middle (metres; y up, -z toward the nose).
+## It pitches and banks with the airframe. Only types a player can inhabit use it.
+@export var cockpit_offset := Vector3(0.0, 1.2, -0.4)
+
+@export_group("Cargo")
+## Which kind of hold slots this unit takes when a carryall carries it.
+@export var cargo_class: CargoClass = CargoClass.NONE
+## How many slots of its class it takes (an IFV half the machinery slots, a tank all of them).
+@export_range(1, 16, 1) var cargo_slots: int = 1
+## This unit's own hold, if it carries others (a carryall). None: carries nothing.
+@export var cargo: CargoStats
+## How this unit behaves as a carryall (pad, landing, side gunners). None: not a carryall.
+@export var carryall: CarryallStats
+
+@export_group("Production")
+## Credits a squad pays for one of this type (`Economy`).
+@export_range(0, 5000, 5) var cost: int = 100
+## Seconds a production line spends on one of this type (a squad takes the sum of its units, scaled by
+## `EconomyStats.build_time_scale`).
+@export_range(0.5, 300.0, 0.5) var build_time: float = 10.0
 
 @export_group("Look")
 ## The imported model (.glb) shown for the unit. None: the placeholder cylinder with a nose.

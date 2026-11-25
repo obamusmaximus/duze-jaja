@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CameraStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/camera_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+confine_mouse = false
+edge_scroll_enabled = false
+drag_mode = 0
+drag_pan_per_px = 1.2
+zoom_to_cursor = true
+min_distance = 700.0
+max_distance = 3000.0
+default_distance = 1800.0
+zoom_step = 0.15
+pitch_near = 55.0
+pitch_far = 66.0
+far_per_distance = 4.5
+height_follow_smoothing = 0.0
+sky_margin = 14.0

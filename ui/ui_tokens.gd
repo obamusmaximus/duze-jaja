@@ -28,6 +28,9 @@ const OFF_WHITE: Color = Color("#F2F0E9")
 const GRAPHITE: Color = Color("#1E1E22")
 ## Thin rules on dark: borders, dividers, minimap grid, hatching.
 const RULE: Color = Color("#45454A")
+## Opacity of the HUD's dark panel fills (graphite and black), so the map shows through. Text, borders, header
+## strips and buttons stay solid.
+const PANEL_ALPHA: float = 0.72
 
 # The world palette: the roles models are coloured in (`WorldMaterials`, style guide "Prototyping rules"). Hull
 # tones reuse the bases, so the UI and the world share one set of neutrals; only nature adds its own tones, kept
@@ -132,6 +135,11 @@ const HATCH_WIDTH: int = 2
 
 ## Health below this fraction turns the bar to the warning accent.
 const LOW_HEALTH: float = 0.25
+
+
+## A dark panel fill at `PANEL_ALPHA`.
+static func glass(fill: Color) -> Color:
+	return Color(fill, PANEL_ALPHA)
 
 
 static func team_color(team: int) -> Color:

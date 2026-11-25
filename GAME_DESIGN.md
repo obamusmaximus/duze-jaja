@@ -23,6 +23,8 @@ A top-down 3D real-time strategy game built, to start with, along the lines of R
 - **Roles split command** between a strategist, company commanders and first-person players (below, "Roles").
 - **Squads are the tactical unit** and **carryalls deliver them** (below, "Squads", "Carryalls").
 - **Tilt-shift is part of the look:** the strategy view is a war table (below, "Views").
+- **First-person flight is a main source of fun** (below, "Flight").
+- **Every unit type has an ability on F** (below, "Unit abilities").
 
 ## A typical match (Decided unless marked)
 The reference level is the battlefield level (`levels/atoll/`, built by `docs/plans/battlefield.md`): an atoll and islands in open sea, a mothership per side far out. The green island was its first draft.
@@ -124,6 +126,19 @@ A perspective camera that orbits a focus point on the ground. Tunables: `CameraS
 - **Jumps:** double-tapping a control group's number centres on it; a key jumps to the latest alert; clicking the minimap moves the camera there.
 - **Lopsided view:** a tilted camera sees further up the screen than down it. Rotation lets the player fix that themselves, so maps don't need to work around it.
 
+## Flight (Decided)
+Build order: `docs/plans/flight.md`.
+- **First-person flight is a main source of fun** and where many later mechanics live, so it gets real feel work.
+- **Between Ace Combat and a sim:** arcade controls on our own simple aerodynamics (speed, angle of attack, lift, drag, gravity, stall). Planes can crash, though not easily: there's a learning curve.
+- **Two models:** RTS and AI flyers fly a cheap, always-safe autopilot model on the air layer of the map; an inhabited flyer runs the full flight model. The full model's wider envelope is the reward for flying in person.
+- **Always from the cockpit:** no chase camera. A dynamic helmet-style HUD (horizon, pitch ladder, flight path marker, angle of attack).
+- **Controls:** the plane steers toward a mouse reticle (mouse aim); WASD is a secondary direct control; B is the air brake; no throttle for now. J inhabits the selected unit and leaves it.
+- **All aircraft but carryalls** use the flight model. Carryalls are big flying ships with their own simpler controls.
+- **Roster ideas:** a VTOL; a fast, fragile fighter whose prism ray links with a second fighter for a deadly strafing run; a VTOL that turns into artillery when landed.
+
+## Unit abilities (Decided)
+- **Every unit type has an ability, a gimmick, on F**, from the most basic infantry to the biggest units. It works on the selection in the RTS view and on the inhabited unit in first person. Design each unit type around it.
+
 ## Controls (Decided: the RA3 / C&C3 left-click scheme)
 Left-click selects and right-click gives orders (the StarCraft scheme, changed from RA3 left-click orders); clicking empty ground clears the selection. RA3 and C&C3 also offered a right-click-orders scheme as an option; we may add that later as a setting.
 
@@ -135,7 +150,7 @@ Left-click selects and right-click gives orders (the StarCraft scheme, changed f
 | Double-click a unit | Select all own units of that type on screen |
 | Left-click ground / enemy (with a selection) | Move there / attack it (the cursor shows which) |
 | Right-click | Order: move, attack an enemy (attack-move when armed) |
-| Right-drag | Drag-pan the camera |
+| Right-hold + pull | RTS: fly the view toward the pull, faster the farther (C&C style). Strategy views: drag-pan the map |
 | Middle-drag | Rotate the camera |
 | Mouse wheel | Zoom |
 | Arrow keys, screen edge | Pan |

@@ -19,6 +19,9 @@ const FOLLOW_REPATH_SECONDS: float = 0.5
 const FOLLOW_MOVE_DISTANCE: float = 2.0
 ## Seconds over which the unit brakes into its final point.
 const BRAKE_SECONDS: float = 0.25
+## Hover flyers plan their braking with this share of their acceleration, and creep no slower than this (m/s).
+const BRAKE_MARGIN: float = 0.7
+const MIN_APPROACH_SPEED: float = 0.5
 
 ## Where it is heading.
 var goal: Vector3
@@ -90,6 +93,9 @@ func wanted_velocity(delta: float) -> Vector3:
 	var position: Vector3 = _unit.global_position
 	var to_goal: Vector3 = _flat(goal - position)
 	var distance: float = to_goal.length()
+	var wing: FlightAutopilot = _unit.movement.autopilot
+	if wing != null and wing.is_fixed_wing():
+		return _fly_over(wing, distance)
 	if distance <= _reach:
 		_arrive()
 		return Vector3.ZERO
@@ -114,8 +120,21 @@ func wanted_velocity(delta: float) -> Vector3:
 		return Vector3.ZERO
 	var speed: float = _stats.speed
 	if _next == last:
-		speed = minf(speed, maxf((distance - _reach) / BRAKE_SECONDS, _stats.speed * 0.2))
+		if _stats.flying: # Brake early enough for the autopilot's acceleration.
+			var braking: float = sqrt(2.0 * _stats.flight_acceleration * BRAKE_MARGIN * maxf(distance - _reach, 0.0))
+			speed = minf(speed, maxf(braking, MIN_APPROACH_SPEED))
+		else:
+			speed = minf(speed, maxf((distance - _reach) / BRAKE_SECONDS, _stats.speed * 0.2))
 	return to_waypoint / maxf(waypoint_distance, 0.0001) * speed
+
+
+## Fixed wings can't stop or be stuck: they arrive by passing within `flight_arrive_radius`, then orbit the goal.
+func _fly_over(wing: FlightAutopilot, distance: float) -> Vector3:
+	if distance <= maxf(_reach, _stats.flight_arrive_radius):
+		wing.orbit(goal)
+		_arrive()
+		return Vector3.ZERO
+	return wing.approach(goal)
 
 
 ## Remaining path points, for debug views.
@@ -153,6 +172,9 @@ func _blocked_by_arrived(to_goal: Vector3) -> bool:
 	for other: Unit in _neighbours:
 		if other == _unit or other.team != _unit.team or other.navigator.active or other.is_flying() != _unit.is_flying():
 			continue
+		var wing: FlightAutopilot = other.movement.autopilot
+		if wing != null and (wing.is_fixed_wing() or absf(other.global_position.y - _unit.global_position.y) > _stats.flight_separation_height):
+			continue # A circling plane hasn't stopped, and a flyer well above or below isn't in the way.
 		var between: Vector3 = _flat(other.global_position - _unit.global_position)
 		var touch: float = _stats.radius + other.stats.radius + _stats.separation_padding + 0.25
 		if between.length() <= touch and between.dot(to_goal) > 0.0:

@@ -47,7 +47,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _resolve_click(point: Vector2, double_click: bool) -> void:
-	var unit := GroundPick.object_under(get_viewport(), point) as Unit
+	var unit: Unit = _unit_under(point)
 	if _orders.attack_move_armed and not _selection.is_empty():
 		_order_at(unit, point)
 		return
@@ -63,7 +63,7 @@ func _resolve_order(point: Vector2) -> void:
 	if _selection.is_empty():
 		_orders.disarm()
 		return
-	_order_at(GroundPick.object_under(get_viewport(), point) as Unit, point)
+	_order_at(_unit_under(point), point)
 
 
 ## Gives the selection an order at a screen point: attack an enemy there, else move (or attack-move when armed).
@@ -80,10 +80,14 @@ func _order_at(unit: Unit, point: Vector2) -> void:
 		_orders.move(ground)
 
 
+func _unit_under(point: Vector2) -> Unit:
+	return GroundPick.object_under(get_viewport(), point, stats.flyer_pick_min_px) as Unit
+
+
 func _update_cursor() -> void:
 	if _pointer.is_boxing():
 		_orders.show_cursor(null, false)
 		return
 	var mouse: Vector2 = get_viewport().get_mouse_position()
-	var unit := GroundPick.object_under(get_viewport(), mouse) as Unit
+	var unit: Unit = _unit_under(mouse)
 	_orders.show_cursor(unit, GroundPick.ground_point(get_viewport(), mouse).is_finite())

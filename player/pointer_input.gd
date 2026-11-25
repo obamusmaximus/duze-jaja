@@ -29,6 +29,16 @@ func is_boxing() -> bool:
 	return _boxing
 
 
+## Switched off with the RTS controls: a half-made gesture is dropped, not resumed on the way back.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DISABLED:
+		_left_down = false
+		_right_down = false
+		_boxing = false
+		if _box != null:
+			_box.hide_rect()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_on_motion((event as InputEventMouseMotion).position)
