@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="UnitStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_commando.tres" id="2_weapon"]
+[ext_resource type="PackedScene" path="res://assets/kenney_space_kit/astronautB.glb" id="3_model"]
+[ext_resource type="Texture2D" path="res://ui/icons/units/commando.svg" id="4_icon"]
+[ext_resource type="Resource" path="res://tuning/jetpack_default.tres" id="5_jetpack"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Commando"
+icon = ExtResource("4_icon")
+speed = 16.0
+turn_rate = 720.0
+radius = 0.45
+height = 1.8
+jetpack = ExtResource("5_jetpack")
+cockpit_offset = Vector3(0, 1.65, 0)
+cargo_class = 1
+cargo_size = 1.0
+cost = 400
+build_time = 25.0
+model = ExtResource("3_model")
+model_scale = 2.3
+max_health = 100.0
+weapon = ExtResource("2_weapon")
+sight_range = 30.0
+leash_distance = 15.0
+sensor_range = 110.0
+signature = 0.4

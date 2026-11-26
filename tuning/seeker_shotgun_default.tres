@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="SeekerShotgunStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/seeker_shotgun_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/weapon_seeker.tres" id="2_weapon"]
+
+[resource]
+script = ExtResource("1_stats")
+weapon = ExtResource("2_weapon")

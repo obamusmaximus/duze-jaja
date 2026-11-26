@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DamageProfile" format=3]
+
+[ext_resource type="Script" path="res://tuning/damage_profile.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+vs_infantry = 1000.0
+vs_light_vehicle = 50.0
+vs_explorer = 5.0

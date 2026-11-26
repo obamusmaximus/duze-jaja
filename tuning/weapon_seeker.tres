@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/weapon_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/damage_seeker.tres" id="2_damage"]
+
+[resource]
+script = ExtResource("1_stats")
+projectile = false
+pilot_fire = true
+fire_cue = &"laser_retro"
+hit_cue = &"hit_spark"
+effect_scale = 0.5
+muzzle_flash = false
+damage_profile = ExtResource("2_damage")

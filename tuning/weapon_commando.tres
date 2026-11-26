@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/weapon_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/damage_commando.tres" id="2_damage"]
+
+[resource]
+script = ExtResource("1_stats")
+max_range = 14.0
+cooldown = 1.2
+fire_arc_deg = 45.0
+projectile = false
+fire_cue = &"laser_retro"
+hit_cue = &"hit_heavy"
+damage_profile = ExtResource("2_damage")
