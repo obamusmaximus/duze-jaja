@@ -31,6 +31,8 @@ var _near_plane := PlaneMesh.new()
 var _shore: Array[Rect2] = []
 var _field: ShoreField
 var _near_centre := Vector2(INF, INF)
+## The level's light preset, for the sea's night look; null keeps the day look.
+var _light: LightStats
 
 
 func _ready() -> void:
@@ -71,6 +73,28 @@ func set_shore(rects: Array[Rect2]) -> void:
 func set_shore_field(field: ShoreField) -> void:
 	_field = field
 	_apply_shore()
+
+
+## The sea's colours, glow and glitter follow the level's light preset. Call again when the preset changes.
+func set_light(light: LightStats) -> void:
+	_light = light
+	_apply_light()
+
+
+func _apply_light() -> void:
+	var night: bool = _light != null and _light.night
+	var values: Dictionary = {
+		"deep_color": UiTokens.WORLD_NIGHT_SEA_DEEP if night else UiTokens.WORLD_SEA_DEEP,
+		"shallow_color": UiTokens.WORLD_NIGHT_SEA_SHALLOW if night else UiTokens.WORLD_SEA_SHALLOW,
+		"foam_color": UiTokens.WORLD_NIGHT_FOAM if night else UiTokens.WORLD_FOAM,
+		"glitter_color": UiTokens.WORLD_NIGHT_MOON if night else UiTokens.WORLD_SUN,
+		"body_glow": _light.sea_glow if _light != null else 1.0,
+		"foam_glow": stats.foam_glow * (_light.foam_glow_scale if _light != null else 1.0),
+		"sun_glitter": _light.glitter_scale if _light != null else 1.0,
+	}
+	for key: String in values:
+		_material.set_shader_parameter(key, values[key])
+		_far_material.set_shader_parameter(key, values[key])
 
 
 func _apply_shore() -> void:
@@ -139,25 +163,20 @@ func _apply() -> void:
 		"calm_end": stats.calm_end,
 		"shore_calm_reach": stats.shore_calm_reach,
 		"shore_calm_level": stats.shore_calm_level,
-		"deep_color": UiTokens.WORLD_SEA_DEEP,
-		"shallow_color": UiTokens.WORLD_SEA_SHALLOW,
 		"ramp_steps": stats.ramp_steps,
 		"ramp_contrast": stats.ramp_contrast,
 		"crest_tint": stats.crest_tint,
 		"light_strength": stats.light_strength,
 		"facet_amount": stats.facet_amount,
-		"foam_color": UiTokens.WORLD_FOAM,
 		"foam_width": stats.foam_width,
 		"foam_raggedness": stats.foam_raggedness,
 		"foam_noise_scale": stats.foam_noise_scale,
 		"foam_speed": stats.foam_speed,
-		"foam_glow": stats.foam_glow,
 		"band_spacing": stats.band_spacing,
 		"band_speed": stats.band_speed,
 		"band_width": stats.band_width,
 		"band_reach": stats.band_reach,
 		"band_breakup": stats.band_breakup,
-		"glitter_color": UiTokens.WORLD_SUN,
 		"glitter_strength": stats.glitter_strength,
 		"glitter_threshold": stats.glitter_threshold,
 		"lamp_glitter": stats.lamp_glitter,
@@ -174,6 +193,7 @@ func _apply() -> void:
 	for key: String in values:
 		_material.set_shader_parameter(key, values[key])
 		_far_material.set_shader_parameter(key, values[key])
+	_apply_light()
 
 
 ## The deepest trough the waves can make (m): the sum of the wave heights as they fall off.

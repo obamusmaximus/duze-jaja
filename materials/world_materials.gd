@@ -7,6 +7,7 @@ extends RefCounted
 
 enum Role { HULL, HULL_MID, HULL_DARK, TRIM, WARNING, LIVERY, STONE, STONE_DARK, MINERAL, GRASS, LEAF, BARK, SAND, SOIL }
 
+const GROUND_SHADER: Shader = preload("res://terrain/ground.gdshader")
 const STATS_PATH: String = "res://tuning/world_look_default.tres"
 ## Imported material names (Kenney Space Kit) to the role that replaces them. Names not listed keep their own
 ## material.
@@ -27,6 +28,8 @@ const IMPORTED_ROLES: Dictionary = {
 static var _stats: WorldLookStats
 ## Role (or LIVERY plus team) key to its lit material.
 static var _lit: Dictionary = {}
+## Role to its ground material (terrain chunks).
+static var _ground: Dictionary = {}
 ## Colour to its unshaded mark material.
 static var _marks: Dictionary = {}
 ## Opacity to its round shadow material.
@@ -41,6 +44,17 @@ static func role(which: Role, team: int = -1) -> StandardMaterial3D:
 		_lit[key] = material
 		_shade(material, key)
 	return _lit[key]
+
+
+## The terrain's material for `which`: shades like `role()`, vertex colours as albedo, and takes the terrain's
+## shadow mask off the directional light (`terrain/ground.gdshader`).
+static func ground(which: Role) -> ShaderMaterial:
+	if not _ground.has(which):
+		var material := ShaderMaterial.new()
+		material.shader = GROUND_SHADER
+		_ground[which] = material
+		_shade_ground(material, which)
+	return _ground[which]
 
 
 ## A flat unshaded material for marks on the world (base plates, rings, deck lines): hard-edged colour that reads
@@ -138,6 +152,13 @@ static func _shade(material: StandardMaterial3D, key: Vector2i) -> void:
 	material.metallic_specular = stats.specular
 
 
+static func _shade_ground(material: ShaderMaterial, which: Role) -> void:
+	var stats: WorldLookStats = _get_stats()
+	material.set_shader_parameter(&"albedo", _color(Vector2i(which, -1)))
+	material.set_shader_parameter(&"roughness", stats.roughness)
+	material.set_shader_parameter(&"specular", stats.specular)
+
+
 static func _get_stats() -> WorldLookStats:
 	if _stats == null:
 		_stats = load(STATS_PATH) as WorldLookStats
@@ -146,5 +167,8 @@ static func _get_stats() -> WorldLookStats:
 
 
 static func _refresh() -> void:
+	FadeMaterials.clear()
 	for key: Vector2i in _lit:
 		_shade(_lit[key], key)
+	for which: Role in _ground:
+		_shade_ground(_ground[which], which)

@@ -10,7 +10,7 @@ extends Resource
 
 @export_group("Import")
 ## The heightmap PNG (16-bit greyscale) the level loads, watches and saves back to.
-@export_file("*.png") var source_path: String = "res://levels/heightmap_test/heightmap.png"
+@export_file("*.png") var source_path: String = "res://levels/atoll/heightmap.png"
 ## Height (metres) of a black pixel.
 @export_range(-500.0, 0.0, 1.0) var min_height: float = -50.0
 ## Metres from black to white: a white pixel is `min_height + height_range`. Sea level (0 m) is at grey
@@ -46,15 +46,8 @@ extends Resource
 @export_range(1.0, 60.0, 1.0) var deep_depth: float = 6.0
 
 @export_group("Baked light")
-## How strongly the sun's horizon shadow (long raking shadows from hills) darkens and cools the ground, 0 to 1. Baked
-## into the chunk colours, so free per frame and in both views.
-@export_range(0.0, 1.0, 0.05) var light_shadow: float = 0.6
-## Colour the shadowed ground is multiplied toward (cool, like skylight).
-@export var light_shade_tint: Color = Color(0.55, 0.62, 0.8)
 ## Vertical metres over which a shadow's edge fades (soft penumbra).
 @export_range(0.1, 10.0, 0.1) var light_shadow_softness: float = 2.5
-## Farthest (metres) a shadow is traced from what casts it. Longer is slower to bake and rebuilds more chunks on an edit.
-@export_range(50.0, 1500.0, 10.0) var light_reach: float = 400.0
 ## How strongly hollows darken (cavity occlusion, the Mobile renderer has no SSAO), 0 to 1.
 @export_range(0.0, 1.0, 0.05) var light_ao: float = 0.5
 ## Metres from a sample that its neighbours count for the hollow test.

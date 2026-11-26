@@ -25,6 +25,8 @@ var _materials: Array[ShaderMaterial] = []
 var _layers: Array[MeshInstance3D] = []
 var _shadow_material: ShaderMaterial
 var _blend: float = 0.0
+## The level's light preset: night cloud colours and weaker shadows.
+var _light: LightStats
 
 
 ## `rig` is the bird's-eye rig (the clouds follow its focus), `chunks` the terrain that takes the shadows, `sun` the
@@ -33,9 +35,7 @@ func setup(stats: BirdsEyeStats, rig: CameraRig, chunks: TerrainChunks, sun: Dir
 	_stats = stats
 	_rig = rig
 	_chunks = chunks
-	var away: Vector3 = sun.global_transform.basis.z # The sun shines along -z; this points toward it.
-	_sun_dir = Vector2(away.x, away.z)
-	_lean = _sun_dir / maxf(away.y, 0.05)
+	_read_sun(sun)
 	RenderingServer.global_shader_parameter_set(&"cloud_noise", _make_noise())
 	RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", 0.0)
 	_shadow_material = ShaderMaterial.new()
@@ -61,6 +61,20 @@ func setup(stats: BirdsEyeStats, rig: CameraRig, chunks: TerrainChunks, sun: Dir
 	_show(0.0)
 
 
+## The light changed: the shadows and the fake lighting lean away from the sun again, and the colours and shadow
+## strength follow the preset.
+func set_light(sun: DirectionalLight3D, light: LightStats) -> void:
+	_light = light
+	_read_sun(sun)
+	_apply_stats()
+
+
+func _read_sun(sun: DirectionalLight3D) -> void:
+	var away: Vector3 = sun.global_transform.basis.z # The sun shines along -z; this points toward it.
+	_sun_dir = Vector2(away.x, away.z)
+	_lean = _sun_dir / maxf(away.y, 0.05)
+
+
 ## Lets `camera` render the clouds.
 func attach(camera: Camera3D) -> void:
 	camera.cull_mask |= LAYER
@@ -71,7 +85,7 @@ func apply_blend(blend: float) -> void:
 	_blend = blend
 	for material: ShaderMaterial in _materials:
 		material.set_shader_parameter(&"strength", blend)
-	RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", _stats.shadow_strength * blend)
+	RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", _shadow_strength() * blend)
 	_show(blend)
 
 
@@ -95,7 +109,7 @@ func _show(blend: float) -> void:
 	_layers[1].visible = on and _stats.second_layer
 	set_process(on)
 	# The land takes the shadow overlay only while it can be seen.
-	_chunks.set_base_overlay(_shadow_material if on and _stats.shadow_strength > 0.0 else null)
+	_chunks.set_base_overlay(_shadow_material if on and _shadow_strength() > 0.0 else null)
 	if not on:
 		RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", 0.0)
 
@@ -106,8 +120,10 @@ func _apply_stats() -> void:
 	RenderingServer.global_shader_parameter_set(&"cloud_softness", _stats.softness)
 	# The cloud that shades a ground point lies toward the sun, by its height times the sun's horizontal lean.
 	RenderingServer.global_shader_parameter_set(&"cloud_shadow_shift", _lean * _stats.cloud_height_low)
-	var lit: Color = _stats.cloud_color
-	var shade: Color = _stats.cloud_shade_color
+	var night: bool = _light != null and _light.night
+	# The shader takes these as linear values (a Vector3 is not converted), so the palette colours are converted here.
+	var lit: Color = UiTokens.WORLD_NIGHT_CLOUD.srgb_to_linear() if night else _stats.cloud_color
+	var shade: Color = UiTokens.WORLD_NIGHT_CLOUD_SHADE.srgb_to_linear() if night else _stats.cloud_shade_color
 	var sun_uv: Vector2 = _sun_dir.normalized() * _stats.light_reach if _sun_dir.length() > 0.001 else Vector2.ZERO
 	for i: int in _materials.size():
 		var m: ShaderMaterial = _materials[i]
@@ -122,8 +138,12 @@ func _apply_stats() -> void:
 		m.set_shader_parameter(&"edge_start", _stats.edge_start)
 		m.set_shader_parameter(&"fade_near", _stats.fade_near)
 		m.set_shader_parameter(&"fade_range", _stats.fade_range)
-	RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", _stats.shadow_strength * _blend if _layers[0].visible else 0.0)
+	RenderingServer.global_shader_parameter_set(&"cloud_shadow_strength", _shadow_strength() * _blend if _layers[0].visible else 0.0)
 	_show(_blend)
+
+
+func _shadow_strength() -> float:
+	return _stats.shadow_strength * (_light.cloud_shadow_scale if _light != null else 1.0)
 
 
 ## One seamless tiling noise, made once at load and shared by everything that draws or shades clouds.

@@ -1,7 +1,7 @@
 class_name TerrainChunkMesh
 extends RefCounted
 ## Builds the flat-shaded facet mesh of one terrain chunk from `TerrainHeights`: two triangles per quad, one surface
-## per palette role (materials come from `WorldMaterials`, so the ground recolours with the palette). Roles are
+## per palette role (materials come from `WorldMaterials.ground()`, so the ground recolours with the palette). Roles are
 ## painted or picked from slope and height (`HeightmapStats`, "Surface").
 ## Two parts: `arrays()` returns plain data and only reads (safe on a worker thread once the heights are decoded and
 ## the light is baked); `make_mesh()` makes the engine objects, on the main thread.
@@ -66,7 +66,7 @@ static func make_mesh(surfaces: Dictionary) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	for role: int in surfaces:
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surfaces[role])
-		mesh.surface_set_material(mesh.get_surface_count() - 1, WorldMaterials.role(role as WorldMaterials.Role))
+		mesh.surface_set_material(mesh.get_surface_count() - 1, WorldMaterials.ground(role as WorldMaterials.Role))
 	return mesh
 
 

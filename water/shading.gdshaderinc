@@ -17,6 +17,8 @@ uniform vec4 glitter_color : source_color = vec4(0.85, 0.92, 1.0, 1.0);
 uniform float glitter_strength = 1.5;
 uniform float glitter_threshold = 0.985;
 uniform float lamp_glitter = 4.0;
+// Scales the directional light's glitter only (the light preset's).
+uniform float sun_glitter = 1.0;
 
 // 0 to 1 in `ramp_steps` hard steps from how much more (or less) this facet faces the light than flat water does.
 // Flat water gives 0.5 before the steps.
@@ -44,7 +46,7 @@ float light_glitter(vec3 normal, vec3 to_light, vec3 to_eye) {
 // brighter lamp glitters brighter. (The lamp's distance falloff comes in through ATTENUATION.)
 vec3 glitter_tint(bool directional, vec3 light_color) {
 	if (directional) {
-		return glitter_color.rgb * glitter_strength;
+		return glitter_color.rgb * glitter_strength * sun_glitter;
 	}
 	return light_color * glitter_strength * lamp_glitter;
 }

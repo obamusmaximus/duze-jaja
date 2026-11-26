@@ -1,12 +1,16 @@
 class_name LightStats
 extends Resource
 ## Tunable numbers for a level's light and air (`WorldLight`): the sun, the ambient light, the haze that distance
-## fades into, and the exposure. One .tres per preset (`light_day.tres`, `light_void.tres`); levels share presets
+## fades into, and the exposure. One .tres per preset (`light_day.tres`, `light_night.tres`, `light_void.tres`); levels share presets
 ## instead of setting up their own light. Colours are palette roles (`UiTokens.WORLD_SKY`, `WORLD_HAZE`, `WORLD_SUN`,
-## `WORLD_VOID`), not tunables.
+## `WORLD_VOID`, and their `WORLD_NIGHT_*` versions picked by `night`), not tunables.
+
+@export_group("Colours")
+## On: the night palette roles (moon, blue sky, haze and ambient fill). Off: the day ones.
+@export var night: bool = false
 
 @export_group("Sun")
-## Sun height above the horizon (degrees). Lower gives longer shadows, which help big things read as big.
+## Sun (at night, moon) height above the horizon (degrees). Lower gives longer shadows, which help big things read as big.
 @export_range(5.0, 90.0, 1.0) var sun_elevation: float = 38.0
 ## Compass direction the sunlight comes from (degrees).
 @export_range(-180.0, 180.0, 1.0) var sun_direction: float = -125.0
@@ -15,11 +19,44 @@ extends Resource
 ## Softening of shadow edges (0 is hard, as the style guide wants).
 @export_range(0.0, 2.0, 0.05) var shadow_blur: float = 0.4
 
+@export_group("Terrain shadow")
+## How much of the sunlight or moonlight the terrain's shadow blocks, on the ground and the sea (0 off, 1 all of it).
+## Ambient light and lamps are never blocked.
+@export_range(0.0, 1.0, 0.05) var terrain_shadow: float = 0.35
+## How much the sea's own glow darkens in the terrain's shadow. Most of the sea's colour is that glow, so this is
+## what makes a shadow show on water.
+@export_range(0.0, 1.0, 0.05) var terrain_shadow_sea: float = 0.1
+
 @export_group("Sky")
 ## On: a sky from the sky colour overhead to the haze colour at the horizon. Off: the black void (space, test maps).
 @export var sky: bool = true
 ## Strength of the ambient light (haze-coloured), which fills the shadows.
 @export_range(0.0, 2.0, 0.05) var ambient_energy: float = 0.5
+
+## Share of the night sky's cells that hold a star (night skies only).
+@export_range(0.0, 1.0, 0.01) var star_density: float = 0.0
+## Brightness of the brightest stars; most are much fainter (0 is no stars).
+@export_range(0.0, 3.0, 0.05) var star_brightness: float = 0.0
+## Radius of the brightest stars on screen (pixels); fainter ones are smaller.
+@export_range(0.5, 4.0, 0.1) var star_size: float = 1.4
+
+@export_group("Sea and clouds")
+## Strength of the sea's own glow, which most of its colour comes from. Day is 1.
+@export_range(0.0, 2.0, 0.05) var sea_glow: float = 1.0
+## Strength of the shore foam's glow (times `WaterStats.foam_glow`). Day is 1.
+@export_range(0.0, 2.0, 0.05) var foam_glow_scale: float = 1.0
+## Strength of the sun's or moon's glitter path on the sea (times `WaterStats.glitter_strength`). Lamps' glitter is
+## not scaled. Day is 1.
+@export_range(0.0, 2.0, 0.05) var glitter_scale: float = 1.0
+## Strength of the bird's-eye view's cloud shadows (times `BirdsEyeStats.shadow_strength`). Low at night, so they
+## aren't taken for the moon's shadows. Day is 1.
+@export_range(0.0, 2.0, 0.05) var cloud_shadow_scale: float = 1.0
+
+@export_group("Lamps")
+## Brightness of every lamp (`LampSet`). Dimmer by day.
+@export_range(0.0, 3.0, 0.05) var lamp_brightness: float = 0.35
+## Brightness of the pools of light under pads and bases (0 by day).
+@export_range(0.0, 3.0, 0.05) var pool_brightness: float = 0.0
 
 @export_group("Haze")
 ## How fast distance fades into the haze (exponential fog density per metre; 0 is off). Haze is the main cue that

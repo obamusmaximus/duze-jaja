@@ -15,6 +15,10 @@ render_mode cull_back;
 #include "res://water/foam.gdshaderinc"
 #include "res://water/shading.gdshaderinc"
 #include "res://views/birds_eye/cloud.gdshaderinc"
+#include "res://terrain/terrain_shadow.gdshaderinc"
+
+// Strength of the body's own glow (the light preset's).
+uniform float body_glow = 1.0;
 
 // 1 lights every triangle flat (facets), 0 lights it smooth from the analytic normal.
 uniform float facet_amount = 1.0;
@@ -23,6 +27,8 @@ uniform float facet_amount = 1.0;
 varying float wave_height_at;
 // One height per triangle (its first vertex's), so the crest tint steps by facet.
 varying flat float facet_height;
+// How far into the terrain's shadow this pixel is (0 lit, 1 shadow), for light().
+varying float terrain_shaded;
 
 // The dense patch that follows the camera (WaterBody): waves fade to nothing at its edge so it meets the flat far sheet
 // (`wave_gain` 0) without a step. `patch_half` 0 means one sheet: no fade.
@@ -64,7 +70,9 @@ void fragment() {
 	float cloud_light = cloud_shade(world_xz);
 	ALBEDO = mix(shallow_color.rgb * tone, foam_color.rgb, foam) * cloud_light;
 	vec3 body = mix(deep_color.rgb, shallow_color.rgb, reef_amount(world_xz));
-	EMISSION = mix(body * tone, foam_color.rgb * foam_glow, foam) * cloud_light;
+	terrain_shaded = terrain_shadowed(world_xz);
+	body *= 1.0 - terrain_shadow_sea * terrain_shaded;
+	EMISSION = mix(body * tone * body_glow, foam_color.rgb * foam_glow, foam) * cloud_light;
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;
 }
@@ -72,6 +80,8 @@ void fragment() {
 void light() {
 	vec3 up = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
 	float ramp = light_ramp(dot(NORMAL, LIGHT), dot(up, LIGHT));
-	DIFFUSE_LIGHT += LIGHT_COLOR * ATTENUATION * ramp * light_strength / PI;
-	SPECULAR_LIGHT += glitter_tint(LIGHT_IS_DIRECTIONAL, LIGHT_COLOR) * ATTENUATION * light_glitter(NORMAL, LIGHT, VIEW);
+	// The terrain's shadow takes the sun or moon only (its light and its glitter), never a lamp.
+	float reach = LIGHT_IS_DIRECTIONAL ? ATTENUATION * terrain_light_factor(terrain_shaded) : ATTENUATION;
+	DIFFUSE_LIGHT += LIGHT_COLOR * reach * ramp * light_strength / PI;
+	SPECULAR_LIGHT += glitter_tint(LIGHT_IS_DIRECTIONAL, LIGHT_COLOR) * reach * light_glitter(NORMAL, LIGHT, VIEW);
 }

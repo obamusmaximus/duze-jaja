@@ -28,9 +28,11 @@ var _has_pending: bool = false
 var _overlay: Material
 ## What shows when no debug overlay does (the bird's-eye view's cloud shadows).
 var _base_overlay: Material
-## The baked light (null until a sun is given with `set_sun`: chunks are then plain white vertex colours).
+## The baked vertex colours and the shadow mask (null until a sun is given with `set_sun`: chunks are then plain white
+## vertex colours and unshadowed).
 var _light: TerrainLight
 var _light_key: Array = []
+var _shadow: TerrainShadow
 ## Chunk data between `compute()` and `finish()` (Vector2i to `_chunk_data()`, in build order).
 var _prepared: Dictionary = {}
 ## Where opaque water hides the ground (world x, z; empty: nowhere) and the lowest its surface dips (world y).
@@ -38,10 +40,21 @@ var _cover_area: Rect2 = Rect2()
 var _cover_level: float = 0.0
 
 
-## Gives the ground its baked light from `sun` (horizon shadows, hollows, tint). Call before `setup`.
+## Gives the ground its baked light (hollows, tint) and its shadow from `sun`. Call before `setup`; call again when the
+## sun moves, which re-traces the shadow mask and rebuilds no chunk.
 func set_sun(sun: DirectionalLight3D) -> void:
-	_light = TerrainLight.new()
-	_light.set_sun(sun)
+	if _shadow == null:
+		_light = TerrainLight.new()
+		_shadow = TerrainShadow.new()
+		_shadow.set_sun(sun)
+	elif _shadow.set_sun(sun) and heights != null:
+		_shadow.bake_all()
+		_shadow.publish()
+
+
+## The terrain's shadow mask (null without a sun).
+func shadow() -> TerrainShadow:
+	return _shadow
 
 
 ## Builds every chunk of `data`. Call once the node is in the tree.
@@ -61,6 +74,7 @@ func begin(data: TerrainHeights) -> void:
 	if _light != null:
 		_light.setup(heights, stats)
 		_light_key = _key()
+		_shadow.setup(heights, stats.light_shadow_softness)
 	if not stats.changed.is_connected(_on_stats_changed):
 		stats.changed.connect(_on_stats_changed)
 	_body = StaticBody3D.new()
@@ -78,6 +92,7 @@ func begin(data: TerrainHeights) -> void:
 func compute() -> void:
 	if _light != null:
 		_light.bake(Rect2i(Vector2i.ZERO, heights.samples))
+		_shadow.bake_all()
 	_prepared.clear()
 	for cz: int in chunk_count.y:
 		for cx: int in chunk_count.x:
@@ -89,6 +104,13 @@ func finish() -> void:
 	for chunk: Vector2i in _prepared:
 		_apply_chunk(chunk, _prepared[chunk], true)
 	_prepared.clear()
+	if _shadow != null:
+		_shadow.publish()
+
+
+func _exit_tree() -> void:
+	if _shadow != null:
+		TerrainShadow.withdraw()
 
 
 ## The map changed inside `area` (world x, z): queue the chunks it touches for a rebuild.
@@ -97,9 +119,11 @@ func changed(area: Rect2) -> void:
 		return
 	var touched: Rect2i = heights.samples_in(area)
 	if _light != null:
-		# Light carries across chunks (a new hill shades the ground downwind): re-bake and rebuild what it reaches.
+		# Hollows reach past the edit; the shadow reaches far downwind, but only in its mask, so no chunk rebuilds for it.
 		touched = heights.samples_in(_light.affected(area))
 		_light.bake(touched)
+		_shadow.bake_edit(area)
+		_shadow.publish()
 	var n: int = stats.chunk_cells
 	var first := Vector2i(maxi(touched.position.x - 1, 0) / n, maxi(touched.position.y - 1, 0) / n)
 	var last := Vector2i(mini(touched.end.x - 1, heights.samples.x - 1) / n, mini(touched.end.y - 1, heights.samples.y - 1) / n)
@@ -131,10 +155,9 @@ func set_base_overlay(material: Material) -> void:
 	_show_overlay()
 
 
-## The baked light's settings; a change to any re-bakes everything.
+## The baked vertex colours' settings; a change to any re-bakes them and rebuilds every chunk.
 func _key() -> Array:
-	return [stats.light_shadow, stats.light_shade_tint, stats.light_shadow_softness, stats.light_reach, stats.light_ao,
-		stats.light_ao_radius, stats.tint_strength, stats.tint_frequency]
+	return [stats.light_ao, stats.light_ao_radius, stats.tint_strength, stats.tint_frequency]
 
 
 ## Queues the chunks that should start or stop being drawn.
@@ -156,7 +179,12 @@ func _is_submerged(chunk: Vector2i, top: float) -> bool:
 
 func _on_stats_changed() -> void:
 	_queue_cover_changes()
-	if _light == null or heights == null or _key() == _light_key:
+	if _light == null or heights == null:
+		return
+	if _shadow.set_softness(stats.light_shadow_softness):
+		_shadow.bake_all()
+		_shadow.publish()
+	if _key() == _light_key:
 		return
 	_light_key = _key()
 	_light.bake(Rect2i(Vector2i.ZERO, heights.samples))

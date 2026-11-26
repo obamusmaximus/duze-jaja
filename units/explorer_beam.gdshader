@@ -8,6 +8,9 @@ uniform vec4 tint : source_color = vec4(1.0);
 uniform float intensity : hint_range(0.0, 4.0) = 0.15;
 // How fast it fades along its length (higher: shorter).
 uniform float falloff : hint_range(0.1, 8.0) = 1.2;
+// Where along its length the far end starts to fade out, and the least light the falloff leaves.
+uniform float fade_from : hint_range(0.0, 0.99) = 0.75;
+uniform float floor_light : hint_range(0.0, 1.0) = 0.0;
 
 varying float along;
 
@@ -18,6 +21,7 @@ void vertex() {
 void fragment() {
 	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
 	// Edge on (the cone's rim) fades out, and so does the far end, so no hard disc shows where it meets the ground.
-	float body = pow(1.0 - along, falloff) * pow(facing, 3.0) * (1.0 - smoothstep(0.75, 1.0, along));
+	float body = mix(floor_light, 1.0, pow(1.0 - along, falloff)) * pow(facing, 3.0)
+		* (1.0 - smoothstep(fade_from, 1.0, along));
 	ALBEDO = tint.rgb * intensity * body;
 }

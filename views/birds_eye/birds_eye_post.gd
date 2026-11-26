@@ -14,6 +14,8 @@ var _stats: BirdsEyeStats
 var _material: ShaderMaterial
 var _quads: Array[MeshInstance3D] = []
 var _blend: float = 0.0
+## By night the blurred edges lift toward the night haze, not `BirdsEyeStats.haze_color`.
+var _night: bool = false
 
 
 func setup(stats: BirdsEyeStats) -> void:
@@ -21,6 +23,11 @@ func setup(stats: BirdsEyeStats) -> void:
 	_material = ShaderMaterial.new()
 	_material.shader = SHADER
 	_stats.changed.connect(_apply_stats)
+	_apply_stats()
+
+
+func set_night(night: bool) -> void:
+	_night = night
 	_apply_stats()
 
 
@@ -64,7 +71,9 @@ func _apply_stats() -> void:
 	m.set_shader_parameter(&"clarity", _stats.clarity)
 	m.set_shader_parameter(&"focus_saturation", _stats.focus_saturation)
 	m.set_shader_parameter(&"focus_contrast", _stats.focus_contrast)
-	m.set_shader_parameter(&"haze_color", Vector3(_stats.haze_color.r, _stats.haze_color.g, _stats.haze_color.b))
+	# The shader reads the vector as linear, so the palette colour is converted.
+	var haze: Color = UiTokens.WORLD_NIGHT_HAZE.srgb_to_linear() if _night else _stats.haze_color
+	m.set_shader_parameter(&"haze_color", Vector3(haze.r, haze.g, haze.b))
 	m.set_shader_parameter(&"edge_haze", _stats.edge_haze)
 	m.set_shader_parameter(&"edge_desat", _stats.edge_desaturation)
 	m.set_shader_parameter(&"vignette", _stats.vignette)

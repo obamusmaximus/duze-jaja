@@ -59,7 +59,24 @@ func setup(bounds: Rect2, home_yaw: float, water: WaterBody, light: WorldLight, 
 	blips.name = "Blips"
 	blip_layer.add_child(blips)
 	blips.setup(stats)
+	clouds.set_light(light.sun(), light.stats)
+	post.set_night(light.stats.night)
+	blips.set_night(light.stats.night)
+	light.applied.connect(_on_light_applied)
 	set_shown(false)
+
+
+## The level's light changed (another preset or a live edit): take its sky, ambient and exposure into the copy, keep
+## this view's own haze and grade, and have the clouds and post pass follow the preset.
+func _on_light_applied() -> void:
+	var source: Environment = _light.environment()
+	for property: StringName in [&"background_mode", &"background_color", &"sky", &"ambient_light_color",
+			&"ambient_light_energy", &"fog_light_color", &"fog_sky_affect", &"tonemap_exposure", &"tonemap_white"]:
+		environment.set(property, source.get(property))
+	_apply_environment()
+	clouds.set_light(_light.sun(), _light.stats)
+	post.set_night(_light.stats.night)
+	blips.set_night(_light.stats.night)
 
 
 ## The map's bounds pulled in by `pan_inset` of the half-extent on every side.

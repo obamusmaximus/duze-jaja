@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="LightStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/light_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+night = true
+sun_elevation = 15.0
+sun_direction = 0.0
+sun_energy = 1.25
+ambient_energy = 0.9
+star_density = 0.22
+star_brightness = 1.2
+sea_glow = 0.85
+foam_glow_scale = 0.4
+glitter_scale = 0.35
+cloud_shadow_scale = 0.25
+lamp_brightness = 1.0
+pool_brightness = 1.0
+haze_density = 0.0004
+terrain_shadow = 0.9
+terrain_shadow_sea = 0.55
