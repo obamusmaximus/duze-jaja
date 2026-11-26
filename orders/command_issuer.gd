@@ -14,6 +14,8 @@ signal issued(order: Order)
 
 ## Set by a level that has an economy; produce and cancel orders are refused without it.
 var production: Production
+## Set by a level with mothership Explorer pads; Explorer build and load orders are refused without it.
+var explorers: ExplorerYard
 ## Set by a level with map markers; marker orders are refused without it.
 var markers: MapMarkers
 ## Who inhabits which unit; made in `setup`. Views read it and follow its signals.
@@ -33,10 +35,14 @@ func setup(registry: UnitRegistry) -> void:
 func issue(order: Order) -> bool:
 	if order.kind == Order.Kind.PRODUCE or order.kind == Order.Kind.CANCEL:
 		return _issue_production(order)
+	if order.kind in [Order.Kind.BUILD_EXPLORER, Order.Kind.CANCEL_EXPLORER, Order.Kind.LOAD_EXPLORER]:
+		return _issue_explorer(order)
 	if order.kind == Order.Kind.MARKER or order.kind == Order.Kind.CLEAR_MARKER:
 		return _issue_marker(order)
 	if order.kind == Order.Kind.INHABIT or order.kind == Order.Kind.LEAVE:
 		return _issue_seat(order)
+	if order.kind == Order.Kind.LAND and order.unit_ids.size() == 1 and order.unit_ids[0] == seats.unit_id_of(order.team):
+		return _toggle_autopilot(order)
 	var units: Array[Unit] = _own_units(order)
 	if units.is_empty():
 		return false
@@ -45,13 +51,17 @@ func issue(order: Order) -> bool:
 			units = _use_abilities(units, order)
 			if units.is_empty():
 				return false # None of them has an ability ready.
+		Order.Kind.LAND:
+			units = _send_to_airfields(units, order)
+			if units.is_empty():
+				return false # None of them can use a pad, or the team has no such airfield.
 		Order.Kind.STOP:
 			for unit: Unit in units:
 				unit.orders.clear()
 		Order.Kind.ATTACK:
 			var target: Unit = _registry.get_unit(order.target_unit_id)
-			if target == null or not target.is_enemy_of(order.team):
-				return false
+			if target == null or not target.is_enemy_of(order.team) or not _team_knows(order.team, target):
+				return false # Only a unit the team knows of can be ordered attacked.
 			var able: int = 0
 			for unit: Unit in units:
 				if not unit.can_attack(target):
@@ -104,6 +114,45 @@ func _issue_seat(order: Order) -> bool:
 	return done
 
 
+## The player's own flown unit: the autopilot takes it to an airfield, or hands it back.
+func _toggle_autopilot(order: Order) -> bool:
+	var unit: Unit = _registry.get_unit(order.unit_ids[0])
+	if unit == null or unit.landing == null:
+		return false
+	if seats.is_on_autopilot(order.team):
+		seats.release_autopilot(order.team)
+	else:
+		var field: Airfield = Airfield.nearest_for(unit, order.airfield_id)
+		if field == null:
+			return false
+		seats.engage_autopilot(order.team)
+		var own: Order = order.for_unit(unit.id, field.global_position)
+		own.airfield_id = field.airfield_id
+		own.queued = false
+		unit.orders.replace(own)
+	playtest_event.emit(&"order", {"kind": order.kind_name(), "unit": unit.id, "autopilot": seats.is_on_autopilot(order.team)})
+	issued.emit(order)
+	return true
+
+
+## Gives each unit that uses pads its own land order, spreading them over the airfields' free pads. Returns them.
+func _send_to_airfields(units: Array[Unit], order: Order) -> Array[Unit]:
+	var sent: Array[Unit] = []
+	var promised: Dictionary = {}
+	for unit: Unit in units:
+		if unit.landing == null:
+			continue
+		var field: Airfield = Airfield.nearest_for(unit, order.airfield_id, promised)
+		if field == null:
+			continue
+		promised[field] = int(promised.get(field, 0)) + 1
+		var own: Order = order.for_unit(unit.id, field.global_position)
+		own.airfield_id = field.airfield_id
+		_give(unit, own)
+		sent.append(unit)
+	return sent
+
+
 ## A block of destinations round the order's point, one per unit. A flyer's is kept far enough inside the map.
 func _move_group(units: Array[Unit], order: Order) -> void:
 	if units.is_empty():
@@ -126,6 +175,23 @@ func _issue_production(order: Order) -> bool:
 		done = production.queue(order.team, order.squad_spec, order.line) != 0
 	else:
 		done = production.cancel(order.team, order.ticket)
+	if done:
+		issued.emit(order)
+	return done
+
+
+## The mothership's Explorer pad: no units involved, the team's own pad and bank.
+func _issue_explorer(order: Order) -> bool:
+	if explorers == null:
+		return false
+	var done: bool
+	match order.kind:
+		Order.Kind.BUILD_EXPLORER:
+			done = explorers.build(order.team)
+		Order.Kind.CANCEL_EXPLORER:
+			done = explorers.cancel(order.team)
+		_:
+			done = explorers.load_units(order.team, order.type_id, order.count)
 	if done:
 		issued.emit(order)
 	return done
@@ -216,3 +282,7 @@ func _spacing(units: Array[Unit]) -> float:
 	for unit: Unit in units:
 		radius = maxf(radius, unit.stats.radius)
 	return radius * 2.0 * stats.formation_spacing
+
+
+func _team_knows(team: int, target: Unit) -> bool:
+	return _registry.vision == null or _registry.vision.of_team(team).knows(target.id)

@@ -43,6 +43,13 @@ func inspect(unit: Unit) -> void:
 	_replace(none, unit.id)
 
 
+## Ends the inspection if it is of `unit` (the view lost it).
+func end_inspection_of(unit: Unit) -> void:
+	if unit.id == _inspected_id:
+		_inspected_id = 0
+		changed.emit()
+
+
 ## The unit being inspected, or null.
 func inspected() -> Unit:
 	var registry: UnitRegistry = _find_registry()

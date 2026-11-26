@@ -3,10 +3,12 @@ extends UnitBrain
 ## Drives the unit by its orders (OrderQueue), using its navigator, targeting and weapon. Behaviour by order:
 ## - Move: goes there; fires at enemies in range that happen to be ahead (in the fire arc), never turns or stops for
 ##   them.
-## - Attack: chases its target until in range, faces it and fires; done when the target is gone.
+## - Attack: chases its target until in range, faces it and fires; done when the target is gone or its team loses it.
 ## - Attack-move: goes there, but fights anything it meets on the way (enemies within `sight_range`), chasing at most
 ##   `leash_distance` from where it met them, so it can't be kited away; then carries on.
 ## - An Explorer that is deploying, deployed or packing up holds still (`Explorer`).
+## - Land (fighters, VTOLs, carryalls): flies to a pad and lands to repair (`Landing`); done once repaired. A craft on
+##   a pad stays there, orders or none, until another order, which waits for it to take off.
 ## - Deliver (carryalls): the carryall flies, lands, unloads and lifts off (`Carryall.deliver`).
 ## - Fixed wings can't stand: whenever one of the above has it fight, it makes attack passes (`AttackRun`).
 ## - Idle (no orders): holds its ground, faces and fires at enemies in range, the one that hit it last first.
@@ -49,8 +51,6 @@ func wanted_facing() -> Vector3:
 
 func wanted_velocity(delta: float) -> Vector3:
 	_facing = Vector3.ZERO
-	if _unit.carryall != null and _unit.carryall.leaving():
-		return _unit.carryall.leave_velocity() # Off the pad first, level with the deck.
 	if _unit.explorer != null and _unit.explorer.anchored():
 		_nav.stop()
 		_active = null # Orders given meanwhile start afresh once it flies again.
@@ -59,20 +59,32 @@ func wanted_velocity(delta: float) -> Vector3:
 	while order and order.kind == Order.Kind.STOP:
 		_queue.finish()
 		order = _queue.current()
+	var landing: Landing = _unit.landing
+	if landing != null and landing.must_leave(order):
+		_weapon.target = null
+		_nav.stop()
+		_active = null # The order starts afresh once it is off the pad.
+		return Vector3.ZERO
 	if order != _active:
 		_start(order)
 	if order == null:
+		if landing != null and landing.is_down():
+			_weapon.target = null
+			_facing = landing.pad_facing()
+			return Vector3.ZERO
 		return _hold_ground()
 	match order.kind:
 		Order.Kind.MOVE:
 			return _move(delta)
 		Order.Kind.ATTACK:
 			var target: Unit = _registry.get_unit(order.target_unit_id)
-			if target == null or not _unit.can_attack(target):
-				return _finish()
+			if target == null or not _unit.can_attack(target) or not _unit.team_knows(target):
+				return _finish() # Gone, or the team lost it: the commander's order ends with the contact.
 			return _fight(target, delta)
 		Order.Kind.ATTACK_MOVE:
 			return _attack_move(order, delta)
+		Order.Kind.LAND:
+			return _land(delta)
 		Order.Kind.DELIVER:
 			var carryall: Carryall = _unit.carryall
 			if carryall == null:
@@ -107,9 +119,22 @@ func _move(delta: float) -> Vector3:
 	return velocity
 
 
+## Heading for a pad it fires at what happens to be ahead, as on a move; over the pad it doesn't fire.
+func _land(delta: float) -> Vector3:
+	var landing: Landing = _unit.landing
+	if landing == null:
+		return _finish()
+	var velocity: Vector3 = landing.fly(_active, _nav, delta)
+	if landing.finished:
+		return _finish()
+	_weapon.target = _targeting.in_range if landing.is_flying_in() else null
+	_facing = landing.pad_facing()
+	return velocity
+
+
 func _attack_move(order: Order, delta: float) -> Vector3:
 	var engaged: Unit = _engaged
-	if _engaged_id != 0 and (engaged == null or _leashed(engaged)):
+	if _engaged_id != 0 and (engaged == null or _leashed(engaged) or not _unit.team_knows(engaged)):
 		if engaged and not _weapon.in_range(engaged):
 			_given_up_id = _engaged_id # Leash: don't chase this one again unless it comes into range.
 		_engaged_id = 0

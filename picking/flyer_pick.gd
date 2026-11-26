@@ -31,7 +31,7 @@ static func _under(camera: Camera3D, point: Vector2, min_radius_px: float, max_d
 	var best_depth: float = max_depth
 	for node: Node in camera.get_tree().get_nodes_in_group(&"units"):
 		var unit := node as Unit
-		if unit == null or not unit.alive or not unit.is_flying():
+		if unit == null or not unit.alive or not unit.in_view or not unit.is_flying():
 			continue
 		var at: Vector3 = unit.ground_point() if plate else unit.center()
 		if camera.is_position_behind(at):

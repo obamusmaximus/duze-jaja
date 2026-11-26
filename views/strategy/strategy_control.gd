@@ -1,6 +1,6 @@
 class_name StrategyControl
 extends Node
-## The strategist's mouse in the bird's-eye view and on the war table (`docs/mechanics/rts_controls.md`), where the
+## The strategist's mouse in the bird's-eye view (`docs/mechanics/rts_controls.md`), where the
 ## RTS player controls are off. Left click: put down the armed map marker, else pick the figure under the cursor
 ## (a squad, unit, carryall; own team only) and select its units through `Selection`; empty ground clears. Right
 ## click (without a drag, which pans): disarm, else take a marker away, else send the selection to the ground or at
@@ -9,7 +9,7 @@ extends Node
 
 signal playtest_event(event: StringName, data: Dictionary)
 
-const STATS: StrategyControlStats = preload("res://tuning/strategy_control_default.tres")
+static var control_stats: StrategyControlStats = preload("res://tuning/strategy_control_default.tres")
 
 var _team: int
 var _selection: Selection
@@ -27,14 +27,13 @@ var _right_moved: bool = false
 
 
 func setup(team: int, selection: Selection, issuer: CommandIssuer, markers: MapMarkers, tools: StrategyTools,
-		views: ViewSwitcher, table: WarTable, heights: TerrainHeights) -> void:
+		views: ViewSwitcher, heights: TerrainHeights) -> void:
 	_team = team
 	_selection = selection
 	_issuer = issuer
 	_markers = markers
 	_tools = tools
 	_views = views
-	_projector.table = table
 	_projector.heights = heights
 	var layer := CanvasLayer.new()
 	layer.name = "OverlayLayer"
@@ -42,7 +41,7 @@ func setup(team: int, selection: Selection, issuer: CommandIssuer, markers: MapM
 	add_child(layer)
 	_overlay.name = "Overlay"
 	layer.add_child(_overlay)
-	_overlay.setup(STATS, _projector, selection, markers, tools, team)
+	_overlay.setup(control_stats, _projector, selection, markers, tools, team)
 	_overlay.visible = false
 	views.view_changed.connect(_on_view_changed)
 
@@ -52,11 +51,10 @@ func overlay() -> StrategyOverlay:
 
 
 func is_active() -> bool:
-	return _views != null and _views.view != ViewSwitcher.View.RTS and not _views.flying()
+	return _views != null and _views.view == ViewSwitcher.View.BIRDS_EYE and not _views.flying()
 
 
 func _on_view_changed(view: ViewSwitcher.View) -> void:
-	_projector.view = view
 	if view == ViewSwitcher.View.RTS:
 		_tools.disarm()
 		_overlay.hover_index = -1
@@ -70,7 +68,7 @@ func _process(delta: float) -> void:
 	if not on:
 		return
 	_since_hover += delta
-	if _since_hover >= 1.0 / STATS.hover_hz:
+	if _since_hover >= 1.0 / control_stats.hover_hz:
 		_since_hover = 0.0
 		_overlay.refresh()
 		var over_hud: bool = get_viewport().gui_get_hovered_control() != null
@@ -81,7 +79,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_active():
 		return
 	if event is InputEventMouseMotion and _right_down:
-		if (event as InputEventMouseMotion).position.distance_to(_right_start) > STATS.click_slop_px:
+		if (event as InputEventMouseMotion).position.distance_to(_right_start) > control_stats.click_slop_px:
 			_right_moved = true
 	elif event is InputEventMouseButton:
 		var point: Vector2 = (event as InputEventMouseButton).position
@@ -167,10 +165,12 @@ func _pick(point: Vector2) -> int:
 	var best: int = -1
 	var best_score: float = 1.0
 	for i: int in figures.size():
+		if not figures.knowns[i]:
+			continue
 		var at: Vector2 = _projector.to_screen(get_viewport(), figures.positions[i])
 		if not at.is_finite():
 			continue
-		var radius: float = STATS.pick_radius_px * (STATS.ship_pick_scale if figures.kinds[i] == StrategyFigures.Kind.MOTHERSHIP else 1.0)
+		var radius: float = control_stats.pick_radius_px * (control_stats.ship_pick_scale if figures.kinds[i] == StrategyFigures.Kind.MOTHERSHIP else 1.0)
 		var score: float = at.distance_to(point) / radius
 		if score < best_score:
 			best_score = score
@@ -180,7 +180,7 @@ func _pick(point: Vector2) -> int:
 
 func _marker_near(point: Vector2) -> MapMarker:
 	var best: MapMarker = null
-	var best_distance: float = STATS.marker_clear_px
+	var best_distance: float = control_stats.marker_clear_px
 	for marker: MapMarker in _markers.of_team(_team):
 		var at: Vector2 = _projector.to_screen(get_viewport(), marker.position)
 		if at.is_finite() and at.distance_to(point) < best_distance:

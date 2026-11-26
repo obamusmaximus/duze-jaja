@@ -25,7 +25,7 @@ func _refresh() -> void:
 	var teams: Dictionary = {}
 	for node: Node in get_tree().get_nodes_in_group(&"units"):
 		var unit := node as Unit
-		if unit == null:
+		if unit == null or not unit.in_view: # Enemy strength as far as it is known.
 			continue
 		var entry: Array = teams.get(unit.team, [0, 0.0, 0.0])
 		if unit.alive:

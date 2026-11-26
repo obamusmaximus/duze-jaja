@@ -17,7 +17,7 @@
 [ext_resource type="Resource" path="res://tuning/fx_default.tres" id="fx_stats"]
 
 [ext_resource type="PackedScene" path="res://lighting/world_light.tscn" id="world_light"]
-[ext_resource type="Resource" path="res://tuning/light_day.tres" id="light_stats"]
+[ext_resource type="Resource" path="res://tuning/light_night.tres" id="light_stats"]
 [ext_resource type="Script" path="res://levels/atoll/atoll_level.gd" id="level"]
 [ext_resource type="Script" path="res://terrain/terrain_chunks.gd" id="chunks"]
 [ext_resource type="Resource" path="res://tuning/heightmap_atoll.tres" id="hm_stats"]
@@ -31,6 +31,7 @@
 [ext_resource type="Resource" path="res://tuning/water_battlefield.tres" id="water_stats"]
 [ext_resource type="Script" path="res://map/map_grid.gd" id="map"]
 [ext_resource type="Script" path="res://units/unit_registry.gd" id="registry"]
+[ext_resource type="Script" path="res://debug/vision_view/vision_view.gd" id="debug_vision"]
 
 [node name="Atoll" type="Node3D"]
 script = ExtResource("level")
@@ -86,6 +87,9 @@ script = ExtResource("shot_view")
 
 [node name="DebugMapGridView" type="MultiMeshInstance3D" parent="."]
 script = ExtResource("grid_view")
+
+[node name="DebugVisionView" type="Node3D" parent="."]
+script = ExtResource("debug_vision")
 
 [node name="Units" type="Node3D" parent="."]
 script = ExtResource("registry")

@@ -19,6 +19,14 @@ var lift: float = 0.0
 var air_brake: bool = false
 ## The ability key is held (`docs/plans/flight.md` step 4).
 var ability: bool = false
+## Where the pilot's head looks (the view's crosshair): a world direction. Zero: along the nose.
+var view := Vector3.ZERO
+## The trigger is held.
+var fire: bool = false
+## The lock key is held.
+var lock: bool = false
+## A jetpack type: the jet key is held (a tap toggles hover, a hold surges).
+var jet: bool = false
 
 
 ## Takes over `other`'s controls (not its team or unit), made safe: a unit-length aim, axes in range, no NaNs.
@@ -28,7 +36,12 @@ func copy_controls(other: PilotInput) -> void:
 	lift = clampf(other.lift, -1.0, 1.0) if is_finite(other.lift) else 0.0
 	air_brake = other.air_brake
 	ability = other.ability
+	view = other.view.normalized() if other.view.is_finite() else Vector3.ZERO
+	fire = other.fire
+	lock = other.lock
+	jet = other.jet
 
 
 func to_dict() -> Dictionary:
-	return {"team": team, "unit_id": unit_id, "aim": aim, "stick": stick, "lift": lift, "air_brake": air_brake, "ability": ability}
+	return {"team": team, "unit_id": unit_id, "aim": aim, "stick": stick, "lift": lift, "air_brake": air_brake, "ability": ability,
+		"view": view, "fire": fire, "lock": lock, "jet": jet}

@@ -2,8 +2,9 @@ class_name PilotControls
 extends Node
 ## View side: the local player's hands on an inhabited unit. Captures the mouse, turns its motion into a mouse-aim
 ## direction, the virtual joystick (or, while `free_look` is held, into turning the pilot's head, while the joystick
-## goes back to centre), reads the WASD, up and down, air brake and ability keys, and streams them every physics tick
-## as a `PilotInput` through `CommandIssuer.pilot()`. Off until `start`.
+## goes back to centre), reads the WASD, up and down, air brake, ability, fire and lock keys, and streams them every physics tick
+## as a `PilotInput` through `CommandIssuer.pilot()`. A jetpack type (the commando) is a first-person shooter instead:
+## the mouse turns the view itself, Space jumps, the jet key surges and hovers. Off until `start`.
 
 ## The pilot's head turned from straight ahead, radians: x up, y left.
 var look := Vector2.ZERO
@@ -59,10 +60,28 @@ func aim() -> Vector3:
 	return Basis.from_euler(Vector3(_aim_pitch, _aim_yaw, 0.0), EULER_ORDER_YXZ) * Vector3.FORWARD
 
 
+## The aim as an orientation (-z along it, level x): a jetpack type's view.
+func aim_basis() -> Basis:
+	return Basis.from_euler(Vector3(_aim_pitch, _aim_yaw, 0.0), EULER_ORDER_YXZ)
+
+
+## Where the pilot's head looks: a world direction of unit length (the nose, with the head straight).
+func view() -> Vector3:
+	if _unit == null or _unit.movement.flight == null or _jetpack():
+		return aim()
+	var head := Basis.from_euler(Vector3(look.x, look.y, 0.0), EULER_ORDER_YXZ)
+	return (_unit.movement.flight.model.basis * head * Vector3.FORWARD).normalized()
+
+
 ## Mouse movement in screen pixels: moves the aim, or the head while free look is held.
 func move_mouse(pixels: Vector2) -> void:
 	var turn: Vector2 = pixels * deg_to_rad(_stats.aim_sensitivity)
 	var up: float = turn.y if _stats.invert_y else -turn.y
+	if _jetpack():
+		_aim_yaw = wrapf(_aim_yaw - turn.x, -PI, PI)
+		_aim_pitch += up
+		_limit_aim()
+		return
 	if Input.is_action_pressed(&"free_look"):
 		var yaw_limit: float = deg_to_rad(_stats.look_yaw_limit)
 		var pitch_limit: float = deg_to_rad(_stats.look_pitch_limit)
@@ -91,6 +110,16 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_unit) or not _unit.alive:
 		return
+	if _unit.movement.flight == null:
+		# On the autopilot: only the ability key counts (an Explorer packs up with it), and the aim rides the nose so
+		# the hand-back starts straight.
+		_aim_yaw = _unit.rotation.y
+		_aim_pitch = 0.0
+		_send_idle()
+		return
+	if _jetpack():
+		_send_jetpack()
+		return
 	var hovering: bool = _hovering()
 	var stick: Vector2 = Input.get_vector(&"pilot_roll_left", &"pilot_roll_right", &"pilot_pitch_down", &"pilot_pitch_up")
 	if _stats.stick_invert_pitch and not hovering:
@@ -113,6 +142,36 @@ func _physics_process(delta: float) -> void:
 	_input.lift = Input.get_axis(&"pilot_down", &"pilot_up") if hovering else 0.0
 	_input.air_brake = not hovering and Input.is_action_pressed(&"air_brake")
 	_input.ability = Input.is_action_pressed(&"unit_ability")
+	_input.view = view()
+	_input.fire = Input.is_action_pressed(&"pilot_fire")
+	_input.lock = Input.is_action_pressed(&"pilot_lock")
+	_issuer.pilot(_input)
+
+
+## A jetpack type: WASD walks, strafes and surges, Space jumps, the jet key hovers and surges, the view aims.
+func _send_jetpack() -> void:
+	_input.aim = aim()
+	_input.stick = Input.get_vector(&"pilot_roll_left", &"pilot_roll_right", &"pilot_pitch_down", &"pilot_pitch_up")
+	_input.lift = Input.get_action_strength(&"pilot_up")
+	_input.jet = Input.is_action_pressed(&"pilot_jet")
+	_input.air_brake = false
+	_input.ability = Input.is_action_pressed(&"unit_ability")
+	_input.view = aim()
+	_input.fire = Input.is_action_pressed(&"pilot_fire")
+	_input.lock = false
+	_issuer.pilot(_input)
+
+
+func _send_idle() -> void:
+	_input.aim = aim()
+	_input.stick = Vector2.ZERO
+	_input.lift = 0.0
+	_input.air_brake = false
+	_input.ability = Input.is_action_pressed(&"unit_ability")
+	_input.view = view()
+	_input.fire = false
+	_input.lock = false
+	_input.jet = false
 	_issuer.pilot(_input)
 
 
@@ -141,6 +200,10 @@ func _centre_aim(rate: float, delta: float) -> void:
 	_set_aim(from.rotated(axis.normalized(), from.angle_to(centre) * weight))
 
 
+func _jetpack() -> bool:
+	return _unit != null and _unit.movement.flight != null and _unit.movement.flight.is_jetpack()
+
+
 func _hovering() -> bool:
 	return _unit.movement.flight != null and _unit.movement.flight.hovering()
 
@@ -162,6 +225,10 @@ func _bank() -> float:
 
 ## Keeps the aim within reach of the nose and short of straight up or down.
 func _limit_aim() -> void:
+	if _jetpack():
+		var view_limit: float = deg_to_rad(_unit.stats.jetpack.view_pitch_limit_deg)
+		_aim_pitch = clampf(_aim_pitch, -view_limit, view_limit)
+		return
 	var pitch_limit: float = deg_to_rad(_stats.aim_pitch_limit)
 	if _hovering():
 		pitch_limit = minf(pitch_limit, deg_to_rad(_unit.movement.flight.hover.stats.pitch_limit_deg))

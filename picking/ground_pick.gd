@@ -34,7 +34,7 @@ static func object_under(viewport: Viewport, screen_point: Vector2, flyer_min_px
 	var camera: Camera3D = viewport.get_camera_3d()
 	if camera == null:
 		return null
-	var hit: Dictionary = _cast(viewport, screen_point, WORLD_MASK | OBJECT_MASK)
+	var hit: Dictionary = _cast_in_view(viewport, screen_point, WORLD_MASK | OBJECT_MASK)
 	var object: Node3D = null
 	var ground_depth: float = INF
 	if not hit.is_empty():
@@ -51,11 +51,44 @@ static func object_under(viewport: Viewport, screen_point: Vector2, flyer_min_px
 	return FlyerPick.plate_under(camera, screen_point, flyer_min_px, ground_depth)
 
 
-static func _cast(viewport: Viewport, screen_point: Vector2, mask: int) -> Dictionary:
+## The airfield under `screen_point`, or null. An airfield behind the ground doesn't count.
+static func airfield_under(viewport: Viewport, screen_point: Vector2) -> Airfield:
+	var camera: Camera3D = viewport.get_camera_3d()
+	if camera == null:
+		return null
+	var from: Vector3 = camera.project_ray_origin(screen_point)
+	var direction: Vector3 = camera.project_ray_normal(screen_point)
+	var hit: Dictionary = _cast(viewport, screen_point, WORLD_MASK)
+	var nearest: float = INF if hit.is_empty() else from.distance_to(hit["position"])
+	var found: Airfield = null
+	for node: Node in camera.get_tree().get_nodes_in_group(&"airfields"):
+		var field := node as Airfield
+		var along: float = field.ray_distance(from, direction)
+		if along < nearest:
+			nearest = along
+			found = field
+	return found
+
+
+## `_cast` that goes through units the view doesn't know of (`FogView`): they can't be clicked or hide what is behind.
+static func _cast_in_view(viewport: Viewport, screen_point: Vector2, mask: int) -> Dictionary:
+	var skipped: Array[RID] = []
+	while true:
+		var hit: Dictionary = _cast(viewport, screen_point, mask, skipped)
+		if hit.is_empty():
+			return hit
+		var unit := hit["collider"] as Unit
+		if unit == null or unit.in_view:
+			return hit
+		skipped.append(unit.get_rid())
+	return {}
+
+
+static func _cast(viewport: Viewport, screen_point: Vector2, mask: int, exclude: Array[RID] = []) -> Dictionary:
 	var camera: Camera3D = viewport.get_camera_3d()
 	if camera == null:
 		return {}
 	var from: Vector3 = camera.project_ray_origin(screen_point)
 	var to: Vector3 = from + camera.project_ray_normal(screen_point) * RAY_LENGTH
-	var query := PhysicsRayQueryParameters3D.create(from, to, mask)
+	var query := PhysicsRayQueryParameters3D.create(from, to, mask, exclude)
 	return camera.get_world_3d().direct_space_state.intersect_ray(query)

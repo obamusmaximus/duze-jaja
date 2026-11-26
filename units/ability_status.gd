@@ -72,7 +72,7 @@ func text() -> String:
 		State.ACTIVE:
 			words = "ACTIVE %.1f S" % seconds
 		State.BUSY:
-			words = "BUSY"
+			words = "UNAVAILABLE"
 		_:
 			words = "COOLDOWN %d S" % ceili(seconds)
 	if stats.charges > 1:

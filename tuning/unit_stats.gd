@@ -8,6 +8,8 @@ extends Resource
 enum CargoClass { NONE, INFANTRY, MACHINERY, AIR }
 ## How the autopilot flies a flyer. Hover: slows, stops and hovers. Fixed wing: never stops, turns in arcs.
 enum FlightStyle { HOVER, FIXED_WING }
+## What a unit is made of, for damage (`DamageProfile`).
+enum ArmorType { INFANTRY, VEHICLE, TANK, AIRCRAFT, CARRYALL, EXPLORER, LIGHT_VEHICLE }
 
 @export_group("Identity")
 ## The type's name, for the HUD and the playtest log.
@@ -99,6 +101,11 @@ enum FlightStyle { HOVER, FIXED_WING }
 ## `flight_model` too it can switch (a `FlightModeStats` ability). None: a jet.
 @export var hover_flight: HoverStats
 
+@export_group("Jetpack")
+## A jetpack type (the commando): a ground unit that hovers, surges and afterburns (`JetpackStats`), and can be
+## inhabited on foot. None: not a jetpack type.
+@export var jetpack: JetpackStats
+
 @export_group("Ability")
 ## The type's ability (F), an `AbilityStats` .tres. None: no ability.
 @export var ability: AbilityStats
@@ -135,9 +142,25 @@ enum FlightStyle { HOVER, FIXED_WING }
 ## Turns the model about its centre, in degrees, to line its front up with the way the unit faces (-Z).
 @export_range(-180.0, 180.0, 15.0) var model_yaw_deg: float = 0.0
 
+@export_group("Vision")
+## How far this type detects a target of signature 1, in metres, with a clear line over the terrain. It sees a target
+## of signature 2 twice as far. The longest ranges cost the most.
+@export_range(0.0, 1000.0, 5.0) var sensor_range: float = 45.0
+## How easily the type is detected: it multiplies every observer's sensor range. Infantry below 1, big things above.
+@export_range(0.05, 20.0, 0.05) var signature: float = 1.0
+## Big units leave a wireframe ghost of themselves where the enemy last saw them; the rest leave heat on the ground.
+@export var leaves_ghost: bool = false
+
 @export_group("Combat")
-## Hit points when full.
+## Hit points when full. Every type has the same; how tough it is comes from `armor`.
 @export_range(1.0, 5000.0, 1.0) var max_health: float = 100.0
+## Which of a weapon's damage numbers hits this type.
+@export var armor: ArmorType = ArmorType.INFANTRY
+## Flyers: the nose of a standing hover type tilts onto the target it fights if that is at most this far above or below
+## level, degrees. 0: it never tilts. Look only.
+@export_range(0.0, 85.0, 1.0) var aim_tilt_deg: float = 0.0
+## First person: the weapon follows the pilot's view (free look aims it). Off: it is fixed to the boresight.
+@export var pilot_turret: bool = false
 ## Can target flying units. Units without it never pick a flyer as a target, on their own initiative or by order.
 @export var anti_air: bool = false
 ## The unit's weapon (a WeaponStats .tres), or none.

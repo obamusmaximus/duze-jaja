@@ -4,6 +4,7 @@ extends Node
 ## orders. Left-click selects, right-click orders (the StarCraft scheme), both decided on release (PointerInput): a box
 ## selects; a click on an own unit selects it; a click on an enemy inspects it, on ground clears the selection.
 ## A right click with a selection moves (ground) or attacks (enemy); with no selection it only cancels attack-move.
+## A click, left or right, on an own airfield with a flyer that uses helipads selected lands it there.
 ## Attack-move, once armed, takes the next left click, and so does a targeted ability (a right click cancels it).
 ##
 ## Gestures are resolved on the next physics tick, where picking (GroundPick) is safe. View side: it changes the
@@ -60,7 +61,10 @@ func _resolve_click(point: Vector2, double_click: bool) -> void:
 	if _orders.attack_move_armed and not _selection.is_empty():
 		_order_at(unit, point)
 		return
-	if unit and unit.team == _team:
+	var field: Airfield = null if unit != null else _landing_field_under(point)
+	if field != null:
+		_orders.land_at(field, GroundPick.ground_point(get_viewport(), point))
+	elif unit and unit.team == _team:
 		_selection_control.click_unit(unit, double_click)
 	elif unit:
 		_selection_control.inspect(unit)
@@ -75,7 +79,12 @@ func _resolve_order(point: Vector2) -> void:
 	if _selection.is_empty():
 		_orders.disarm()
 		return
-	_order_at(_unit_under(point), point)
+	var unit: Unit = _unit_under(point)
+	var field: Airfield = null if unit != null or _orders.attack_move_armed else _landing_field_under(point)
+	if field != null:
+		_orders.land_at(field, GroundPick.ground_point(get_viewport(), point))
+	else:
+		_order_at(unit, point)
 
 
 ## Gives the selection an order at a screen point: attack an enemy there, else move (or attack-move when armed).
@@ -96,10 +105,19 @@ func _unit_under(point: Vector2) -> Unit:
 	return GroundPick.object_under(get_viewport(), point, stats.flyer_pick_min_px) as Unit
 
 
+## The own airfield under a screen point, if the selection has something that can land on it; else null.
+func _landing_field_under(point: Vector2) -> Airfield:
+	if _selection.is_empty() or not _orders.can_land():
+		return null
+	var field: Airfield = GroundPick.airfield_under(get_viewport(), point)
+	return field if field != null and field.team == _team else null
+
+
 func _update_cursor() -> void:
 	if _pointer.is_boxing():
 		_orders.show_cursor(null, false)
 		return
 	var mouse: Vector2 = get_viewport().get_mouse_position()
 	var unit: Unit = _unit_under(mouse)
-	_orders.show_cursor(unit, GroundPick.ground_point(get_viewport(), mouse).is_finite())
+	_orders.show_cursor(unit, GroundPick.ground_point(get_viewport(), mouse).is_finite(),
+			_landing_field_under(mouse) != null)

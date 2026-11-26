@@ -86,6 +86,27 @@ const WORLD_HAZE: Color = Color("#C9CCC6")
 const WORLD_SUN: Color = OFF_WHITE
 ## The void around maps with no sky.
 const WORLD_VOID: Color = BLACK
+## Night (`LightStats.night`): a change of hue more than of brightness. A blue sky rather than black, ...
+const WORLD_NIGHT_SKY: Color = Color("#1A2A4C")
+## ... the haze distance fades into, ...
+const WORLD_NIGHT_HAZE: Color = Color("#34486E")
+## ... the blue fill that keeps a floor under the shadows ...
+const WORLD_NIGHT_AMBIENT: Color = Color("#6079B8")
+## ... and the moonlight.
+const WORLD_NIGHT_MOON: Color = Color("#C4D6FF")
+## The night sea: its self-lit body, the colour the moon adds, and the shore foam.
+const WORLD_NIGHT_SEA_DEEP: Color = Color("#101C2C")
+const WORLD_NIGHT_SEA_SHALLOW: Color = Color("#2B425E")
+const WORLD_NIGHT_FOAM: Color = Color("#8D9FC0")
+## The bird's-eye view's clouds by night (lit and shaded faces).
+const WORLD_NIGHT_CLOUD: Color = Color("#4A5C82")
+const WORLD_NIGHT_CLOUD_SHADE: Color = Color("#1C2842")
+const WORLD_NIGHT_STAR: Color = Color("#E6EEFF")
+## Lamps (`LampSet`). Aircraft wingtips keep aviation's own red (port) and green (starboard); they mark heading, not a
+## team or a warning. White is the tail, the strobes, pad corners and ground markers.
+const WORLD_LAMP_PORT: Color = Color("#FF2418")
+const WORLD_LAMP_STARBOARD: Color = Color("#10F070")
+const WORLD_LAMP_WHITE: Color = Color("#EEF4FF")
 
 ## Team number to colour: the first four accents in the guide's order. Teams past the end wrap around.
 const TEAM_COLORS: Array[Color] = [CYAN, VIOLET, ORANGE, GREEN]

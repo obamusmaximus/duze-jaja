@@ -192,6 +192,9 @@ func _looped(stream: AudioStream) -> AudioStream:
 func _on_node_added(node: Node) -> void:
 	if node is BaseButton:
 		var button := node as BaseButton
+		# `node_added` fires again when a button's branch is moved (`HudFrame` re-parents whole modules).
+		if button.mouse_entered.is_connected(_on_button_hover.bind(button)):
+			return
 		if button.toggle_mode:
 			button.toggled.connect(_on_button_toggled.bind(button))
 		else:

@@ -6,6 +6,8 @@ extends Node
 ## - `in_range`: the best enemy in weapon range: the last attacker first (return fire), then enemies not already
 ##   doomed by shots in flight (no overkill), nearest first.
 ## - `in_sight`: the nearest enemy within `sight_range`.
+## Only enemies the unit knows of count (awareness, `vision.md`): an unseen attacker gets no return fire. Between
+## searches a pick is dropped once the team loses it.
 
 ## Held as ids; the properties resolve them (null once the unit is gone).
 var in_range: Unit:
@@ -46,11 +48,11 @@ func note_attacker(_amount: float, source_id: int) -> void:
 func step(delta: float) -> void:
 	_timer -= delta
 	var ranged: Unit = in_range
-	if _in_range_id != 0 and not (ranged and _weapon.in_range(ranged)):
+	if _in_range_id != 0 and not (ranged and _weapon.in_range(ranged) and _unit.team_knows(ranged)):
 		_in_range_id = 0
 		_timer = 0.0
 	var sighted: Unit = in_sight
-	if _in_sight_id != 0 and not (sighted and _within(sighted, _unit.stats.sight_range)):
+	if _in_sight_id != 0 and not (sighted and _within(sighted, _unit.stats.sight_range) and _unit.team_knows(sighted)):
 		_in_sight_id = 0
 	if _timer > 0.0:
 		return
@@ -71,10 +73,14 @@ func _scan() -> void:
 		if not other.alive or not _unit.can_attack(other):
 			continue
 		var distance: float = _unit.global_position.distance_to(other.global_position)
-		if distance < nearest and distance <= _unit.stats.sight_range:
+		var sightable: bool = distance < nearest and distance <= _unit.stats.sight_range
+		var rangeable: bool = _weapon.in_range(other)
+		if not (sightable or rangeable) or not _unit.knows(other):
+			continue
+		if sightable:
 			nearest = distance
 			in_sight = other
-		if _weapon.in_range(other):
+		if rangeable:
 			var score: float = distance
 			if other.health.is_doomed():
 				score += 10000.0

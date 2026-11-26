@@ -35,6 +35,10 @@ var _occupied: bool = false
 var air: AirLayer
 ## The Explorer's lights, beam and bubble (`add_explorer`); null on other units.
 var _explorer_look: ExplorerLook
+## The aircraft's navigation lamps or the ground unit's marker, on the airframe so they hide with it.
+var _lamps := LampSet.new()
+## How much of the unit is drawn, in `FadeMaterials` steps.
+var _view_step: int = FadeMaterials.STEPS
 
 
 func setup(stats: UnitStats, team: int) -> void:
@@ -43,6 +47,7 @@ func setup(stats: UnitStats, team: int) -> void:
 	add_child(_frame)
 	for part: MeshInstance3D in [_body, _nose]:
 		_frame.add_child(part)
+	_frame.add_child(_lamps)
 	for part: MeshInstance3D in [_ring, _plate]:
 		add_child(part)
 	_ring.visible = false
@@ -50,6 +55,7 @@ func setup(stats: UnitStats, team: int) -> void:
 	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_build()
 	stats.changed.connect(_build)
+	UnitLamps.lamp_stats().changed.connect(_fill_lamps)
 
 
 ## Adds the Explorer's searchlights, beacons, beam and bubble (look only).
@@ -59,11 +65,36 @@ func add_explorer(explorer: Explorer) -> void:
 	add_child(_explorer_look)
 	_explorer_look.setup(explorer, _team, _frame)
 	_explorer_look.fit_to(_model)
+	_explorer_look.set_view_fade(float(_view_step) / FadeMaterials.STEPS)
+	_lamps.clear() # The Explorer's lamps are its own.
 
 
 func show_selected(on: bool) -> void:
 	_ring.visible = on and not _occupied
 	_selected = on
+
+
+## How much of the unit the local view draws, 0 (nothing, lights and lamps too) to 1.
+func set_view_level(level: float) -> void:
+	var step: int = clampi(ceili(level * FadeMaterials.STEPS), 0, FadeMaterials.STEPS)
+	if step == _view_step:
+		return
+	_view_step = step
+	visible = step > 0
+	var share: float = float(step) / FadeMaterials.STEPS
+	_lamps.set_fade(share)
+	if _explorer_look != null:
+		_explorer_look.set_view_fade(share)
+	if step > 0:
+		_fade_meshes(step)
+
+
+func _fade_meshes(step: int) -> void:
+	for part: MeshInstance3D in [_body, _nose, _ring, _plate, _shadow, _height_line]:
+		FadeMaterials.apply(part, step)
+	if _model != null:
+		for node: Node in _model.find_children("*", "MeshInstance3D", true, false):
+			FadeMaterials.apply(node as MeshInstance3D, step)
 
 
 ## The cockpit mount point (`UnitStats.cockpit_offset`): a child of the airframe, so it pitches and banks with it.
@@ -94,6 +125,7 @@ func _place_cockpit() -> void:
 
 
 func _build() -> void:
+	_fade_meshes(FadeMaterials.STEPS) # Its own materials back before they are replaced.
 	var color: Color = UiTokens.team_color(_team)
 	if _model != null:
 		_model.queue_free()
@@ -132,12 +164,21 @@ func _build() -> void:
 	_build_height_marks(color)
 	if _explorer_look != null:
 		_explorer_look.fit_to(_model)
+	else:
+		_fill_lamps()
 	var ring_mesh := TorusMesh.new()
 	ring_mesh.inner_radius = _stats.radius * 1.15
 	ring_mesh.outer_radius = _stats.radius * 1.3
 	_ring.mesh = ring_mesh
 	_ring.material_override = WorldMaterials.mark(RING_COLOR)
 	_place_ground_parts()
+	if _view_step > 0:
+		_fade_meshes(_view_step)
+
+
+func _fill_lamps() -> void:
+	if _explorer_look == null:
+		UnitLamps.fill(_lamps, _stats, _frame, _model, get_parent().get(&"id") as int)
 
 
 ## Over open sea a flyer's marks ride above the wave crests, which would otherwise cover them.
@@ -149,7 +190,7 @@ func _sea_lift() -> float:
 
 ## The slope under a flyer, in this node's space (it turns with the unit). Straight up for ground units.
 func _ground_normal() -> Vector3:
-	if air == null or not _stats.flying:
+	if air == null or not _hovers():
 		return Vector3.UP
 	var at: Vector3 = global_position - Vector3.UP * _hover
 	var reach: float = _stats.radius
@@ -165,7 +206,7 @@ func _build_height_marks(color: Color) -> void:
 		_height_line.queue_free()
 		_shadow = null
 		_height_line = null
-	if not _stats.flying:
+	if not _hovers():
 		return
 	_shadow = MeshInstance3D.new()
 	var disc := PlaneMesh.new()
@@ -180,6 +221,11 @@ func _build_height_marks(color: Color) -> void:
 	for part: MeshInstance3D in [_shadow, _height_line]:
 		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(part)
+
+
+## Flyers and jetpack types ride above their ground: they get the shadow and the height line.
+func _hovers() -> bool:
+	return _stats.flying or _stats.jetpack != null
 
 
 ## Pitches and banks a flyer's airframe (radians); the plate and ring stay flat.

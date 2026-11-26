@@ -5,12 +5,13 @@ extends Node
 ## it died first. The ShotView draws them. Simulation. A playtest probe (event `attack` when a unit opens fire on a
 ## new target).
 
-## A shot was fired: `instant` ones only, for tracers (projectiles are drawn from `positions()`).
-signal fired(from: Vector3, to: Vector3)
+## An instant shot was fired, for tracers and beams (projectiles are drawn from `positions()`).
+signal fired(from: Vector3, to: Vector3, source: Unit, weapon: WeaponStats)
 ## Any shot was fired (instant or projectile), from the muzzle; for sound and flashes.
-signal shot_fired(from: Vector3, weapon: WeaponStats)
-## A shot landed on a unit, at its centre; for sound and sparks.
-signal shot_hit(at: Vector3, weapon: WeaponStats)
+signal shot_fired(from: Vector3, weapon: WeaponStats, source: Unit)
+## A shot landed; for sound and sparks. `target` is the unit it hit (null: ground or a wall), `source` who fired it
+## (null once gone).
+signal shot_hit(at: Vector3, weapon: WeaponStats, source: Unit, target: Unit)
 signal playtest_event(event: StringName, data: Dictionary)
 
 ## Projectiles closer than this (metres) to their aim point hit.
@@ -35,29 +36,72 @@ func setup(registry: UnitRegistry) -> void:
 
 
 func fire(source: Unit, target: Unit, weapon: WeaponStats) -> void:
-	if _last_target.get(source.id, 0) != target.id:
-		_last_target[source.id] = target.id
-		playtest_event.emit(&"attack", {"unit": source.id, "target": target.id})
+	_note_target(source, target)
 	var muzzle: Vector3 = source.center() - source.global_basis.z * source.stats.radius
-	shot_fired.emit(muzzle, weapon)
+	shot_fired.emit(muzzle, weapon, source)
 	if not weapon.projectile:
-		fired.emit(muzzle, target.center())
-		shot_hit.emit(target.center(), weapon)
-		target.health.damage(weapon.damage, source.id)
+		fired.emit(muzzle, target.center(), source, weapon)
+		_hit(target, target.center(), damage_of(weapon, target), source.id, weapon)
 		return
 	_positions.append(muzzle)
 	_aims.append(target.center())
 	_targets.append(target.id)
 	_sources.append(source.id)
-	_damages.append(weapon.damage)
+	var damage: float = damage_of(weapon, target)
+	_damages.append(damage)
 	_speeds.append(weapon.projectile_speed)
 	_weapons.append(weapon)
-	target.health.incoming += weapon.damage
+	target.health.incoming += damage
+
+
+## An instant shot aimed by hand, from `from` to `to`, where it stops. `target` is the unit it hits there, or null
+## (ground, a wall, a friend or nothing at all). `struck`: something is there, so it sparks.
+func fire_beam(source: Unit, from: Vector3, to: Vector3, target: Unit, struck: bool, weapon: WeaponStats) -> void:
+	shot_fired.emit(from, weapon, source)
+	fired.emit(from, to, source, weapon)
+	if target != null:
+		_note_target(source, target)
+		_hit(target, to, damage_of(weapon, target), source.id, weapon)
+	elif struck:
+		shot_hit.emit(to, weapon, source, null)
+
+
+## A hit delivered by something that flies on its own (a seeker pellet): `target` takes `weapon`'s damage at `at`.
+func strike(source: Unit, target: Unit, at: Vector3, weapon: WeaponStats) -> void:
+	_note_target(source, target)
+	_hit(target, at, damage_of(weapon, target), source.id, weapon)
+
+
+## What one hit of `weapon` does to `target`'s armor.
+static func damage_of(weapon: WeaponStats, target: Unit) -> float:
+	if weapon.damage_profile == null:
+		return DamageProfile.FALLBACK
+	return weapon.damage_profile.against(target.stats.armor)
+
+
+func _note_target(source: Unit, target: Unit) -> void:
+	if _last_target.get(source.id, 0) != target.id:
+		_last_target[source.id] = target.id
+		playtest_event.emit(&"attack", {"unit": source.id, "target": target.id})
+
+
+func _hit(target: Unit, at: Vector3, damage: float, source_id: int, weapon: WeaponStats) -> void:
+	shot_hit.emit(at, weapon, _registry.get_unit(source_id), target)
+	target.health.damage(damage, source_id)
 
 
 ## Projectiles in flight, for the view.
 func positions() -> PackedVector3Array:
 	return _positions
+
+
+## The id of who fired projectile `i` (an index into `positions()`), and that unit (null once gone).
+func source_id_of(i: int) -> int:
+	return _sources[i]
+
+
+func source_of(i: int) -> Unit:
+	return _registry.get_unit(_sources[i])
 
 
 func count() -> int:
@@ -75,7 +119,7 @@ func _physics_process(delta: float) -> void:
 		if to_aim.length() <= step + HIT_DISTANCE:
 			if target:
 				target.health.incoming = maxf(target.health.incoming - _damages[i], 0.0)
-				shot_hit.emit(target.center(), _weapons[i])
+				shot_hit.emit(target.center(), _weapons[i], _registry.get_unit(_sources[i]), target)
 				target.health.damage(_damages[i], _sources[i])
 			_remove(i)
 			continue

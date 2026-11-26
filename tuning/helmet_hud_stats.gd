@@ -28,6 +28,11 @@ extends Resource
 ## How close to the screen's edge the flight path marker is held when the path leaves the view.
 @export_range(0.0, 400.0, 5.0) var path_edge_inset: float = 120.0
 
+## Half the width of the weapon crosshair.
+@export_range(4.0, 60.0, 1.0) var crosshair_size: float = 18.0
+## Half the width of the box on a locked target.
+@export_range(8.0, 120.0, 1.0) var lock_size: float = 26.0
+
 @export_group("Angle of attack")
 ## The top of the angle-of-attack gauge, as a share of the stall angle.
 @export_range(1.1, 2.0, 0.05) var gauge_top: float = 1.4

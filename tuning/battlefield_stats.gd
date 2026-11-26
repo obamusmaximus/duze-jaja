@@ -29,6 +29,28 @@ extends Resource
 ## Height of the small islands above the sea, in metres.
 @export_range(1.0, 40.0, 0.5) var small_island_height: float = 4.0
 
+@export_group("Airfields")
+## Where the middle of team 0's airfield stands (x, z), in metres: on flat high ground on its side. Read at level load.
+@export var airfield_west := Vector2(-360.0, -5.0)
+## Where the middle of team 1's airfield stands (x, z), in metres. Read at level load.
+@export var airfield_east := Vector2(440.0, 5.0)
+
+@export_group("Starting flyers")
+## Where team 0's test fighters and VTOLs start (x, z): keep it well clear of high ground, so taking one over at once
+## is safe (over the sea off its island). Read at level load.
+@export var flyers_west := Vector2(-780.0, -40.0)
+## Where team 1's test fighters and VTOLs start (x, z). Read at level load.
+@export var flyers_east := Vector2(900.0, -40.0)
+## Where team 0's first starting carryall hovers (x, z), over its island; further ones line up along z. Read at level
+## load.
+@export var carryalls_west := Vector2(-300.0, -150.0)
+## Where team 1's first starting carryall hovers (x, z). Read at level load.
+@export var carryalls_east := Vector2(520.0, -90.0)
+## Where team 0's first test Explorer starts (x, z): flat ground on its island; further ones line up along z.
+@export var explorer_west := Vector2(-430.0, -130.0)
+## Where team 1's first test Explorer starts (x, z).
+@export var explorer_east := Vector2(560.0, -170.0)
+
 @export_group("Motherships")
 ## How far each mothership hovers from the middle of the atoll, along x, in metres. Its long side faces the atoll.
 @export_range(200.0, 2000.0, 10.0) var mothership_standoff: float = 1100.0
@@ -40,11 +62,18 @@ extends Resource
 @export_range(5.0, 300.0, 1.0) var flyer_speed: float = 50.0
 
 @export_group("Test units")
-## Units placed on the big island at the start, split between the two teams.
+## Ground units placed at the start, split between the two teams.
 @export_range(0, 400, 1) var unit_count: int = 100
-## Test fighters (fixed wing) per team, placed over its block at the start.
+## The test units are spread over their team's island (the one its airfield is on), on ground no steeper than this,
+## in degrees.
+@export_range(1.0, 35.0, 0.5) var spawn_max_slope_deg: float = 12.0
+## Carryalls per team hovering over its island at the start, each with a hold full of troopers.
+@export_range(0, 4, 1) var test_carryalls: int = 2
+## Test fighters (fixed wing) per team at the start.
 @export_range(0, 20, 1) var test_fighters: int = 2
-## Test VTOLs (hovering) per team, placed over its block at the start.
+## Test VTOLs (hovering) per team at the start.
 @export_range(0, 20, 1) var test_vtols: int = 2
-## Explorers per team, each with a demo hold (troopers, IFVs, a tank, a VTOL), parked behind the test flyers.
+## Test commandos (jetpack infantry) per team at the start, beside the test flyers.
+@export_range(0, 20, 1) var test_commandos: int = 2
+## Explorers per team, each with a demo hold (troopers, IFVs, a tank, a VTOL), parked on its island.
 @export_range(0, 4, 1) var test_explorers: int = 1

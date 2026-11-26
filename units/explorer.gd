@@ -10,6 +10,9 @@ extends RefCounted
 ## The base area opened (deployed, `true`) or closed (packing up, `false`).
 signal base_changed(open: bool)
 
+## Back at cruise height after packing up (or giving up a deploy): it flies again.
+signal flying_again(unit: Unit)
+
 enum State { FLYING, DESCENDING, RAISING, UNLOADING, DEPLOYED, PACKING, CLIMBING }
 
 ## Group of the units whose base area is open (`base_at`).
@@ -51,11 +54,15 @@ func anchored() -> bool:
 
 ## Whether F does anything now: deploy while flying, pack up once the bubble is raising or up.
 func can_toggle() -> bool:
+	if unit.landing != null:
+		return false # Still on (or leaving) the mothership's pad.
 	return state in [State.FLYING, State.RAISING, State.UNLOADING, State.DEPLOYED]
 
 
 ## Deploys while flying, packs up while deployed. Returns whether it did either.
 func toggle() -> bool:
+	if not can_toggle():
+		return false
 	if state == State.FLYING:
 		_deploy()
 		return true
@@ -151,6 +158,7 @@ func step(delta: float) -> void:
 			if t >= 1.0:
 				unit.movement.altitude_override = NAN
 				_enter(State.FLYING)
+				flying_again.emit(unit)
 
 
 func _deploy() -> void:

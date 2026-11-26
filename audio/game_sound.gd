@@ -1,7 +1,8 @@
 class_name GameSound
 extends Node
 ## Turns what happens in the match into sounds: shots fired and landing, deaths, the local player's orders and
-## selection. It only listens to simulation signals and calls `Sfx`; the simulation never knows it exists. View side.
+## selection. It only listens to simulation signals and calls `Sfx`; the simulation never knows it exists. View side: fights and deaths out of view (`FogView`)
+## are silent.
 ## Cue names come from the stats (`WeaponStats`, `UnitStats`), the order acknowledgements are fixed here.
 
 ## Order kind to the cue played when the local player gives it.
@@ -32,15 +33,22 @@ func _watch(unit: Unit) -> void:
 	unit.died.connect(_on_died)
 
 
-func _on_shot_fired(from: Vector3, weapon: WeaponStats) -> void:
+func _on_shot_fired(from: Vector3, weapon: WeaponStats, source: Unit) -> void:
+	if not source.is_drawn():
+		return
 	Sfx.play_at(weapon.fire_cue, from)
 
 
-func _on_shot_hit(at: Vector3, weapon: WeaponStats) -> void:
+func _on_shot_hit(at: Vector3, weapon: WeaponStats, source: Unit, target: Unit) -> void:
+	var seen: Unit = target if target != null else source
+	if seen == null or not seen.is_drawn():
+		return
 	Sfx.play_at(weapon.hit_cue, at)
 
 
 func _on_died(unit: Unit) -> void:
+	if not unit.is_drawn():
+		return
 	Sfx.play_at(unit.stats.death_cue, unit.global_position)
 
 

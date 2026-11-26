@@ -10,5 +10,7 @@ enum Section { TOP_LEFT, TOP, TOP_RIGHT, LEFT, CENTER, RIGHT, BOTTOM_LEFT, BOTTO
 @export var section: Section = Section.BOTTOM
 ## Lower comes first (left to right in a row, top to bottom in a column).
 @export var order: int = 0
+## In the left or right column: sit to the right of the module placed before it, sharing its row.
+@export var beside: bool = false
 ## Take the room left over along its edge (the middle of the Generals bar).
 @export var expand: bool = false

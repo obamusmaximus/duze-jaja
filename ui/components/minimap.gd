@@ -2,8 +2,7 @@ class_name Minimap
 extends Control
 ## A top-down map of the whole play area (north up): a flat black field with the map's panel grid, corner brackets,
 ## a blip per living unit in its team colour, and the camera's view as an off-white outline of its footprint on the
-## ground. Left press or drag moves the camera there (`CameraRig.focus_on`). View only. Placeholder until fog of war
-## and buildings exist.
+## ground. Enemies only as far as the view knows them (`FogView`). Left press or drag moves the camera there (`CameraRig.focus_on`). View only. Placeholder until buildings exist.
 
 ## Metres between the minimap's grid lines.
 const GRID_METRES: float = 20.0
@@ -43,8 +42,9 @@ func _draw() -> void:
 	_draw_brackets()
 	for node: Node in get_tree().get_nodes_in_group(&"units"):
 		var unit := node as Unit
-		if unit != null and unit.alive:
-			draw_circle(_to_map(unit.global_position), _stats.blip_radius, UiTokens.team_color(unit.team))
+		if unit != null and unit.alive and unit.is_drawn():
+			draw_circle(_to_map(unit.global_position), _stats.blip_radius,
+					Color(UiTokens.team_color(unit.team), unit.view_level))
 	_draw_view()
 
 

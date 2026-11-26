@@ -33,7 +33,7 @@ func _draw() -> void:
 	var view: Rect2 = get_viewport_rect().grow(BAR_SIZE.x)
 	for node: Node in get_tree().get_nodes_in_group(&"units"):
 		var unit := node as Unit
-		if unit == null or not unit.alive or (not unit.selected and not unit.health.is_damaged()):
+		if unit == null or not unit.alive or not unit.is_drawn() or (not unit.selected and not unit.health.is_damaged()):
 			continue
 		var top: Vector3 = unit.get_global_transform_interpolated().origin + Vector3.UP * (unit.stats.height + LIFT)
 		if camera.is_position_behind(top):
@@ -43,9 +43,9 @@ func _draw() -> void:
 			continue
 		var fraction: float = unit.health.fraction()
 		var back := Rect2(point - Vector2(BAR_SIZE.x * 0.5, BAR_SIZE.y), BAR_SIZE)
-		draw_rect(back.grow(BORDER), UiTokens.BLACK)
+		draw_rect(back.grow(BORDER), Color(UiTokens.BLACK, unit.view_level))
 		var fill := Rect2(back.position, Vector2(BAR_SIZE.x * fraction, BAR_SIZE.y))
-		draw_rect(fill, _color(unit.team, fraction))
+		draw_rect(fill, Color(_color(unit.team, fraction), unit.view_level))
 
 
 ## The unit's team colour, safety orange when low (flat, one colour per meaning).

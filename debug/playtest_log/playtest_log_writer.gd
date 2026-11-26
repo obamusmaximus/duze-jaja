@@ -15,6 +15,8 @@ static func write(path: String, header: Dictionary, lines: Array[Dictionary]) ->
 	file.store_line(JSON.stringify(to_plain(header)))
 	for line: Dictionary in lines:
 		file.store_line(JSON.stringify(to_plain(line)))
+	# Close now so the data is on disk before the caller goes on (a later crash can't cut the file short).
+	file.close()
 	return true
 
 
@@ -23,9 +25,9 @@ static func to_plain(value: Variant) -> Variant:
 	match typeof(value):
 		TYPE_FLOAT:
 			return snappedf(value, DECIMALS)
-		TYPE_VECTOR2:
+		TYPE_VECTOR2, TYPE_VECTOR2I:
 			return [snappedf(value.x, DECIMALS), snappedf(value.y, DECIMALS)]
-		TYPE_VECTOR3:
+		TYPE_VECTOR3, TYPE_VECTOR3I:
 			return [snappedf(value.x, DECIMALS), snappedf(value.y, DECIMALS), snappedf(value.z, DECIMALS)]
 		TYPE_STRING_NAME:
 			return String(value)

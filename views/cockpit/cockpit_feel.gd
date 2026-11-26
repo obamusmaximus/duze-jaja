@@ -29,7 +29,11 @@ func start(flight: PilotFlight) -> void:
 
 
 func step(delta: float, flight: PilotFlight) -> void:
-	if flight == null:
+	if flight == null: # On the autopilot: the view settles.
+		var settle: float = 1.0 - exp(-_stats.speed_fov_response * delta)
+		fov_gain = lerpf(fov_gain, 0.0, settle)
+		_amount = 0.0
+		shake = Basis.IDENTITY
 		return
 	var model: PilotModel = flight.model
 	fov_gain = lerpf(fov_gain, _fov_target(model), 1.0 - exp(-_stats.speed_fov_response * delta))

@@ -2,7 +2,7 @@ class_name UnitRegistry
 extends Node3D
 ## The match's units: the parent of every unit, gives each a stable id (unique per match, never reused), finds units
 ## by id and by place (a spatial hash rebuilt first thing every physics tick), and hands units the match services
-## they use (`map`, `paths`, `shots`). Units placed as its children in the level join at `setup()`, in child order.
+## they use (`map`, `paths`, `shots`, `vision`). Units placed as its children in the level join at `setup()`, in child order.
 ## Simulation. A playtest probe (event `death`).
 
 signal unit_added(unit: Unit)
@@ -16,6 +16,8 @@ const HASH_CELL: float = 4.0
 var map: MapGrid
 var paths: PathService
 var shots: Shots
+## Detection and awareness (`vision.md`); null in a match without it, where every unit knows every enemy.
+var vision: Vision
 
 var _next_id: int = 1
 var _tick: int = 0

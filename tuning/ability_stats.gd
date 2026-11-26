@@ -26,12 +26,17 @@ func targeting() -> Targeting:
 
 ## Whether `target` is something a `Targeting.UNIT` ability of `unit` can be aimed at.
 func accepts_target(unit: Unit, target: Unit) -> bool:
-	return target.is_enemy_of(unit.team)
+	return target.is_enemy_of(unit.team) and unit.team_knows(target)
 
 
 ## Whether `unit` may use it now, beyond charges and cooldown (an Explorer halfway through deploying can't).
 func can_use(_unit: Unit) -> bool:
 	return true
+
+
+## Whether a pilot using it hands the unit to the autopilot, which carries it out (`PilotSeats`).
+func needs_autopilot() -> bool:
+	return false
 
 
 ## Takes effect on `unit`. `point` and `target_id` are what a targeted ability was aimed at (zero and 0 if nothing).

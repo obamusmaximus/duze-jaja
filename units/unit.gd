@@ -26,7 +26,8 @@ var selected: bool = false
 var killed_by: int = 0
 ## What it crashed into (`FlightCrash.Cause`); NONE if it didn't.
 var crash_cause: FlightCrash.Cause = FlightCrash.Cause.NONE
-## Flyers: height above the ground or sea under it, kept by the autopilot; 0 on the ground.
+## Flyers and jetpack types: height above the ground or sea under it, kept by the autopilot or the jetpack; 0 on the
+## ground.
 var hover_height: float = 0.0
 ## The squad this unit belongs to (`SquadRegistry`); 0 for none.
 var squad_id: int = 0
@@ -41,6 +42,15 @@ var cargo: Cargo
 var carryall: Carryall
 ## The Explorer behaviour (deploy, bubble, base area), for a type with `stats.explorer`; null otherwise.
 var explorer: Explorer
+## Using pads (landing, repair, takeoff), for any flyer but an Explorer; null otherwise. An Explorer built on the
+## mothership has one only until it is clear of its pad (`ExplorerYard`).
+var landing: Landing
+## The jetpack (hover, surge, afterburner) under the RTS, for a type with `stats.jetpack`; null otherwise.
+var jetpack: Jetpack
+## View side (`FogView`), which the simulation never reads: how much of the unit the local player's view draws (0
+## hidden, 1 whole), and whether that view knows of it (so it can be picked).
+var view_level: float = 1.0
+var in_view: bool = true
 
 @onready var movement: UnitMovement = $Movement
 @onready var navigator: UnitNavigator = $Navigator
@@ -66,8 +76,12 @@ func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 		carryall = Carryall.new(self, stats.carryall)
 	if stats.explorer != null:
 		explorer = Explorer.new(self, stats.explorer)
+	if stats.flying and explorer == null:
+		landing = Landing.new(self)
 	if stats.ability != null:
 		ability = UnitAbility.new(self, stats.ability)
+	if stats.jetpack != null:
+		jetpack = Jetpack.new(self, stats.jetpack)
 	if stats.flying:
 		collision_mask = 0 # Flyers pass over walls and buildings; they only share the air with other flyers.
 	weapon.setup(self, stats.weapon, unit_registry.shots)
@@ -80,6 +94,8 @@ func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 	_look.setup(stats, team)
 	if explorer != null:
 		_look.add_explorer(explorer)
+	if jetpack != null:
+		set_hover(jetpack.hover_height())
 	_apply_size()
 	stats.changed.connect(_apply_size)
 	health.damaged.connect(targeting.note_attacker)
@@ -92,10 +108,19 @@ func think(delta: float) -> void:
 		carryall.step(delta)
 	if explorer != null:
 		explorer.step(delta)
+	if landing != null:
+		landing.step(delta)
+		if explorer != null and landing.phase == Landing.Phase.NONE:
+			landing = null # Clear of the pad it was built on: an Explorer uses no pads after that.
 	if ability != null:
 		ability.step(delta)
 	targeting.step(delta)
 	movement.decide(delta)
+	if jetpack != null and movement.flight == null:
+		jetpack.step(delta, movement.flat_velocity())
+		if jetpack.afterburning():
+			weapon.cool(delta) # No firing under the afterburner.
+			return
 	weapon.step(delta)
 
 
@@ -112,6 +137,18 @@ func set_selected(on: bool) -> void:
 	selected_changed.emit(on)
 
 
+## View side (`FogView`): draws this much of the unit.
+func show_in_view(level: float, known: bool) -> void:
+	view_level = level
+	in_view = known
+	_look.set_view_level(level)
+
+
+## Whether any of it is in view: its effects and sounds play.
+func is_drawn() -> bool:
+	return view_level > 0.0
+
+
 ## The middle of the body, for screen projection and aiming.
 func center() -> Vector3:
 	return global_position + Vector3.UP * stats.height * 0.5
@@ -121,8 +158,24 @@ func is_enemy_of(other_team: int) -> bool:
 	return team != other_team
 
 
+## Awareness (`vision.md`): whether this unit knows of the enemy `other` (it, its squad or its base detects it).
+## What it reacts to. Costs a sight line when nobody linked to it saw `other` last: call it on a search, not every tick.
+func knows(other: Unit) -> bool:
+	return registry.vision == null or registry.vision.unit_knows(self, other)
+
+
+## Whether this unit's team knows of `other` (the commander's view; cheap).
+func team_knows(other: Unit) -> bool:
+	return registry.vision == null or registry.vision.of_team(team).knows(other.id)
+
+
 func is_flying() -> bool:
 	return stats.flying
+
+
+## Flyers and jetpack types: the body hovers above its ground point (a jetpack type is still a ground unit).
+func hovers() -> bool:
+	return stats.flying or stats.jetpack != null
 
 
 ## Whether this unit may target `other` at all: an enemy, and in the air only if this unit is anti-air.

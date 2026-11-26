@@ -14,9 +14,10 @@ const TUNING_DIR: String = "res://tuning/"
 ## Tab name to the stats classes shown on it.
 const TABS: Dictionary = {
 	"Camera": ["CameraStats", "CockpitStats"],
-	"Units": ["UnitStats", "WeaponStats", "BoostStats", "DeployStats", "FlightModeStats", "OrderStats", "CargoStats", "CarryallStats", "ExplorerStats", "EconomyStats"],
+	"Units": ["UnitStats", "WeaponStats", "DamageProfile", "BoostStats", "DeployStats", "FlightModeStats", "OrderStats", "CargoStats", "CarryallStats", "AirfieldStats", "PadStats", "ExplorerStats", "EconomyStats", "VisionStats"],
 	"Flight": ["FlightStats", "HoverStats", "HelmetHudStats"],
-	"Map": ["BattlefieldStats", "MothershipStats", "MapStats", "WarTableStats", "BirdsEyeStats", "PropStats", "TerrainStats", "HeightmapStats", "WaterStats", "WorldLookStats", "LightStats"],
+	"Commando": ["JetpackStats", "SeekerShotgunStats", "TrackingStats", "JetHudStats"],
+	"Map": ["BattlefieldStats", "MothershipStats", "MapStats", "BirdsEyeStats", "HeightmapStats", "WaterStats", "WorldLookStats", "LightStats", "LampStats"],
 	"Audio": ["AudioStats", "FlightSoundStats", "SfxCue", "FxStats"],
 	"Controls": ["PlayerControlStats", "StrategyControlStats", "UiStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],

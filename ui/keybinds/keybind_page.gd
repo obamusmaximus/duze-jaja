@@ -15,14 +15,14 @@ const GAME_ROWS: Array = [
 	["Order: move, attack, ...", [&"order_click"]],
 	["Attack-move", [&"order_attack_move"]],
 	["Stop", [&"order_stop"]],
+	["Flyers: land at the nearest airfield (in the cockpit: autopilot on / off)", [&"order_seek_airfield"]],
 	["Unit ability (main type; also in the cockpit)", [&"unit_ability"]],
 	["Next main type in the selection", [&"cycle_main_type"]],
 	["Queue orders (hold)", [&"order_queue"]],
 	["Control group: recall", ["1 - 6"]],
 	["Control group: set", [&"control_group_set", "+ 1 - 6"]],
 	["Bird's-eye view", [&"toggle_strategy_view"]],
-	["War table", [&"toggle_war_table"]],
-	["Pilot a selected flyer / leave it", [&"inhabit"]],
+	["Pilot a selected flyer or commando / leave it", [&"inhabit"]],
 	["Pilot: aim", ["MOUSE"]],
 	["Pilot, jet: air brake (hold)", [&"air_brake"]],
 	["Pilot, jet: pitch up / down (hold)", [&"pilot_pitch_up", &"pilot_pitch_down"]],
@@ -30,7 +30,11 @@ const GAME_ROWS: Array = [
 	["Pilot, hover: fly forward / back (hold)", [&"pilot_pitch_up", &"pilot_pitch_down"]],
 	["Pilot, hover: strafe left / right (hold)", [&"pilot_roll_left", &"pilot_roll_right"]],
 	["Pilot, hover: up / down (hold)", [&"pilot_up", &"pilot_down"]],
+	["Commando: jet (tap: hover, hold + move: surge)", [&"pilot_jet"]],
+	["Commando: walk / jump", [&"pilot_pitch_up", &"pilot_up"]],
 	["Pilot: free look (hold)", [&"free_look"]],
+	["Pilot: fire (hold)", [&"pilot_fire"]],
+	["Pilot: lock the target at the crosshair", [&"pilot_lock"]],
 	["Pause menu", [&"pause"]],
 	["This page", [&"show_keybinds"]],
 ]
@@ -38,8 +42,6 @@ const GAME_ROWS: Array = [
 const DEBUG_ROWS: Array = [
 	["Slower / faster / normal time", [&"debug_time_slower", &"debug_time_faster", &"debug_time_reset"]],
 	["Save a playtest log", [&"save_playtest_log"]],
-	["Tile terrain editor", [&"debug_terrain_editor"]],
-	["Raise / lower the test wall", [&"debug_toggle_wall"]],
 	["Show the map grid and paths", [&"debug_show_map_grid"]],
 	["Heightmap: re-import the PNG", [&"debug_heightmap_reload"]],
 	["Heightmap: save to the PNG", [&"debug_heightmap_save"]],
@@ -48,6 +50,8 @@ const DEBUG_ROWS: Array = [
 	["Brush mode", [&"debug_brush_mode"]],
 	["Brush radius", [&"debug_brush_smaller", &"debug_brush_larger"]],
 	["Height bands and contours", [&"debug_height_bands"]],
+	["Day / night light", [&"debug_day_night"]],
+	["Vision: contacts, sensors and sight lines", [&"debug_show_vision"]],
 ]
 
 var _root := Control.new()

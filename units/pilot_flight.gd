@@ -3,13 +3,17 @@ extends RefCounted
 ## An inhabited flyer in flight: runs the unit's control type every tick from the pilot's controls (the jet's
 ## `FlightModel` or the `HoverModel`), puts the result on the unit, keeps it on the map and handles what it hits. A
 ## type with both starts in the hover and can switch. Takes over from the autopilot's state and hands the same state
-## back, so neither end of a flight jumps. Made by `UnitMovement`. Simulation.
+## back, so neither end of a flight jumps. A jetpack type (the commando) runs its `JetpackModel` instead, on foot or
+## in the air, with the seeker shotgun and tracking in place of the pilot's weapon. Made by `UnitMovement`.
+## Simulation.
 
 const DEFAULT_STATS: FlightStats = preload("res://tuning/flight_default.tres")
 ## A hover that finds the ground under it rising by more than this in one tick has met a face, not a slope, metres.
 const CLIFF_STEP: float = 2.5
 ## A hover below its least height (taken over on a landing) rises back to it at this rate, metres per second.
 const FLOOR_LIFT: float = 12.0
+## The Building layer: what a jetpack body can't pass (it walks over the ground and props by their height).
+const BUILDING_MASK: int = 1 << 2
 ## The unit node turns (yaw only) after the nose at most this fast, radians per second; the airframe takes the rest.
 ## Near the vertical the nose's heading swings wildly, and the node and airframe are smoothed separately on screen.
 const NODE_YAW_RATE: float = TAU
@@ -18,27 +22,39 @@ const NODE_YAW_RATE: float = TAU
 var model: PilotModel
 var jet: FlightModel
 var hover: HoverModel
+## A jetpack type's first-person kit, its tracking and its seeker shotgun; null on flyers.
+var jetpack: JetpackModel
+var tracking: JetTracking
+var shotgun: SeekerShotgun
 ## What the jet was last asked to do.
 var controls := FlightControls.new()
+## The unit's weapon in the pilot's hand (null for a jetpack type, which has the `shotgun`).
+var weapon: PilotWeapon
 
 var _unit: Unit
 var _input: PilotInput
 var _crash: FlightCrash
-## The ability key as of the last tick: a use is a press, not the key held.
-var _ability_held: bool = false
 
 
-func _init(unit: Unit, input: PilotInput, autopilot: FlightAutopilot) -> void:
+func _init(unit: Unit, input: PilotInput, start_velocity: Vector3, facing: Basis) -> void:
 	_unit = unit
 	_input = input
 	var stats: UnitStats = unit.stats
+	_crash = FlightCrash.new(unit)
+	if stats.jetpack != null:
+		jetpack = JetpackModel.new(stats.jetpack)
+		model = jetpack
+		jetpack.start(unit.center(), start_velocity, facing)
+		tracking = JetTracking.new(unit, stats.jetpack.tracking)
+		shotgun = SeekerShotgun.new(unit, stats.jetpack.shotgun, tracking)
+		return
+	weapon = PilotWeapon.new(unit)
 	if stats.hover_flight != null:
 		hover = HoverModel.new(stats.hover_flight)
 	if stats.flight_model != null or hover == null:
 		jet = FlightModel.new(stats.flight_model if stats.flight_model != null else DEFAULT_STATS)
 	model = hover if hover != null else jet
-	_start_model(unit.center(), autopilot.velocity, autopilot.orientation())
-	_crash = FlightCrash.new(unit)
+	_start_model(unit.center(), start_velocity, facing)
 	_set_reach()
 	_crash.start()
 
@@ -64,12 +80,20 @@ func switch_mode() -> void:
 	_set_reach()
 
 
+## A jetpack type on foot or in its kit (no crashes; it walks and lands).
+func is_jetpack() -> bool:
+	return jetpack != null
+
+
+## The pilot's eyes in the world (a jetpack type's view and weapons start here).
+func eye() -> Vector3:
+	return model.position + model.basis * (_unit.stats.cockpit_offset - Vector3.UP * _unit.stats.height * 0.5)
+
+
 func step(delta: float) -> void:
-	# A targeted ability needs a click on the map; the cockpit has no way to aim one yet.
-	if _input.ability and not _ability_held and _unit.ability != null \
-			and _unit.ability.stats.targeting() == AbilityStats.Targeting.NONE:
-		_unit.ability.use()
-	_ability_held = _input.ability
+	if jetpack != null:
+		_step_jetpack(delta)
+		return
 	var from: Vector3 = model.position
 	if hovering():
 		hover.step(delta, _input)
@@ -87,6 +111,55 @@ func step(delta: float) -> void:
 		var cause: FlightCrash.Cause = _crash.check(jet.stats, from, jet.position, jet.basis)
 		if cause != FlightCrash.Cause.NONE:
 			_crash_into(cause, _crash.other)
+	if _unit.alive:
+		weapon.step(_input, model)
+
+
+func _step_jetpack(delta: float) -> void:
+	var from: Vector3 = jetpack.position
+	jetpack.step(delta, _input)
+	_stay_on_map()
+	_jetpack_contact(from)
+	_unit.rotation.y = jetpack.basis.get_euler(EULER_ORDER_YXZ).y
+	var at: Vector3 = jetpack.position - Vector3.UP * _unit.stats.height * 0.5
+	_unit.global_position = at
+	_unit.set_hover(maxf(at.y - _unit.registry.map.air.ground_height(at), 0.0))
+	var view: Basis = jetpack.view_basis()
+	tracking.step(delta, eye(), view, jetpack.afterburning())
+	shotgun.step(delta, _input, eye(), view, not jetpack.afterburning())
+
+
+## Buildings stop the body (it slides along them); the ground and sea under it are its floor: it lands on them, and
+## a grounded body follows ground that drops away gently instead of taking off.
+func _jetpack_contact(from: Vector3) -> void:
+	if _building_between(from, jetpack.position):
+		var to: Vector3 = jetpack.position
+		if not _building_between(from, Vector3(from.x, to.y, from.z)):
+			jetpack.position = Vector3(from.x, to.y, from.z)
+			jetpack.velocity.x = 0.0
+			jetpack.velocity.z = 0.0
+		elif not _building_between(from, Vector3(to.x, from.y, to.z)):
+			jetpack.position = Vector3(to.x, from.y, to.z)
+			jetpack.velocity.y = 0.0
+		else:
+			jetpack.position = from
+			jetpack.velocity = Vector3.ZERO
+	var floor_height: float = _unit.registry.map.air.ground_height(jetpack.position) + _unit.stats.height * 0.5
+	var above: float = jetpack.position.y - floor_height
+	if above <= 0.0:
+		jetpack.position.y = floor_height
+		jetpack.land()
+	elif jetpack.grounded and jetpack.velocity.y <= 0.0 and above <= jetpack.stats.ground_snap:
+		jetpack.position.y = floor_height
+	elif jetpack.grounded:
+		jetpack.leave_ground()
+
+
+func _building_between(from: Vector3, to: Vector3) -> bool:
+	if from.is_equal_approx(to):
+		return false
+	var query := PhysicsRayQueryParameters3D.create(from, to, BUILDING_MASK, [_unit.get_rid()])
+	return not _unit.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 
 func _start_model(at: Vector3, velocity: Vector3, facing: Basis) -> void:

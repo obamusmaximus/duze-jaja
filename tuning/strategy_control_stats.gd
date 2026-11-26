@@ -1,6 +1,6 @@
 class_name StrategyControlStats
 extends Resource
-## Tunable numbers for the strategist's controls in the bird's-eye view and the war table (`views/strategy/`,
+## Tunable numbers for the strategist's controls in the bird's-eye view (`views/strategy/`,
 ## `docs/mechanics/rts_controls.md`): picking figures, the outlines and the map markers drawn on screen.
 ## One `.tres` (`strategy_control_default.tres`).
 

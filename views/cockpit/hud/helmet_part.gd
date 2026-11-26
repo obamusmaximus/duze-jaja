@@ -24,6 +24,11 @@ func _paint() -> void:
 	pass
 
 
+## Whether this part belongs on the HUD of `flight`: the flight marks are a flyer's, not a jetpack type's.
+func shows(flight: PilotFlight) -> bool:
+	return not flight.is_jetpack()
+
+
 ## Whether the world direction is in front of the camera, so it has a place on screen.
 func ahead(direction: Vector3) -> bool:
 	return direction.dot(-hud.camera.global_basis.z) > 0.05

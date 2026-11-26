@@ -3,7 +3,8 @@ extends Node
 ## Turns the player's order clicks and keys into `Order`s for the selection and sends them through the
 ## CommandIssuer. Holding `order_queue` (Alt) queues a waypoint; `order_attack_move` (A) arms attack-move for the next
 ## left click (orders themselves are right clicks); `order_stop` (S) stops; `unit_ability` (F, or the HUD's
-## ability button) fires the main type's ability, or arms a targeted one for the next left click. Also the feedback: the cursor and a short marker where an order landed.
+## ability button) fires the main type's ability, or arms a targeted one for the next left click; a click on an own
+## airfield or mothership pads with flyers selected lands them there, and `order_seek_airfield` (H) sends them to the nearest. Also the feedback: the cursor and a short marker where an order landed.
 ## View side: it only reads the selection and sends orders.
 
 ## Confirm is acid green; hostile orders are safety orange (`UiTokens`).
@@ -59,6 +60,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"unit_ability"):
 		use_ability()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"order_seek_airfield"):
+		seek_airfield()
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"order_stop"):
 		_issuer.issue(Order.stop(_team, _selection.ids()))
 		disarm()
@@ -102,11 +106,7 @@ func target_ability(hovered: Unit, ground: Vector3) -> void:
 		ability_armed = false
 
 
-## A move click: a selection of only loaded carryalls delivers (land, unload, fly home) instead of just flying there.
 func move(point: Vector3) -> void:
-	if _only_loaded_carryalls():
-		_send(Order.deliver(_team, _selection.ids(), point), point, MOVE_COLOR)
-		return
 	_send(Order.move(_team, _selection.ids(), point, _queued()), point, MOVE_COLOR)
 
 
@@ -119,17 +119,54 @@ func attack_move(point: Vector3) -> void:
 	_send(Order.attack_move(_team, _selection.ids(), point, _queued()), point, ATTACK_MOVE_COLOR)
 
 
+## Whether any selected unit can land on a helipad.
+func can_land() -> bool:
+	for unit: Unit in _selection.units:
+		if unit.landing != null:
+			return true
+	return false
+
+
+## A click on one of the team's airfields: the selection's helipad flyers land there, the rest move to the click.
+func land_at(field: Airfield, point: Vector3) -> void:
+	attack_move_armed = false
+	var others := PackedInt32Array()
+	for unit: Unit in _selection.units:
+		if not field.serves(unit):
+			others.append(unit.id)
+	if not others.is_empty() and point.is_finite():
+		_issuer.issue(Order.move(_team, others, point, _queued()))
+	_send(Order.land(_team, _selection.ids(), field.airfield_id, _queued()), field.global_position, MOVE_COLOR)
+
+
+## H: the selection's helipad flyers go to the nearest own airfield with room.
+func seek_airfield() -> void:
+	if not can_land():
+		return
+	attack_move_armed = false
+	ability_armed = false
+	if not _issuer.issue(Order.land(_team, _selection.ids(), 0, _queued())):
+		return
+	for unit: Unit in _selection.units:
+		var order: Order = unit.orders.current()
+		if unit.landing != null and order != null and order.kind == Order.Kind.LAND:
+			_mark(order.target_position, MOVE_COLOR)
+			return
+
+
 func disarm() -> void:
 	attack_move_armed = false
 	ability_armed = false
 
 
-## Sets the cursor for what an order click would do: `hovered` is the unit under the mouse (or null) and
-## `over_ground` whether there is ground under it.
-func show_cursor(hovered: Unit, over_ground: bool) -> void:
+## Sets the cursor for what an order click would do: `hovered` is the unit under the mouse (or null),
+## `over_ground` whether there is ground under it and `over_airfield` whether that is an airfield it would land on.
+func show_cursor(hovered: Unit, over_ground: bool, over_airfield: bool = false) -> void:
 	var shape: Input.CursorShape = Input.CURSOR_ARROW
 	if ability_armed:
 		shape = Input.CURSOR_CROSS
+	elif over_airfield and hovered == null and not attack_move_armed:
+		shape = Input.CURSOR_POINTING_HAND
 	elif not _selection.is_empty() and (hovered == null or hovered.is_enemy_of(_team)):
 		if attack_move_armed or hovered:
 			shape = Input.CURSOR_CROSS
@@ -143,11 +180,15 @@ func show_cursor(hovered: Unit, over_ground: bool) -> void:
 func _send(order: Order, marker_point: Vector3, color: Color) -> bool:
 	if not _issuer.issue(order):
 		return false
+	_mark(marker_point, color)
+	return true
+
+
+func _mark(point: Vector3, color: Color) -> void:
 	var marker := OrderMarker.new()
 	marker.setup(color, _stats.order_marker_seconds)
 	_markers.add_child(marker)
-	marker.global_position = marker_point + Vector3.UP * 0.05
-	return true
+	marker.global_position = point + Vector3.UP * 0.05
 
 
 func _main_ids() -> PackedInt32Array:
@@ -155,14 +196,6 @@ func _main_ids() -> PackedInt32Array:
 	for unit: Unit in _selection.main_units():
 		ids.append(unit.id)
 	return ids
-
-
-func _only_loaded_carryalls() -> bool:
-	var units: Array[Unit] = _selection.units
-	for unit: Unit in units:
-		if unit.carryall == null or unit.cargo.entries.is_empty():
-			return false
-	return not units.is_empty()
 
 
 func _queued() -> bool:

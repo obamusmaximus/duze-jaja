@@ -14,6 +14,8 @@ var _sections: Dictionary = {}
 ## Band (`HudLayout.BAND_*`) to its panel and margin.
 var _bands: Dictionary = {}
 var _modules: Array[HudModule] = []
+## Rows made for modules placed beside each other (they take the same gap as the sections).
+var _rows: Array[BoxContainer] = []
 ## One glitch trace per module, in layout order (`HudSwap` runs them).
 var reveals: Array[HudReveal] = []
 
@@ -123,12 +125,28 @@ func _add_module(placement: HudPlacement, section: int) -> void:
 		module.size_flags_horizontal = Control.SIZE_FILL if section != SECTION.CENTER else Control.SIZE_SHRINK_CENTER
 		if placement.expand:
 			module.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(module)
+	if placement.beside and box is VBoxContainer and not _modules.is_empty() and _modules.back().get_parent() == box:
+		_share_row(_modules.back(), module)
+	else:
+		box.add_child(module)
 	module.bind(_context)
 	_modules.append(module)
 	var reveal := HudReveal.new(module, _side_of(section))
 	reveal.apply_stats(_context.stats)
 	reveals.append(reveal)
+
+
+## Puts `first` (already in a column) and `second` side by side in its place, both hugging the top.
+func _share_row(first: HudModule, second: HudModule) -> void:
+	var column: Node = first.get_parent()
+	var row := _box(false)
+	column.add_child(row)
+	column.move_child(row, first.get_index())
+	column.remove_child(first)
+	for module: HudModule in [first, second]:
+		module.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(module)
+	_rows.append(row)
 
 
 ## The screen edge a section's modules trace in from: corners and sides from their side, the middle row from its edge.
@@ -147,7 +165,7 @@ func _apply() -> void:
 	for reveal: HudReveal in reveals:
 		reveal.apply_stats(_context.stats)
 	var gap: int = UiTokens.px(_context.stats.gap_units)
-	for box: BoxContainer in _sections.values():
+	for box: BoxContainer in _sections.values() + _rows:
 		box.add_theme_constant_override(&"separation", gap)
 	for band: int in _bands:
 		var panel: PanelContainer = _bands[band][0]

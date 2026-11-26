@@ -53,17 +53,25 @@ func _add(system: GPUParticles3D) -> GPUParticles3D:
 	return system
 
 
-func _on_shot_fired(from: Vector3, weapon: WeaponStats) -> void:
+func _on_shot_fired(from: Vector3, weapon: WeaponStats, source: Unit) -> void:
+	if not weapon.muzzle_flash or not source.is_drawn():
+		return
 	_play(_flashes[_next_flash], from, weapon.effect_scale)
 	_next_flash = (_next_flash + 1) % _flashes.size()
 
 
-func _on_shot_hit(at: Vector3, weapon: WeaponStats) -> void:
+## Sparks show on a unit in view (even from an unseen shooter); a miss shows with its shooter.
+func _on_shot_hit(at: Vector3, weapon: WeaponStats, source: Unit, target: Unit) -> void:
+	var seen: Unit = target if target != null else source
+	if seen == null or not seen.is_drawn():
+		return
 	_play(_sparks[_next_spark], at, weapon.effect_scale)
 	_next_spark = (_next_spark + 1) % _sparks.size()
 
 
 func _on_died(unit: Unit) -> void:
+	if not unit.is_drawn():
+		return
 	var burst: Node3D = _deaths[_next_death]
 	_next_death = (_next_death + 1) % _deaths.size()
 	burst.global_position = unit.center()

@@ -21,3 +21,5 @@ max_health = 100.0
 weapon = ExtResource("2_weapon")
 cost = 50
 build_time = 8.0
+sensor_range = 45.0
+signature = 0.5

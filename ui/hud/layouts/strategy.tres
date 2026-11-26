@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://ui/hud/modules/commands_module.tscn" id="5_commands"]
 [ext_resource type="PackedScene" path="res://ui/hud/modules/abilities_module.tscn" id="6_abilities"]
 
+[ext_resource type="PackedScene" path="res://ui/hud/modules/explorer_module.tscn" id="7_explorer"]
+
 [sub_resource type="Resource" id="Resource_resource"]
 script = ExtResource("1_place")
 module = ExtResource("3_resource")
@@ -17,6 +19,13 @@ script = ExtResource("1_place")
 module = ExtResource("4_production")
 section = 5
 order = 1
+
+[sub_resource type="Resource" id="Resource_explorer"]
+script = ExtResource("1_place")
+module = ExtResource("7_explorer")
+section = 5
+order = 2
+beside = true
 
 [sub_resource type="Resource" id="Resource_commands"]
 script = ExtResource("1_place")
@@ -32,4 +41,4 @@ section = 7
 script = ExtResource("2_layout")
 bands = 0
 sides_first = true
-placements = Array[ExtResource("1_place")]([SubResource("Resource_resource"), SubResource("Resource_production"), SubResource("Resource_commands"), SubResource("Resource_abilities")])
+placements = Array[ExtResource("1_place")]([SubResource("Resource_resource"), SubResource("Resource_production"), SubResource("Resource_explorer"), SubResource("Resource_commands"), SubResource("Resource_abilities")])

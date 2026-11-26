@@ -29,6 +29,12 @@ func damage(amount: float, source_id: int) -> void:
 		died.emit(source_id)
 
 
+## Gives back up to `amount` hit points (never past full, and never to the dead).
+func repair(amount: float) -> void:
+	if current > 0.0 and amount > 0.0:
+		current = minf(current + amount, _stats.max_health)
+
+
 ## Full is 1.
 func fraction() -> float:
 	return clampf(current / maxf(_stats.max_health, 0.001), 0.0, 1.0)

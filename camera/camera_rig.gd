@@ -17,7 +17,7 @@ extends Node3D
 @onready var _zoom: CameraZoom = $Zoom
 @onready var _ground: CameraGroundFollow = $GroundFollow
 
-## Off for a rig that floats over no ground (the war table's): the focus keeps the height the rig was placed at.
+## Off for a rig that floats over no ground (the bird's-eye one): the focus keeps the height the rig was placed at.
 var follow_ground: bool = true
 var _base_far: float = 0.0
 

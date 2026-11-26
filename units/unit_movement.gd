@@ -10,6 +10,11 @@ extends Node
 ## cells (a blocked cell stops a move, which then slides along it); the physics engine solves nothing. Flyers are
 ## flown by their `autopilot` (`FlightAutopilot`). `physical` brings back `move_and_slide` (gravity, collision) for direct control.
 
+## A jetpack unit's afterburner adds speed only while the brain asks for at least this share of its top speed (not
+## while it brakes to arrive).
+const CRUISE_SHARE: float = 0.9
+## How far (cells) a jetpack unit set down off walkable ground looks for ground to stand on (once, on leaving it).
+const SETTLE_RINGS: int = 256
 ## Neighbours are searched within the unit's radius plus this (metres): covers other units up to about this radius.
 const NEIGHBOUR_MARGIN: float = 1.5
 ## A standing unit re-checks its ground this often (decisions).
@@ -48,7 +53,7 @@ func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitR
 		autopilot = FlightAutopilot.new(body, stats, registry.map.air)
 		autopilot.snap_to_altitude(altitude_override)
 	if not stats.flying and registry.map and registry.map.is_built():
-		_body.global_position.y = registry.map.surface_height(_body.global_position)
+		_body.global_position.y = registry.map.surface_height(_body.global_position) + _lift()
 
 
 ## One decision (the unit's own tick; `delta` is the time since its last one).
@@ -65,16 +70,23 @@ func decide(delta: float) -> void:
 	if autopilot:
 		# A deploying or deployed Explorer isn't pushed off its bubble; others still make way for it.
 		var anchored: bool = _body.explorer != null and _body.explorer.anchored()
+		var fought: Unit = _body.weapon.target
+		var standing: bool = wanted.length_squared() <= 0.0001
+		autopilot.tilt_toward(fought if standing and fought != null and _body.weapon.in_range(fought) else null)
 		autopilot.command(wanted, facing, Vector3.ZERO if anchored else _separation() * _stats.speed)
 		return
 	if wanted.length_squared() > 0.0001:
 		facing = wanted
 	_target_yaw = atan2(-facing.x, -facing.z) if facing.length_squared() > 0.0001 else NAN
 	var flat := Vector3.ZERO
+	var top: float = _stats.speed
+	if _body.jetpack != null and wanted.length() >= _stats.speed * CRUISE_SHARE:
+		top *= _body.jetpack.boost
 	if wanted.length_squared() > 0.0001:
 		var forward: Vector3 = -_body.global_basis.z
-		flat = wanted.limit_length(_stats.speed) * clampf(forward.dot(wanted.normalized()), 0.0, 1.0)
-	_flat = (flat + _separation() * _stats.speed).limit_length(_stats.speed)
+		flat = wanted.limit_length(_stats.speed) * (top / _stats.speed) \
+			* clampf(forward.dot(wanted.normalized()), 0.0, 1.0)
+	_flat = (flat + _separation() * _stats.speed).limit_length(top)
 	if _flat.length_squared() < 0.0001:
 		_rest_ticks += 1
 		if _rest_ticks % REST_CHECK_TICKS == 0:
@@ -99,19 +111,38 @@ func integrate(delta: float) -> void:
 		_walk(delta)
 
 
-## A flyer goes over to the flight model, flown by `input`, from the autopilot's present state.
+## A flyer goes over to the flight model, flown by `input`, from the autopilot's present state; a jetpack type to
+## its first-person kit, from where it hovers.
 func start_flight(input: PilotInput) -> void:
 	if autopilot:
-		flight = PilotFlight.new(_body, input, autopilot)
+		flight = PilotFlight.new(_body, input, autopilot.velocity, autopilot.orientation())
+	elif _body.jetpack != null:
+		_body.jetpack.reset()
+		_flat = Vector3.ZERO
+		flight = PilotFlight.new(_body, input, Vector3.ZERO, Basis(Vector3.UP, _body.rotation.y))
 
 
-## Back to the autopilot, with the flight's state (a destroyed unit just stops flying).
+## Back to the autopilot, with the flight's state (a destroyed unit just stops flying). A jetpack type drops back to
+## its hover over the ground, out of any blocked cell.
 func end_flight() -> void:
 	if flight == null:
 		return
-	if _body.alive:
-		autopilot.take_over(flight.model.velocity, flight.model.basis)
+	var ended: PilotFlight = flight
 	flight = null
+	if not _body.alive:
+		return
+	if autopilot:
+		autopilot.take_over(ended.model.velocity, ended.model.basis)
+	elif _body.jetpack != null:
+		_body.set_airframe(Basis.IDENTITY)
+		_body.jetpack.reset()
+		_body.set_hover(_lift())
+		_settle(true)
+
+
+## The flat velocity decided last, metres per second.
+func flat_velocity() -> Vector3:
+	return _flat
 
 
 ## The usual height above sea level over ground at `ground` (`FlightAutopilot.altitude_for`). Flyers only.
@@ -137,22 +168,29 @@ func _walk(delta: float) -> void:
 			moved = along_z
 		else:
 			return
-	moved.y = map.surface_height(moved)
+	moved.y = map.surface_height(moved) + _lift()
 	_body.global_position = moved
 
 
-## Standing: take the ground's height again, and step out of a cell that became blocked under the unit.
-func _settle() -> void:
+## Standing: take the ground's height again, and step out of a cell that became blocked under the unit. `walkable`
+## also leaves a cell it can't walk from (a jetpack unit set down over the sea or on a cliff).
+func _settle(walkable: bool = false) -> void:
 	var map: MapGrid = _registry.map
 	if _stats.flying or map == null or not map.is_built():
 		return
 	var position: Vector3 = _body.global_position
 	var cell: Vector2i = map.cell_of(position)
-	if map.is_blocked(cell):
-		var out: Vector2i = map.nearest_walkable(cell)
-		position = map.cell_center(out)
-	position.y = map.surface_height(position)
+	if map.is_blocked(cell) or (walkable and not map.is_walkable(cell)):
+		var out: Vector2i = map.nearest_walkable(cell, SETTLE_RINGS if walkable else 24)
+		if out.x >= 0:
+			position = map.cell_center(out)
+	position.y = map.surface_height(position) + _lift()
 	_body.global_position = position
+
+
+## How far a ground unit's body rides above the ground: a jetpack type's hover, else 0.
+func _lift() -> float:
+	return _body.jetpack.hover_height() if _body.jetpack != null else 0.0
 
 
 ## Direct control: the physics body moves and falls (`_flat` is the wanted velocity).

@@ -5,6 +5,11 @@ extends Resource
 ## and its look (searchlights, beacons). A unit type points at one from `UnitStats.explorer`; its hold is
 ## `UnitStats.cargo`, its flight the usual `UnitStats` flight group, its F the deploy ability (`DeployStats`).
 
+@export_group("Vision")
+## The sensor range of a deployed Explorer (while its base area is open), against signature 1, in metres. Flying, it
+## has its unit type's `sensor_range`.
+@export_range(0.0, 1500.0, 10.0) var base_sensor_range: float = 250.0
+
 @export_group("Deploy")
 ## Deployed hover height above the ground, as a share of its cruise height (`UnitStats.flight_height`; 0.5: half).
 @export_range(0.1, 1.0, 0.05) var hover_fraction: float = 0.5
@@ -20,8 +25,8 @@ extends Resource
 @export_range(0.5, 30.0, 0.5) var climb_time: float = 5.0
 
 @export_group("Bubble")
-## Radius (metres) of the bubble: 35 makes it 70 m across.
-@export_range(5.0, 200.0, 0.5) var bubble_radius: float = 35.0
+## How far across (metres) the bubble is where it meets flat ground: the width of the base area.
+@export_range(10.0, 400.0, 1.0) var bubble_ground_diameter: float = 115.0
 ## Height (metres) of the bubble's centre above the ground where it deployed. Above 0 it is more than a half dome,
 ## so the hull fits inside; the ground it covers (the base area) shrinks a little.
 @export_range(0.0, 100.0, 0.5) var bubble_lift: float = 15.0
@@ -63,10 +68,13 @@ extends Resource
 @export_range(0.0, 1.0, 0.01) var bubble_opacity: float = 0.08
 ## Width (metres) of the beam from the hull's top.
 @export_range(0.1, 10.0, 0.1) var beam_width: float = 1.6
-## How far (metres) the beam reaches above the bubble's top.
-@export_range(0.0, 400.0, 5.0) var beam_overshoot: float = 120.0
 
 
 ## The radius of the ground the bubble covers (the base area).
 func base_radius() -> float:
-	return sqrt(maxf(bubble_radius * bubble_radius - bubble_lift * bubble_lift, 0.0))
+	return bubble_ground_diameter * 0.5
+
+
+## The radius of the bubble's sphere, whose centre is `bubble_lift` above the ground.
+func bubble_radius() -> float:
+	return Vector2(base_radius(), bubble_lift).length()

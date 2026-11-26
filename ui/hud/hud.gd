@@ -10,7 +10,7 @@ enum Mode { RTS, STRATEGY, FLIGHT }
 
 @export var stats: UiStats
 @export var layout: HudLayout
-## The HUD of the strategy views (bird's-eye and war table). None: the RTS HUD stays up in every view.
+## The HUD of the strategy views (the bird's-eye view). None: the RTS HUD stays up in every view.
 @export var strategy_layout: HudLayout
 ## The first-person HUD of an inhabited flyer. None: the RTS HUD stays up there too.
 @export var flight_layout: HudLayout

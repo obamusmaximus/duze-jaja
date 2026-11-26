@@ -1,6 +1,6 @@
 class_name StrategyOverlay
 extends Control
-## Visual only: what the strategy views (bird's-eye, war table) draw on screen above the world and below the HUD:
+## Visual only: what the bird's-eye view draws on screen above the world and below the HUD:
 ## the team's map markers, the outlines ("strategy outline") of the selected and the hovered figure, and a ghost of
 ## the armed marker under the cursor. Figures (`StrategyFigures`) are re-read by `StrategyControl`; positions are
 ## re-projected every frame through the `StrategyProjector`, so everything sticks to the map while the camera moves.

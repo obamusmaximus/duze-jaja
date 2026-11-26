@@ -1,7 +1,7 @@
 class_name StatChip
 extends PanelContainer
 ## A small inset block: a caption over a figure and its unit ("RANGE / 40 M"). `row_for` lays out a unit type's
-## speed, range, damage and rate of fire.
+## speed, range, damage (to infantry and tanks) and rate of fire.
 
 
 func _init(caption: String, figure: String, unit_text: String = "") -> void:
@@ -28,6 +28,10 @@ static func row_for(stats: UnitStats) -> HBoxContainer:
 	var weapon: WeaponStats = stats.weapon
 	if weapon != null:
 		chips.add_child(StatChip.new("Range", "%d" % roundi(weapon.max_range), "M"))
-		chips.add_child(StatChip.new("Damage", "%d" % roundi(weapon.damage)))
+		var profile: DamageProfile = weapon.damage_profile
+		var infantry: float = profile.vs_infantry if profile else DamageProfile.FALLBACK
+		var tank: float = profile.vs_tank if profile else DamageProfile.FALLBACK
+		chips.add_child(StatChip.new("Vs inf", "%d" % roundi(infantry)))
+		chips.add_child(StatChip.new("Vs tank", "%d" % roundi(tank)))
 		chips.add_child(StatChip.new("Rate", "%.1f" % (1.0 / weapon.cooldown), "/S"))
 	return chips

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="UnitStats" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
-[ext_resource type="Resource" path="res://tuning/weapon_skiff.tres" id="2_weapon"]
+[ext_resource type="Resource" path="res://tuning/weapon_beam.tres" id="2_weapon"]
 [ext_resource type="PackedScene" path="res://assets/kenney_space_kit/craft_speederD.glb" id="3_model"]
 [ext_resource type="Texture2D" path="res://ui/icons/units/vtol.svg" id="4_icon"]
 [ext_resource type="Resource" path="res://tuning/flight_vtol.tres" id="5_flight"]
@@ -27,8 +27,16 @@ flight_max_bank_deg = 30.0
 model = ExtResource("3_model")
 flight_model = ExtResource("5_flight")
 model_scale = 2.3
-max_health = 140.0
+max_health = 100.0
 weapon = ExtResource("2_weapon")
 sight_range = 28.0
 hover_flight = ExtResource("7_hover")
 ability = ExtResource("8_ability")
+armor = 3
+anti_air = true
+aim_tilt_deg = 45.0
+pilot_turret = true
+cost = 350
+build_time = 30.0
+sensor_range = 80.0
+signature = 1.8

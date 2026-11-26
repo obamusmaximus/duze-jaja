@@ -23,3 +23,7 @@ func _paint() -> void:
 	draw_rect(Rect2(frame.position, Vector2(BAR.x * clampf(status.fraction, 0.0, 1.0), BAR.y)), color)
 	box(frame, color)
 	text(at + Vector2(0.0, LINE_GAP * 2.0), status.text(), HORIZONTAL_ALIGNMENT_CENTER, color)
+
+
+func shows(_flight: PilotFlight) -> bool:
+	return true

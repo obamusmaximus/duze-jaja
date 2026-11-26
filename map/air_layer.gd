@@ -8,15 +8,33 @@ extends RefCounted
 var bounds: Rect2
 
 var _map: MapGrid
+## Flat decks standing above the ground (airfields): their areas (x, z) and the heights of their tops.
+var _platform_areas: Array[Rect2] = []
+var _platform_tops := PackedFloat32Array()
 
 
 func _init(map: MapGrid) -> void:
 	_map = map
 
 
-## The height under `point`, at least the sea level: from the heightmap where the level has one (it covers the whole
-## map, the grid only the land), else from the grid, and open sea outside both.
+## From now on flyers treat a flat deck over `area` (world x, z) with its top at `top` as ground.
+func add_platform(area: Rect2, top: float) -> void:
+	_platform_areas.append(area)
+	_platform_tops.append(top)
+
+
+## The height under `point`: the ground or sea, or the top of a platform standing there.
 func ground_height(point: Vector3) -> float:
+	var ground: float = _terrain_height(point)
+	for i: int in _platform_areas.size():
+		if _platform_areas[i].has_point(Vector2(point.x, point.z)):
+			ground = maxf(ground, _platform_tops[i])
+	return ground
+
+
+## The height of the land under `point`, at least the sea level: from the heightmap where the level has one (it covers the whole
+## map, the grid only the land), else from the grid, and open sea outside both.
+func _terrain_height(point: Vector3) -> float:
 	if _map.terrain != null:
 		return maxf(_map.terrain.height_at(point.x, point.z), MapGrid.SEA_LEVEL)
 	if _map.is_built() and _map.bounds.has_point(Vector2(point.x, point.z)):

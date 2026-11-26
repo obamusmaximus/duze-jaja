@@ -61,6 +61,8 @@ func _process(delta: float) -> void:
 		if flight != null:
 			_follow(flight, 1.0 - exp(-_stats.response * delta))
 			_warn(flight.model)
+		else:
+			_set_warning(false) # On the autopilot.
 	_drive()
 	if not flying and _level <= 0.0:
 		for loop: SfxLoop in [_engine, _wind]:

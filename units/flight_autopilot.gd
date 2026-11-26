@@ -31,6 +31,8 @@ const CLIMB_MARGIN: float = 0.8
 const HARD_FLOOR: float = 0.5
 ## After a hand-over, how fast the climb or dive it was given eases to its own, metres per second per second.
 const TAKE_OVER_EASE: float = GRAVITY * 2.0
+## How sharply a held flyer closes on its point (per second).
+const HOLD_PULL: float = 2.0
 ## Hover types lean this share of the angle their acceleration would ask for (look only).
 const HOVER_LEAN: float = 0.6
 
@@ -39,7 +41,18 @@ var velocity := Vector3.ZERO
 ## Nose up (+) or down, and roll with the left wing down (+), in radians. Yaw is the unit's own rotation.
 var pitch: float = 0.0
 var bank: float = 0.0
+## Hover types: the pitch (radians) that puts the nose on what the unit is fighting; NAN for none. Look only.
+var aim_pitch: float = NAN
 
+## A point (x, z) to slide to and stay over, pushed by nothing (a pad being landed on); `Vector3.INF` for none.
+var hold: Vector3 = Vector3.INF
+## Top speed of that slide, metres per second.
+var hold_speed: float = 0.0
+## How fast it may sink toward a held altitude, metres per second; 0 for its usual climb rate.
+var sink_rate: float = 0.0
+
+## A fixed wing told to fly like a hover type (to land and take off).
+var _vtol: bool = false
 var _body: Unit
 var _stats: UnitStats
 var _air: AirLayer
@@ -76,7 +89,24 @@ func _init(body: Unit, stats: UnitStats, air: AirLayer) -> void:
 	_cruise = altitude_for(_air.ground_height(body.global_position))
 
 
+## Whether it is flying as a fixed wing now.
 func is_fixed_wing() -> bool:
+	return _has_wings() and not _vtol
+
+
+## A fixed wing flies like a hover type while `on` (landing and takeoff), and flies on its wings again after.
+func set_vtol(on: bool) -> void:
+	if not _has_wings() or on == _vtol:
+		return
+	if on:
+		_drive = Vector3(velocity.x, 0.0, velocity.z)
+	else:
+		_speed = maxf(_drive.dot(_forward()), 0.0)
+	_vtol = on
+	_orbiting = false
+
+
+func _has_wings() -> bool:
 	return _stats.flight_style == UnitStats.FlightStyle.FIXED_WING
 
 
@@ -97,6 +127,18 @@ func command(wanted: Vector3, facing: Vector3, nudge: Vector3) -> void:
 	var soon: Vector3 = _body.global_position + Vector3(velocity.x, 0.0, velocity.z) * PULL_UP_SECONDS
 	var near: float = maxf(_air.ground_height(_body.global_position), _air.ground_height(soon))
 	_pull_up = _body.global_position.y < near + _stats.flight_min_clearance * 0.5
+
+
+## Hover types: tilt the nose onto `target` while standing to fight it, if it is within the type's `aim_tilt_deg` of
+## level; null (or too steep) for the usual lean.
+func tilt_toward(target: Unit) -> void:
+	aim_pitch = NAN
+	if target == null or is_fixed_wing() or _stats.aim_tilt_deg <= 0.0:
+		return
+	var to: Vector3 = target.center() - _body.center()
+	var elevation: float = atan2(to.y, Vector2(to.x, to.z).length())
+	if absf(elevation) <= deg_to_rad(_stats.aim_tilt_deg):
+		aim_pitch = elevation
 
 
 ## One physics tick. `altitude_override` is a fixed height to hold (pads and landings), NAN for the usual altitude.
@@ -125,11 +167,16 @@ func step(delta: float, altitude_override: float) -> void:
 			flat *= lerpf(_climb_first(), 1.0, _carry_on)
 	flat += _nudge
 	var position: Vector3 = _body.global_position
+	if hold.is_finite():
+		var to := Vector3(hold.x - position.x, 0.0, hold.z - position.z)
+		flat = (to * HOLD_PULL).limit_length(hold_speed)
+		_drive = Vector3.ZERO
 	var wanted_height: float = _cruise if is_nan(altitude_override) else altitude_override
 	var climb_limit: float = _stats.flight_climb_rate
 	if _pull_up and is_nan(altitude_override):
 		climb_limit = maxf(climb_limit, Vector2(flat.x, flat.z).length() * PULL_UP_SLOPE)
-	var climb: float = clampf((wanted_height - position.y) / delta, -_stats.flight_climb_rate, climb_limit)
+	var sink: float = sink_rate if sink_rate > 0.0 else _stats.flight_climb_rate
+	var climb: float = clampf((wanted_height - position.y) / delta, -sink, climb_limit)
 	if _easing:
 		var eased: float = move_toward(velocity.y, climb, TAKE_OVER_EASE * delta)
 		_easing = not is_equal_approx(eased, climb)
@@ -151,6 +198,9 @@ func take_over(with_velocity: Vector3, facing: Basis) -> void:
 	pitch = angles.x
 	bank = angles.z
 	_body.set_attitude(pitch, bank)
+	_vtol = false
+	hold = Vector3.INF
+	sink_rate = 0.0
 	velocity = with_velocity
 	var flat := Vector3(with_velocity.x, 0.0, with_velocity.z)
 	_speed = flat.length()
@@ -160,6 +210,7 @@ func take_over(with_velocity: Vector3, facing: Basis) -> void:
 	_target_yaw = NAN
 	_yaw_rate = 0.0
 	_orbiting = false
+	aim_pitch = NAN
 	_pull_up = false
 	_easing = true
 	_carry_on = 1.0
@@ -224,7 +275,7 @@ func turn_radius(speed: float) -> float:
 
 ## How far inside the map edge a destination must lie, so the flyer can stay on the map there.
 func edge_margin() -> float:
-	return orbit_radius() + turn_radius(_stats.flight_min_speed) if is_fixed_wing() else _stats.radius
+	return orbit_radius() + turn_radius(_stats.flight_min_speed) if _has_wings() else _stats.radius
 
 
 ## The usual altitude here, raised for hills ahead: each point ahead asks for its altitude less what can still be
@@ -307,9 +358,12 @@ func _lean(delta: float, yaw_rate: float, acceleration: float) -> void:
 	var wanted_bank: float = clampf(atan(flat_speed * yaw_rate / GRAVITY), -limit, limit)
 	var wanted_pitch: float
 	if is_fixed_wing():
-		wanted_pitch = atan2(velocity.y, maxf(flat_speed, 1.0))
+		# Never read as slower than its slowest: it picks up speed as it climbs off a pad.
+		wanted_pitch = atan2(velocity.y, maxf(flat_speed, _stats.flight_min_speed))
 	else:
 		wanted_pitch = clampf(-atan(acceleration / GRAVITY) * HOVER_LEAN, -limit, limit)
+		if not is_nan(aim_pitch):
+			wanted_pitch = aim_pitch
 	var blend: float = 1.0 - exp(-_stats.flight_lean_rate * delta)
 	bank = lerpf(bank, wanted_bank, blend)
 	pitch = lerpf(pitch, wanted_pitch, blend)

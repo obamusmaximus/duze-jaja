@@ -53,9 +53,29 @@ func in_arc(other: Unit) -> bool:
 	return forward.angle_to(to_other) <= deg_to_rad(stats.fire_arc_deg)
 
 
-func step(delta: float) -> void:
+## The cooldown has run out.
+func is_ready() -> bool:
+	return stats != null and _cooldown <= 0.0
+
+
+## The share of the cooldown still to run, 1 just after a shot.
+func cooling() -> float:
+	return clampf(_cooldown / maxf(stats.cooldown, 0.001), 0.0, 1.0) if stats else 0.0
+
+
+## A shot was just fired (also by a pilot's hand, `PilotWeapon`).
+func reload() -> void:
+	_cooldown = stats.cooldown
+
+
+## Only the cooldown runs (a unit that may not fire this tick).
+func cool(delta: float) -> void:
 	if _cooldown > 0.0:
 		_cooldown -= delta
+
+
+func step(delta: float) -> void:
+	cool(delta)
 	if stats == null or _target_id == 0 or _cooldown > 0.0:
 		return
 	var aim: Unit = target
@@ -64,7 +84,7 @@ func step(delta: float) -> void:
 		return
 	if not in_range(aim) or not in_arc(aim):
 		return
-	_cooldown = stats.cooldown
+	reload()
 	_shots.fire(_unit, aim, stats)
 
 
