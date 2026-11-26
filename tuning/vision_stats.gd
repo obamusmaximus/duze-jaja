@@ -42,10 +42,10 @@ extends Resource
 @export_range(0.0, 1.0, 0.01) var coverage_edge: float = 0.07
 
 @export_group("Last known")
-## Seconds a lost unit's last-known record lasts (its heat and cross fade over them). Simulation.
-@export_range(5.0, 900.0, 5.0) var memory_time: float = 180.0
-## Seconds a big unit's last-known record (its ghost) lasts. Simulation.
-@export_range(5.0, 900.0, 5.0) var ghost_time: float = 90.0
+## Seconds a lost unit's last-known record lasts (its heat and cross fade over them). The default is a day: in practice no fade. Simulation.
+@export_range(5.0, 3600.0, 5.0, "or_greater") var memory_time: float = 86400.0
+## Seconds a big unit's last-known record (its ghost) lasts. The default is a day: in practice no fade. Simulation.
+@export_range(5.0, 3600.0, 5.0, "or_greater") var ghost_time: float = 86400.0
 ## Radius of one lost unit's heat on the ground, metres.
 @export_range(4.0, 200.0, 1.0) var heat_radius: float = 48.0
 ## Side of one texel of the heat picture, metres. Smaller is rounder and costs more to rebuild.
