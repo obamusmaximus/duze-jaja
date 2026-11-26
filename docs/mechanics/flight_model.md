@@ -36,7 +36,6 @@ How an inhabited flyer flies: two control types, **jet** and **hover**. Design: 
 ## Known issues
 - The hover numbers have not had a feel pass.
 - A hover slides along buildings by dropping one axis at a time, so it can feel sticky on a slanted face.
-- The Explorer can't deploy from the cockpit.
 - An aim well below the nose rolls inverted and pulls through, losing a lot of height (`steer_push_angle_deg` sets from where).
 - The gains have not had the feel pass yet.
 - Crashes have no effects of their own beyond the unit's death burst.

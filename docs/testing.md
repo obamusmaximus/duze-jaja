@@ -8,7 +8,7 @@ Read before writing a headless or `--script` test harness. Add a line here when 
 - A `--script` harness (`extends SceneTree`) can't name autoloads as globals at compile time: reach them with `root.get_node("PlaytestLog")`.
 - Headless runs have no renderer, so `PlaytestLog`'s screenshot logs a harmless "Parameter t is null" error.
 - Code that uses `get_tree().current_scene` gets null when a script adds the level to `root`.
-- Autoloads (`Sfx`) are not yet registered while a `--script` harness runs `_init`: `await process_frame` before loading a level whose scripts name them.
+- Autoloads (`Sfx`) are not yet registered while a `--script` harness runs `_init`: `await process_frame` before loading a level whose scripts name them. Leave vars untyped rather than typing them as such a script's class (`CockpitView`, `CameraRig`): the type compiles it with the harness.
 - Run one level load per process when comparing several loads.
 - To change a stats resource before loading a level, keep the loaded resource in a variable: otherwise it can be freed and the level loads a fresh copy.
 - A GDScript lambda captures locals by value: assigning to an outer variable inside one (a signal callback collecting results) changes nothing outside. Mutate a container instead (`got[0] = x`).

@@ -2,7 +2,7 @@
 
 Goal: a shorter atoll load by running the map's build stages in parallel with `WorkerThreadPool`. One step per session. Delete this file once built.
 
-**Read:** `docs/mechanics/heightmap.md`, `pathing.md` (MapGrid, land regions), `water.md` (shore field); `levels/atoll/atoll_level.gd`, `levels/sandbox/sandbox.gd`, `terrain/terrain_chunks.gd`, `terrain_chunk_mesh.gd`, `terrain_light.gd`, `terrain_heights.gd`, `map/map_grid.gd`, `water/shore_field.gd`.
+**Read:** `docs/mechanics/heightmap.md`, `pathing.md` (MapGrid, land regions), `water.md` (shore field); `levels/atoll/atoll_level.gd`, `levels/match_level.gd`, `terrain/terrain_chunks.gd`, `terrain_chunk_mesh.gd`, `terrain_light.gd`, `terrain_heights.gd`, `map/map_grid.gd`, `water/shore_field.gd`.
 
 ## Starting point
 The cheaper work is done: decoded heights are cached in `TerrainHeights`, wholly submerged chunks get no meshes, and the grid and shore loops are tightened. Check `git status` first: if that work is still uncommitted, work in the main checkout, because a fresh worktree won't have it.
@@ -22,7 +22,7 @@ After the decode, three chains don't depend on each other: **light then meshes**
 
 ## Hazards
 - **Height cache:** `TerrainHeights` decodes on the first read, which isn't thread-safe. Decode on the main thread before starting any task (add a `prepare()` for it). Nothing may write heights while tasks run: set up the brush and the reloader after they finish.
-- **Don't split the light bake.** A partial `bake(area)` only looks `light_reach` upstream (and pads the other axis to match), while the full bake carries shadows from the map's edge, so bands would change the shadows and could leave seams. Run it as one task. It also writes a member array, so nothing may read `color_at` until it has finished.
+- **Don't split the light bake.** (Since match flow 3a the shadow is `TerrainShadow`, and `light_reach` is gone.) A partial `bake(area)` only looks `light_reach` upstream (and pads the other axis to match), while the full bake carries shadows from the map's edge, so bands would change the shadows and could leave seams. Run it as one task. It also writes a member array, so nothing may read `color_at` until it has finished.
 - **`WorldMaterials.role()`** fills a static dictionary on first use. Workers must not call it, which affects `TerrainChunkMesh.build` and `WarTableMesh`.
 - **Engine objects:** have workers return plain data (packed arrays, bytes). Make `ArrayMesh`, `ImageTexture`, `HeightMapShape3D` and nodes, assign materials and emit signals on the main thread.
 - **`MapGrid.build`** sets `_built` before sampling and emits `cells_changed` at the end. While it runs on a worker, nothing else may touch the grid or its `astar`; `is_built()` must stay false until the main thread publishes the result. Only the heightmap path (`terrain` set) can leave the main thread: the ray path uses the physics space.

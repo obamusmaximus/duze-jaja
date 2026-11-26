@@ -1,8 +1,8 @@
 # GAME DESIGN (working outline)
 
-**Optional reading.** Not needed at the start of a session; `CLAUDE.md` and `STATUS.md` are enough for coding work. Open this when discussing game design, level structure or progression. It records where a design discussion got to, so it holds decisions, leanings and open questions. Nothing here is final unless marked **Decided**. No tunable values belong here (name the parameter, the value lives in `tuning/`).
+**Optional reading.** Not needed at the start of a session; `CLAUDE.md` and `STATUS.md` are enough for coding work. Open this when discussing game design, level structure or progression. **This file holds decisions** (a few older sections still carry a marked leaning). Ideas being mulled over, parked ideas and open questions live in `docs/brainstorm.md`; lessons from other games in `docs/prior_art.md`. Design discussions update these docs every turn. No tunable values belong here (name the parameter, the value lives in `tuning/`).
 
-_Last updated: 2026-11-22_
+_Last updated: 2026-11-26_
 
 ## Vision
 A top-down 3D real-time strategy game built, to start with, along the lines of Red Alert 3 and C&C3: Tiberium Wars: their camera, their control scheme, army-and-base play.
@@ -22,9 +22,16 @@ A top-down 3D real-time strategy game built, to start with, along the lines of R
 - **Setting: mothership warfare over islands** (below, "A typical match"). Battlefield 2142's Titan mode is a main inspiration.
 - **Roles split command** between a strategist, company commanders and first-person players (below, "Roles").
 - **Squads are the tactical unit** and **carryalls deliver them** (below, "Squads", "Carryalls").
-- **Tilt-shift is part of the look:** the strategy view is a war table (below, "Views").
+- **Tilt-shift is part of the look** of the strategy view (below, "Views").
 - **First-person flight is a main source of fun** (below, "Flight").
 - **Every unit type has an ability on F** (below, "Unit abilities").
+- **Player and AI parity** (below): a player is one unit with better decisions, not better information or stats.
+- **Fog of war by detection:** sensor against signature, height and terrain (below, "Fog of war").
+- **Night is the default on the atoll** (below, "Time of day").
+- **Operations** are the commander's planning tool and the way first-person players join the action (below).
+- **Airfields and the mothership's pads:** each team has one airfield (six helipads) on its island's plateau, near its mothership; the mothership has four carryall pads, one Explorer pad (the Explorer is built there) and six helipads (`docs/plans/match_flow.md`, steps 1 and 2).
+- **Squads are command groups**, not a core mechanic (below, "Squads"); **a player leads their squad** with a ping wheel (below, "Roles").
+- **Matches last about 30 minutes**, with room to come back (below, "Match pacing").
 
 ## A typical match (Decided unless marked)
 The reference level is the battlefield level (`levels/atoll/`, built by `docs/plans/battlefield.md`): an atoll and islands in open sea, a mothership per side far out. The green island was its first draft.
@@ -37,15 +44,18 @@ The reference level is the battlefield level (`levels/atoll/`, built by `docs/pl
 - **The island battle is over capture points** (radar arrays, launch platforms). Capturing one gives static defences and a forward spawn point.
 - **Win condition (for now): tickets.** Holding points earns tickets; the first side to reach the target wins.
 - **Later:** a mothership assault, in the style of Battlefield 2142's Titan mode (holding points lets you take the fight to the enemy mothership), possibly including infiltrating it in first person. So the mothership should become a unit with separate parts (hangars, production bays, carryall pads, forward-base pieces) that each have their own health, rather than one health bar.
+- **Every unit can capture a point.** (Capture rules, zone and bubble are being worked out: `docs/brainstorm.md`.)
+- **Maps will be joined by land** eventually (bridges, a new map, or naval ferries); the current atoll's two islands are not.
 - **Snowballing is a known risk.** Points are not the economy (yet) for that reason, and the defences and forward spawn they give must not make a held point too hard to retake.
 
 ## Economy (Leaning: flat income, no harvesting)
 - **Both sides get the same flat income per minute.** No resource harvesting and no economy micro. The skill is in how the income is spent: which units go into which squads, and later how much goes into forward bases, to suit the commander's strategy and the battlefield's needs. Think Clash Royale more than C&C.
 - Open: a bank cap, and whether unspent income carries over.
 
-## Squads (Decided)
-- **A squad is made of individual units**, and in the RTS view each unit can still be micro'd on its own (with the right clearances), or taken over in first person.
-- **Above that, the squad is the smallest tactical unit**, and it usually has one job: scouting, patrol, guard duty, a hail-mary covert operation. A big battle over a control point is rarely just one squad.
+## Squads (Decided: a command group; the rest is open, `docs/brainstorm.md`)
+- **The unit is the core of the game; a squad is a command and control group** of separate units. In the RTS view each unit can still be micro'd on its own, or taken over in first person.
+- **Shared engagement and awareness:** when one member detects or engages an enemy, the whole squad knows it and engages. (No lone unit fighting a tank formation because only one tank was in its range.)
+- A squad usually has one job: scouting, patrol, guard duty, a hail-mary covert operation. A big battle over a control point is rarely just one squad. What else a squad is stays open: build nothing more on it yet.
 - **Fully custom, with presets:** the commander composes a squad from unit types, or starts from a preset (fireteam, anti-air, motorized division, covert insertion, and so on). The rule is one squad per carryall; a less granular strategy may call for bigger single squads.
 - Squads are produced on the mothership in several parallel production lines, paid from the income.
 - Squads are also the natural unit the strategist hands to company commanders ("Roles") and the AI's squad layer ("Commander AI").
@@ -53,32 +63,78 @@ The reference level is the battlefield level (`levels/atoll/`, built by `docs/pl
 ## Carryalls (Decided)
 - **Big air transports** that carry squads from the mothership to the islands.
 - **Cargo:** infantry slots and machinery slots (twice as many infantry slots as machinery ones; the counts are tunables). An IFV takes half the machinery slots, a tank-type unit all of them.
+- **Deploy (F)** is how it sets its load down: it lands where it is, unloads and flies itself back to a mothership pad. A move order only moves it. Both it and the Explorer can use their deploy while flown in first person.
 - **Para-drop** everything it carries anywhere; it **must land to pick units up**.
 - **Two carried units can act as side gunners**, firing from the carryall.
 - **A player can pilot it** (first person); otherwise an autopilot (not an AI infantry unit) carries out RTS-view orders.
 - **Cargo is stored as data** (type, health, squad), not as units riding along; dropped or unloaded units come back as themselves.
 - Open: whether its cargo dies when it's shot down, and whether units can be shot while descending.
 
-## Roles (Decided: compartmentalized command; first-person squads are a leaning)
+## Roles (Decided: compartmentalized command)
 In multiplayer one side can be several players, each in one role:
-1. **Strategist** (strategy view): decides strategy and how units are distributed among the commanders.
-2. **Company commanders** (RTS view): run their part of the battlefield with the units assigned to them.
-3. **First-person players:** take over a single unit, possibly leading an AI squad, for Battlefield-style play. A player-controlled unit will nearly always outplay its AI equivalent, and that's intended.
+1. **Commander (strategist):** for now one commander runs both the strategy view and the RTS view. (Company commanders, a rank below who carry out single operations, are parked in `docs/brainstorm.md`.)
+2. **First-person players:** may inhabit **any unit of their team** at any time, including on joining a match in progress. Most units are already carrying out an order (often an idle guard order, which few players will pick). An operations menu lists every running operation; a player joins any role in one, from the carryall pilot to the smallest ground unit.
+
+**Player and AI parity (Decided).** Most seats in a match are AI, so:
+- A player is one unit with **better decisions, not better information or stats**. Their edge is aim (an AI's accuracy falls off with range, a good player's doesn't), using cover, dodging, and improvising. No player-only information (no spotting key) and no player-only actions: everything a player can do, the unit's brain can do too, if worse.
+- **Balance check:** a player-controlled unit always beats one AI unit of its type and usually doesn't beat two. An army that would win as AI also wins against players.
+- Players shine where many decisions are taken on the fly: covert operations, flying, difficult micro taken off the commander's hands.
+- **A whole match can be played with only AI units** and the commander loses no real feature.
+
+**The game is unforgiving to lone players (Decided).** A rogue player can't do much outside the strategy: a jet flown alone into enemy territory gets shot down, a single infantry unit can't fight an army. The sandbox allows cool plays, but they come from playing inside the commander's strategy.
+
+**Grunts (Decided):** the basic rifle infantry is called a **grunt** (the `trooper` type now). Bullet fodder, never meant to need a player.
+
+**A player leads their squad (Decided).** A player inhabiting a unit in a squad becomes its squad leader and orders the other members with a **ping wheel** (in the style of Apex Legends' pings): middle mouse places a marker, dragging opens a wheel to pick the task (rally here, attack that, escort this, follow me). Pings are ordinary orders through `CommandIssuer`, limited to the player's own squad. Commanding a few grunts is what makes one player feel important on a big battlefield. A squad with no player has no squad leader orders: it follows the commander's orders (later a company commander's), as any AI squad does.
 
 What this means for the build:
 - **Every role can be a player or the AI.** The AI commander's layers line up with the roles (strategy layer, managers and squads, single unit brains), so empty roles and single player are covered by the same AI.
 - **Ordering rights sit below the team:** a unit belongs to a team and is assigned to a controller (a player or an AI). `CommandIssuer`'s team check becomes "may this controller order this unit".
 
+## Fog of war (Decided)
+On a to-scale map information is crucial, so the fog is strict and scouting is a core job.
+- **Detection:** every unit type has a **sensor** and a **signature**. An observer detects a target when its sensor against the target's signature covers the distance, with a clear line of sight over the heightmap; height helps the observer. Big units (tanks on a ridge, the Explorer) are seen from far, infantry only up close. Mountains and later trees are the hiding places.
+- **The fog closes quickly** once nothing detects an area, so detection has to be kept up: scout and radar units and emplacements, scouting and patrol routes, a balance of scouts against fighting units. Regular ground units see little.
+- **The Explorer sees a large area** (shown by its searchlights; carryalls get searchlights later).
+- **Cloak:** some units are invisible to sight and found only by radar or a scan. **Firing breaks cloak.**
+- **The commander has a short radar scan.**
+- **Who knows what (awareness):** the commander sees the team's vision. A single unit knows only what it detects itself, plus what its squad knows, plus what the base it's linked to (a deployed Explorer, an outpost) detects. It reacts only to what it knows.
+- **The first-person view draws what its unit knows**, the same as its AI twin would react to. No thick haze: undetected units simply aren't there, night hides the edges (dark shapes far away are plausibly unseen), and detection is quick to gain and slightly slower to lose, so units fade rather than pop.
+- **Coverage shows on the map** (RTS and strategy views): unwatched ground is dimmed or tinted with a faint wireframe grid over the terrain, with line-of-sight shadows behind ridges.
+- **Last known** (commander views only): big units, such as the Explorer and carryalls, leave a wireframe ghost of themselves where last seen. Other units' last-known positions show as a heatmap on the unwatched terrain. Heat and its crosses fade over about three minutes, ghosts over about a minute and a half; a mark clears early when its spot is revealed again with the unit gone, or when the unit is spotted elsewhere.
+- **Bases see:** each team's airfields and motherships have sensors, and a deployed Explorer sees farther than a flying one. A unit is linked to a base (and shares its detection) while it is inside the base area.
+- **No spotting and no "lights off" stance.** Sneaking is a choice of route, not a mechanic.
+
+## Stances (Decided)
+RTS-style stances decide what a unit does with what it knows (guard, hold ground, return fire, aggressive; the exact set follows RA3). Units stationed at an outpost are on guard: once the outpost detects an attacking force they take formation and fire, but don't leave it. The commander can still micro.
+
+## Time of day (Decided)
+Fixed per match and per map. **The atoll is a night map by default,** not a difficulty setting (moonlight, a blue sky with stars rather than black, no night vision). It needn't look entirely arcade-bright: units read plenty clearly, and a darker night gives lights something to stand out against. It asks for lighting design and many visible lights: searchlights, navigation lights on aircraft, base lights.
+**Lamps:** aircraft wingtips are aviation's red (port) and green (starboard), with a white tail light and strobe; they show heading, not team, which the units already show plainly.
+**The moon is low,** so the terrain casts long shadows that read from the bird's-eye view.
+**Light never changes what anyone knows:** darkness, moon shadows and lamps neither hide nor reveal; only detection does.
+
+## Operations (Decided)
+The commander's tool for planned actions, and how first-person players find something worth doing.
+- **An operation is an ordered list of phases**, each with markers and an order: go here, then proceed there, sneak round here, scout here, attack here. A richer version of RA3's queued (shift) orders.
+- **Forces:** units already on the battlefield, assigned to it, or a **new strike team** launched from the mothership, which may include carryalls, jets and other units.
+- **AI units carry it out**; first-person players join any role through the operations menu (above, "Roles").
+
+## Match pacing (Decided)
+- **Target match length: about 30 minutes**, longer between evenly matched commanders. Long enough that a side can bounce back, re-plan and win back momentum, rather than an early edge deciding the match; not so long that commanding becomes a chore.
+- **A 30-second loop for every role** (after Halo's designers): each half-minute has a beat of action, a beat of repositioning or recovering, a change of tactic, and some downtime, so nothing is on full intensity all the time. Both the first-person and the commander's play are designed against it.
+- **The commander delegates micro to the AI** (unit and squad behaviour), so their job is attention: hold the main front lines and, when nothing there is urgent, spend thirty seconds to a minute on an operation in the RTS view. One person can fill both the strategist and the company commander role.
+
 ## Changing maps (Decided)
 Parts of the map can appear and disappear, walls can block the way, and elevation can change, all during a match.
 - **Pathing must update locally and cheaply.** A change rebuilds only the area it touches, units whose path crosses it re-path, and nothing assumes a map baked once at load.
-- **Terrain is game data, not a static mesh.** Height and passability live in a map model that the game changes, and the terrain mesh, collision and pathing all rebuild from it in chunks. This model is also what the strategy view draws, and what building placement and fog of war read.
+- **Terrain is game data, not a static mesh.** Height and passability live in a map model that the game changes, and the terrain mesh, collision and pathing all rebuild from it in chunks. This model is also what building placement and fog of war read.
 - Units standing on ground that vanishes or rises need defined outcomes (fall, die, get pushed out); decide when the first such feature is built.
 
 ## Views (Decided: three views of one match)
 In one match the commander switches freely between:
 1. **RTS view:** the camera and controls below. A tactical, company-commander view, for micro.
-2. **Strategy view (Decided, v1): a war table.** A tilt-shift view of about two thirds of the map at its farthest, for big-picture command and unit distribution. It need not show the live level: it's a model of the map with low-res, scaled-up unit models (as in Homeworld) or icons. Zooming in hands over to the live battle in the RTS view. Its HUD overlay builds squads, assigns landing zones, places map markers allies can see, and sets general strategy outlines (the guidelines, below). A lighter tilt-shift fades in as the RTS camera zooms out, so the two views blend.
+2. **Strategy view (Decided): a live bird's-eye view** of the real map under a tilt-shift, for big-picture command and unit distribution (the war table model it replaces was dropped). Its HUD overlay builds squads, assigns landing zones, places map markers allies can see, and sets general strategy outlines (the guidelines, below).
 3. **First-person:** inhabit any own unit on the map and control it directly.
 
 What this means for the build:
@@ -166,18 +222,5 @@ The hotkeys in this table follow how we remember RA3 and C&C3; the exact keys an
 
 **Production (leaning: the C&C model):** construction and unit production are queued from a sidebar, not by selecting the building, and new structures are placed near existing ones. This shapes the HUD layout, but it isn't part of the groundwork.
 
-## Open questions
-- **Economy:** the flat income is a leaning (above, "Economy"); how the strategist hands it out to commanders is open.
-- **Look:** the setting is decided; how the world art shows scale (haze, detail density, slow heavy motion) against the style guide's flat look is open.
-- **Map scale:** a mothership that could host a force is likely a few hundred metres long, so a match map is likely kilometres, not hundreds of metres. That affects grid size and network relevance. Picked on the scale reference level (`docs/plans/battlefield.md`, step 1).
-- **Capture points:** how capturing works (presence, timers, contesting); whether radar arrays and launch platforms do different things; whether a point's defences switch sides on capture or must be rebuilt.
-- **Forward bases:** can they be shot down in transit, moved once placed, or rebuilt after they're lost? Where may they be placed? How much income do they cost?
-- **Mothership relocation and naval drops:** when and how a mothership moves, and what it drops on the water.
-- **Mothership assault:** how points open it up, and what "winning" the assault means (destroyed, boarded, captured).
-- **Modes besides multiplayer:** AI skirmish, campaign missions?
-- **Networking model:** server-authoritative is the leaning (above); confirm before networking is built. Hosting: a player hosts, or dedicated servers, or both?
-- **Strategy view:** what exactly can the strategy outlines (guidelines, Leitlinien) say, and how does the AI read them?
-- **Time:** what pause and slow time do in multiplayer, and whether slow time becomes a mechanic.
-- **Ground changing under units:** fall, die or get pushed out?
-
-## Parked
+## Open questions and parked ideas
+In `docs/brainstorm.md`.

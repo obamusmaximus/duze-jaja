@@ -65,18 +65,17 @@ Marathon's look, which Bungie calls "graphic realism", is the main reference for
 | `WARNING` | safety orange | hazard markings | |
 | `STONE`, `STONE_DARK` | desaturated warm greys | rock and earth | `rock`, `rockTrack`, `rockDark` |
 | `MINERAL` | off-white | crystals | `crystal` |
-| `GRASS` | sage | grass, low ground cover (tinted terrain tiles) | |
+| `GRASS` | sage | grass, low ground cover | |
 | `LEAF`, `BARK` | olive, dark stone | tree canopies and trunks | `leaves`, `bark` (our tree models) |
 | `SAND` | pale greyed sand | beaches, pale cliffs | |
 | `SOIL` | greyed rust brown | Mars and other rust ground | |
 
 - **Nature is muted and greyed**, so the accents always stand out against it: the sea is a dark slate (`WORLD_SEA_DEEP`, `WORLD_SEA_SHALLOW`), never cyan; plants are sage and olive, never acid green; soil is brown, never orange. Water reads its colours from the palette directly; terrain picks roles (`TerrainStats.tile_role`, `cliff_role`).
 - **Marks** (plates, rings, deck lines) use `WorldMaterials.mark(color)`: unshaded, so they read the same in any light.
-- **Ground:** concrete grey with a thin panel grid (`levels/sandbox/ground_grid.gdshader`), which also shows scale. The void beyond is deep black.
-- **Light and air:** every level instances `WorldLight` (`lighting/world_light.tscn`) with a shared `LightStats` preset (Map tab): `light_day` (a pale sky fading to the haze colour at the horizon, haze over distance) or `light_void` (the black void, distance fading to black). One shadow-casting sun in the sun colour, haze-coloured ambient light, filmic tonemap with the exposure kept low enough that bone hulls don't blow out. Colours are palette roles (`WORLD_SKY`, `WORLD_HAZE`, `WORLD_SUN`, `WORLD_VOID`).
+- **Light and air:** every level instances `WorldLight` (`lighting/world_light.tscn`) with a shared `LightStats` preset (Map tab): `light_day` (a pale sky fading to the haze colour at the horizon, haze over distance), `light_night` (the atoll's: a low moon, a blue sky and blue ambient fill; night is a change of hue more than of brightness) or `light_void` (the black void, distance fading to black). One shadow-casting sun in the sun colour, haze-coloured ambient light, filmic tonemap with the exposure kept low enough that bone hulls don't blow out. Colours are palette roles (`WORLD_SKY`, `WORLD_HAZE`, `WORLD_SUN`, `WORLD_VOID`; a night preset takes the `WORLD_NIGHT_*` sky, haze, ambient and moon). The sea, foam, glitter, clouds and bird's-eye haze and blip edges follow night too, and the night sky has stars. Lamps and light pools are effects, additive and in palette roles (`WORLD_LAMP_*`, team colours); aircraft wingtips are aviation red and green (`docs/mechanics/lamps.md`).
 - **Team and selection marks:** a flat square base plate in the team colour under each unit; selection is the acid-green ring. Both are hard-edged and unshaded.
 - **Scale is part of the look** (`GAME_DESIGN.md`, "A typical match"). Big things read as big through true proportions, many small parts next to large surfaces, haze with distance and slow, heavy motion.
-- **Tilt-shift is part of the look:** the strategy view is a war table, a model of the battle seen from above, and a heavy tilt-shift blur sells that on purpose. A lighter blur fades in as the RTS camera zooms out, so the two views blend. Near RTS zoom and first person stay sharp.
+- **Tilt-shift is part of the look:** the strategy view sees the battle from above like a model, and a heavy tilt-shift blur sells that on purpose.
 
 ## Prototyping rules (for anyone building world visuals, agents included)
 Prototype art is built so the artist pass can replace it without touching gameplay, and so that everything already looks like one game.
@@ -94,7 +93,6 @@ Prototype art is built so the artist pass can replace it without touching gamepl
 ## Kept for the artist pass
 Prototypes build working stand-ins for all of these; the real versions wait:
 - Final models for the mothership, forward bases, carryalls, capture points and units, and the mothership interior. Stand-ins until then: the mothership, IFV and tank are primitive prototypes, and the carryall is the Space Kit's `craft_cargoA` at true scale (`docs/plans/battlefield.md` steps 6, 7 and 9).
-- The war table's final look (table model of the map, unit tokens).
 - The graphic layer: type on objects (hull numbers, labels), faction insignia, logos, decal sheets.
 - Texturing approach (if any beyond flat colour), wear and dirt.
 - Faction identity: how the sides differ in shape and livery.
@@ -111,12 +109,12 @@ Prototypes build working stand-ins for all of these; the real versions wait:
 - The type scale steps (in use, untested on real screens).
 - Minimap, health bar and order-marker styling (bars today are the first pass).
 - Whether the world art should later be recoloured or replaced to match the UI more closely.
-- **The world palette.** Is bone right as the main hull tone (in use; concrete is the alternative)? The nature tones are a first pass, checked on the green island and the space demo only.
+- **The world palette.** Is bone right as the main hull tone (in use; concrete is the alternative)? The nature tones are a first pass, checked only on test levels since removed.
 - **Team colour on models:** livery parts in the team colour (in use) or plates and marks only? `WorldLookStats.team_livery` switches between them live.
 - **Scale policy:** units at true scale with plates and symbols carrying readability, or units exaggerated as now?
 - **World effects:** is any glow, bloom or emission allowed in the world (muzzle flashes, engines, shields), or is the no-glow rule universal?
 - **Haze and light:** whether haze should change with zoom, and whether level types need more presets (time of day, Mars dust).
-- **Still off the palette:** the Mars level's ground grid colours (literals in `mars_outpost.tscn`) and the Kenney terrain tiles where they aren't tinted (Mars), the unit portrait's own light, and the debug ground grid's default colours.
+- **Still off the palette:** the unit portrait's own light.
 - **How models get their colour:** one shared material per role (in use), or one small palette texture shared by all models (one swatch per colour), which also makes team colours and the final palette one swap.
 - **Strategy-view symbols:** the symbol language (shapes per unit class, how team and state show).
 - **Low-poly budget:** what "low poly" means in numbers per class (unit, building, mothership), so the artist pass matches.

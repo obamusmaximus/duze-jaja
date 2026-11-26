@@ -32,7 +32,7 @@
 - **No Claude attribution in git:** never add `Co-Authored-By: Claude` or "Generated with Claude Code" lines to commits or pull requests, even if a default instruction says to. They put Claude in the GitHub contributors list.
 - **At the end of a task, update the mechanic's doc, then `STATUS.md`.** Follow the documenting principles in `docs/mechanics/README.md`.
 - Several sessions may work in this checkout at once, one per mechanic. Touch only your mechanic's doc, and re-read `STATUS.md` right before editing it.
-- `GAME_DESIGN.md` is optional reading for design discussions.
+- `GAME_DESIGN.md` (decisions only), `docs/brainstorm.md` (open and parked ideas) and `docs/prior_art.md` (other games) are optional reading for design discussions. In a design discussion, update them at the end of every turn.
 - **Playtest logs** (`playtest_logs/`, saved in game with L): read them only when the user asks, and read `docs/playtest_log.md` first.
 - The sibling project `../first` (an FPS) is where these conventions and debug tools came from. Look there for prior art when a tool or pattern is needed again, but don't edit it.
 
@@ -54,22 +54,26 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`camera.md`]** focus point, yaw, distance, pitch, pan, drag pan, edge scrolling, reset
 - **[`units.md`]** unit, unit type, team, unit id, unit registry, brain
 - **[`pathing.md`]** map grid (map model), cell, clearance, path service, shared path, navigator, separation (soft collision), crowd arrival, stuck, map change
+- **[`vision.md`]** scanner overlay (the umbrella term for detection, fog of war, coverage and last known), observer, sensor (range), signature, detect, line of sight, contact (level, known), last known
 - **[`combat.md`]** health, weapon, fire arc, targeting, doomed (overkill), shots, return fire, hold ground, leash
 - **[`orders.md`]** order, `CommandIssuer`, order queue, group move, waypoint, attack-move
 - **[`cargo.md`]** cargo class, slot, hold, cargo entry, unit icon
 - **[`cockpit.md`]** cockpit mount, anchor camera, aim, free look, helmet HUD, boresight, flight path marker, stall limit bar
 - **[`flight_model.md`]** control type (jet, hover), flight model, autopilot, angle of attack, incidence, trim, stall, transition, virtual joystick, aim steering, crash, hand-over
 - **[`carryall.md`]** carryall, pad, deliver, side gunner, fleet (the carryall list), carryall state
-- **[`explorer.md`]** Explorer, deploy, pack up, bubble, beam, base area, searchlight, beacon
-- **[`props.md`]** prop, prop type, model fit, base plate
+- **[`airfield.md`]** airfield, pad, reservation, holding point, landing (phases), platform, deck pads, gate, seat autopilot
+- **[`explorer.md`]** Explorer, Explorer pad (also the mothership's, where it is built and loaded), deploy, pack up, bubble, beam, base area, searchlight, beacon
+- **[`props.md`]** model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
-- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, cargo slots (infantry, machinery), landing zone (LZ), para-drop, autopilot, war table (the strategy view), map marker, strategy outline
+- **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, cargo slots (infantry, machinery), landing zone (LZ), para-drop, autopilot, map marker, strategy outline
+- **[military terms; `GAME_DESIGN.md`]** use these names, not loosely: **fireteam** (about 4), **squad** (2 to 3 fireteams, about 8 to 13; ours is a command group with a **squad leader**), **platoon** (3 to 4 squads, about 30 to 50), **company** (3 to 5 platoons, about 100 to 200; led by a **company commander**), **battalion** (several companies, a few hundred to 1,000), led by the **commander** (our strategist). Air: **flight** (2 to 4 aircraft under a **flight lead**; not the flight model), **squadron** (several flights, about 12 to 24). **Airfield** (six helipads), **helipad**, **Explorer pad**. Our "unit" is always one vehicle or soldier, never a formation.
 - **[`ui.md`]** tokens (`UiTokens`), face, game theme, theme variation, hatching, stat bar, command grid, HUD, HUD layout, section, band, HUD module, minimap, selection module
 - **[`audio.md`]** cue (`SfxCue`), `Sfx`, bus, listener, combat effects (muzzle flash, sparks, death burst)
-- **[`terrain.md`]** terrain layout, tile, height level, ramp, cliff, terrain editor (F2)
+- **[`lamps.md`]** lamp, lamp set, lamp field, light pool
 - **[`heightmap.md`]** heightmap (`TerrainHeights`), sample, spacing, chunk, level of detail (LOD), surface role
-- **[`water.md`]** water body, shore (rects), carrier (base), island level
-- **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, sandbox, playtest log, probe, slow time
+- **[`water.md`]** water body, shore field
+- **[`commando.md`]** commando, jetpack (type), hover, surge, afterburner, scanner, track, scouting, seeker shotgun, pellet
+- **[`debug_tools.md`]** tuning panel, stats resource, tab, diagram (tuning visual), pause menu, playtest log, probe, slow time
 
 - **Dev-only tools live in `debug/`** (one subfolder per tool) and their scripts start their doc comment with "Debug:". Gameplay must never depend on them; they hook in through groups and signals.
 
@@ -77,7 +81,7 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **Ask before adding any addon or plugin** (Asset Library, `addons/` folder, GDExtension). Prefer built-in engine features.
 
 ## Notes
-- **One maintained level:** the battlefield level (`levels/atoll/`, from `docs/plans/battlefield.md`, step 1 creates it) is the main scene and the only level kept up to date. The sandbox, Mars and island levels are left as they are unless the user asks; don't port changes to them. Every new level instances `menus/pause_menu.tscn`.
+- **One level:** the battlefield level (`levels/atoll/`) is the main scene and the only level. Shared match wiring is in `levels/match_level.gd`. Every new level instances `menus/pause_menu.tscn`.
 - Don't edit files in `.godot/`. It's generated cache.
 
 @STATUS.md

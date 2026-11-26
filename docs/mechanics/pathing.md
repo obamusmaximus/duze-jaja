@@ -1,8 +1,8 @@
 # Map grid, pathing and unit movement
 
-How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "Changing maps"). Tunables: `MapStats` (`tuning/map_default.tres`, Map tab); `UnitStats` "Movement" and "Crowds" (Units tab).
+How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "Changing maps"). Tunables: `MapStats` (`tuning/map_atoll.tres`, Map tab); `UnitStats` "Movement" and "Crowds" (Units tab).
 
-**Scripts:** `map/map_grid.gd`, `map/air_layer.gd`, `map/path_service.gd`; `props/prop.gd` (blocks its footprint, see `props.md`); `units/unit_navigator.gd`, `unit_movement.gd`, `unit_spatial_hash.gd` (in `unit_registry.gd`); debug: `debug/map_wall/map_wall.gd`, `debug/map_view/map_grid_view.gd`.
+**Scripts:** `map/map_grid.gd`, `map/air_layer.gd`, `map/path_service.gd`; `units/unit_navigator.gd`, `unit_movement.gd`, `unit_spatial_hash.gd` (in `unit_registry.gd`); debug: `debug/map_wall/map_wall.gd`, `debug/map_view/map_grid_view.gd`.
 
 ## How it works
 - **`MapGrid`** (the map model): the map area in cells of `cell_size`, each with a ground height and blocked or not. The level builds it on its first physics tick (`build(area)`, rays down on layer 1). With heightmap data, `build` can be split: `compute(area)` on a worker, `publish()` later on the main thread (the atoll). A cell is blocked when the height step to a side neighbour is steeper than `max_slope_deg` (both sides of a cliff), or when an obstacle covers it. For paths, blocked cells grow by `path_clearance` (a row pass then a column pass, so the cost doesn't grow with it; `astar` is filled in runs), so paths keep off walls and every path check is a cell lookup. The atoll's 1058 x 832 grid builds in about 1.0 s with regions (headless M1). One clearance serves every unit size for now.
@@ -12,7 +12,7 @@ How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "C
 - **`UnitMovement`:** turns toward the brain's velocity (or wanted facing while standing) at `turn_rate`; speed scales with how far it already faces that way. **Soft collision:** units don't collide with each other (masks 1 and 3 only); they add a separation push from overlapping neighbours (`separation_strength`, `separation_padding`), so moving units nudge idle ones aside and crowds never lock up. Walls and buildings block hard (`move_and_slide`). A unit standing still on the ground skips physics, except every 30th tick to notice ground going away.
 - **Air layer** (`map/air_layer.gd`, `MapGrid.air`): where flyers move. No cells, paths or land regions, so any point over land or sea is open; only the map bounds apply (`air.bounds`, set by the level to the map area: positions are clamped, and move destinations are kept `FlightAutopilot.edge_margin()` inside, enough for a fixed wing to orbit). `air.ground_height` reads the heightmap where the level has one (it covers the whole map; the grid only the land), at least sea level. Flyers take a straight path (the navigator skips `PathService`); how they fly it is the autopilot (`units.md`, "Flyers").
 - **Neighbour queries:** `UnitRegistry.units_near(point, radius, out)` reads a spatial hash (4 m buckets) rebuilt once per tick before the units move. Callers own `out`, so nothing allocates.
-- **Debug:** `debug_toggle_wall` (7) raises and lowers a 90 m wall across the sandbox (`MapGrid.set_blocked`, World-layer collision). Units caught inside when it rises are pushed out by physics. `debug_show_map_grid` (8) shows blocked-for-paths cells and the selected units' paths.
+- **Debug:** `debug_show_map_grid` (8) shows impassable cells and selected units' paths.
 - **Probe events:** `map_change` (MapGrid), `repath` (PathService: unit, reason `map_change`, `map_opened`, `stuck`).
 
 ## Land regions (battlefield step 4)
@@ -22,7 +22,7 @@ How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "C
 - Measured headless before step 0 (battlefield plan), 100 units ordered across the map: about 2.8 ms per tick wall time, of which Jolt `move_and_slide` is about 1 ms and separation about 0.7 ms. The order made 42 searches and 139 shared paths, nothing waited in the queue, and all units arrived. A long path onto the plateau costs about 0.16 ms.
 - 12 units sent to one point settle in a few seconds, without overlap.
 
-- After step 0 (`debug/benchmark/benchmark.gd`: 100 units move 600 ticks across the sandbox, M1): about 2.2 ms per tick overall, of which the unit loop (decisions at half rate, integration, no `move_and_slide`) is about 1.6 ms. Includes path requests and shared paths, which are not part of the loop figure's split yet.
+- After step 0 (the benchmark as it was then, on the since-removed sandbox, M1; `debug/benchmark/benchmark.gd` now runs on the atoll, so its figures don't compare): about 2.2 ms per tick overall, of which the unit loop (decisions at half rate, integration, no `move_and_slide`) is about 1.6 ms. Includes path requests and shared paths, which are not part of the loop figure's split yet.
 
 ## Tried and passed on
 - Path checks sampling half-cells with the unit's radius either side: about 0.4 ms per long line, and the reason long paths cost 2 ms; replaced by clearance built into the cells and a cell-by-cell grid walk.
@@ -32,4 +32,4 @@ How units get around a map that changes. Design: `GAME_DESIGN.md` ("Pathing", "C
 ## Known issues
 - No flow fields: groups use shared paths and formation slots. Revisit only if measurements call for it.
 - Wide units (more than about `path_clearance` plus half a cell) can clip walls and corners: one clearance for all sizes.
-- Units standing on ground that vanishes or rises: only "pushed out by physics" so far (the debug wall).
+- Units standing on ground that vanishes or rises: only "pushed out by physics" so far .
