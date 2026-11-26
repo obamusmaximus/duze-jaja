@@ -4,5 +4,4 @@
 
 [resource]
 script = ExtResource("1_stats")
-infantry_slots = 8
-machinery_slots = 4
+volume = 10.0

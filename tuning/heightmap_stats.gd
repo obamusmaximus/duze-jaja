@@ -31,6 +31,9 @@ extends Resource
 @export_range(50.0, 4000.0, 10.0) var lod_distance: float = 500.0
 ## Chunks rebuilt per physics tick after a change; the rest wait for the next tick.
 @export_range(1, 32, 1) var chunks_per_tick: int = 4
+## Metres under the deepest wave trough a whole chunk must lie to go undrawn (it keeps its collision). Raise it if
+## holes ever show in the sea.
+@export_range(0.0, 20.0, 0.5) var submerged_depth: float = 1.0
 
 @export_group("Surface")
 ## Ground this far above the sea (metres) or lower is sand.

@@ -1,9 +1,9 @@
 class_name PilotControls
 extends Node
 ## View side: the local player's hands on an inhabited unit. Captures the mouse, turns its motion into a mouse-aim
-## direction (or, while `free_look` is held, into turning the pilot's head, with the aim held), reads the stick,
-## air brake and ability keys, and streams them every physics tick as a `PilotInput` through `CommandIssuer.pilot()`.
-## Off until `start`.
+## direction, the virtual joystick (or, while `free_look` is held, into turning the pilot's head, while the joystick
+## goes back to centre), reads the WASD, up and down, air brake and ability keys, and streams them every physics tick
+## as a `PilotInput` through `CommandIssuer.pilot()`. Off until `start`.
 
 ## The pilot's head turned from straight ahead, radians: x up, y left.
 var look := Vector2.ZERO
@@ -69,8 +69,9 @@ func move_mouse(pixels: Vector2) -> void:
 		look.x = clampf(look.x + up, -pitch_limit, pitch_limit)
 		look.y = clampf(look.y - turn.x, -yaw_limit, yaw_limit)
 		return
-	_aim_yaw = wrapf(_aim_yaw - turn.x, -PI, PI)
-	_aim_pitch += up
+	var moved: Vector2 = Vector2(turn.x, up).rotated(_bank() * _stats.aim_roll_follow)
+	_aim_yaw = wrapf(_aim_yaw - moved.x, -PI, PI)
+	_aim_pitch += moved.y
 	_limit_aim()
 
 
@@ -87,20 +88,83 @@ func _process(delta: float) -> void:
 	look = look.lerp(Vector2.ZERO, CameraEase.weight(_stats.look_return_rate, real_delta))
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_unit) or not _unit.alive:
 		return
+	var hovering: bool = _hovering()
+	var stick: Vector2 = Input.get_vector(&"pilot_roll_left", &"pilot_roll_right", &"pilot_pitch_down", &"pilot_pitch_up")
+	if _stats.stick_invert_pitch and not hovering:
+		stick.y = -stick.y
+	# In a jet WASD flies the plane and takes over from the mouse; a hover moves by it and steers by the mouse.
+	var jet_stick: bool = not hovering and not stick.is_zero_approx()
+	if Input.is_action_pressed(&"free_look"):
+		if jet_stick and _stats.aim_follows_stick:
+			_aim_along_course()
+		else:
+			_centre_aim(_stats.free_look_aim_return, delta)
+	elif jet_stick:
+		if _stats.aim_follows_stick:
+			_aim_along_course()
+	else:
+		_centre_aim(_stats.aim_correction, delta)
 	_limit_aim() # The nose moves under a still mouse too.
 	_input.aim = aim()
-	_input.stick = Input.get_vector(&"pilot_roll_left", &"pilot_roll_right", &"pilot_pitch_down", &"pilot_pitch_up")
-	_input.air_brake = Input.is_action_pressed(&"air_brake")
+	_input.stick = stick
+	_input.lift = Input.get_axis(&"pilot_down", &"pilot_up") if hovering else 0.0
+	_input.air_brake = not hovering and Input.is_action_pressed(&"air_brake")
 	_input.ability = Input.is_action_pressed(&"unit_ability")
 	_issuer.pilot(_input)
+
+
+## Puts the aim where the jet is going (held up in a transition, where its nose points).
+func _aim_along_course() -> void:
+	var flight: PilotFlight = _unit.movement.flight
+	if flight == null or flight.hovering():
+		return
+	var model: FlightModel = flight.jet
+	var slow: bool = model.support > 0.5 or model.velocity.length() < FlightModel.MIN_AIR_SPEED
+	var course: Vector3 = model.forward() if slow else model.velocity.normalized()
+	_set_aim(course)
+
+
+## Pulls the aim toward the mouse stick's centre at `rate` per second (`CockpitStats.aim_correction`, or the faster
+## `free_look_aim_return` while looking around).
+func _centre_aim(rate: float, delta: float) -> void:
+	if rate <= 0.0 or _unit.movement.flight == null:
+		return
+	var from: Vector3 = aim()
+	var centre: Vector3 = _unit.movement.flight.model.neutral_aim()
+	var weight: float = CameraEase.weight(rate, delta)
+	var axis: Vector3 = from.cross(centre)
+	if axis.length_squared() < 0.00000001:
+		return
+	_set_aim(from.rotated(axis.normalized(), from.angle_to(centre) * weight))
+
+
+func _hovering() -> bool:
+	return _unit.movement.flight != null and _unit.movement.flight.hovering()
+
+
+## Aims along a world direction of unit length. Near the vertical there is no heading to take.
+func _set_aim(direction: Vector3) -> void:
+	_aim_pitch = asin(clampf(direction.y, -1.0, 1.0))
+	if Vector2(direction.x, direction.z).length() > 0.1:
+		_aim_yaw = atan2(-direction.x, -direction.z)
+
+
+## The plane's bank, radians: negative with the right wing down.
+func _bank() -> float:
+	if _unit == null or _unit.movement.flight == null:
+		return 0.0
+	var basis: Basis = _unit.movement.flight.model.basis
+	return atan2(basis.x.y, basis.y.y)
 
 
 ## Keeps the aim within reach of the nose and short of straight up or down.
 func _limit_aim() -> void:
 	var pitch_limit: float = deg_to_rad(_stats.aim_pitch_limit)
+	if _hovering():
+		pitch_limit = minf(pitch_limit, deg_to_rad(_unit.movement.flight.hover.stats.pitch_limit_deg))
 	_aim_pitch = clampf(_aim_pitch, -pitch_limit, pitch_limit)
 	var reach: float = deg_to_rad(_stats.aim_max_off_nose)
 	var nose: float = _unit.rotation.y

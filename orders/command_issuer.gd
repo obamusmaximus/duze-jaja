@@ -41,6 +41,10 @@ func issue(order: Order) -> bool:
 	if units.is_empty():
 		return false
 	match order.kind:
+		Order.Kind.ABILITY:
+			units = _use_abilities(units, order)
+			if units.is_empty():
+				return false # None of them has an ability ready.
 		Order.Kind.STOP:
 			for unit: Unit in units:
 				unit.orders.clear()
@@ -166,6 +170,15 @@ func _reachable(units: Array[Unit], target: Vector3) -> Array[Unit]:
 		if has == 0 or has == want:
 			able.append(unit)
 	return able
+
+
+## The units among `units` whose ability was ready and is now used.
+func _use_abilities(units: Array[Unit], order: Order) -> Array[Unit]:
+	var out: Array[Unit] = []
+	for unit: Unit in units:
+		if unit.ability != null and unit.ability.use(order.target_position, order.target_unit_id):
+			out.append(unit)
+	return out
 
 
 ## The carryalls among `units` that have something aboard to deliver.

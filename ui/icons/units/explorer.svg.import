@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://be47mndlx5u4d"
-path="res://.godot/imported/hornet.svg-495ad0dfbab6823ab19b6bcfd055be7a.ctex"
+uid="uid://dn61hmy1w2q8c"
+path="res://.godot/imported/explorer.svg-bcfae791c55fcb4fb55746a2e2bbd9eb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ui/icons/units/hornet.svg"
-dest_files=["res://.godot/imported/hornet.svg-495ad0dfbab6823ab19b6bcfd055be7a.ctex"]
+source_file="res://ui/icons/units/explorer.svg"
+dest_files=["res://.godot/imported/explorer.svg-bcfae791c55fcb4fb55746a2e2bbd9eb.ctex"]
 
 [params]
 

@@ -33,6 +33,8 @@ var _cockpit: Node3D
 var _occupied: bool = false
 ## Where a flyer's ground marks read the slope they lie on; null on a level without a map.
 var air: AirLayer
+## The Explorer's lights, beam and bubble (`add_explorer`); null on other units.
+var _explorer_look: ExplorerLook
 
 
 func setup(stats: UnitStats, team: int) -> void:
@@ -48,6 +50,15 @@ func setup(stats: UnitStats, team: int) -> void:
 	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_build()
 	stats.changed.connect(_build)
+
+
+## Adds the Explorer's searchlights, beacons, beam and bubble (look only).
+func add_explorer(explorer: Explorer) -> void:
+	_explorer_look = ExplorerLook.new()
+	_explorer_look.name = "ExplorerLook"
+	add_child(_explorer_look)
+	_explorer_look.setup(explorer, _team, _frame)
+	_explorer_look.fit_to(_model)
 
 
 func show_selected(on: bool) -> void:
@@ -119,6 +130,8 @@ func _build() -> void:
 		_nose.material_override = WorldMaterials.role(WorldMaterials.Role.LIVERY, _team)
 		_nose.position = Vector3(0.0, lift + _stats.height * 0.6 - pivot, -_stats.radius)
 	_build_height_marks(color)
+	if _explorer_look != null:
+		_explorer_look.fit_to(_model)
 	var ring_mesh := TorusMesh.new()
 	ring_mesh.inner_radius = _stats.radius * 1.15
 	ring_mesh.outer_radius = _stats.radius * 1.3
@@ -172,6 +185,11 @@ func _build_height_marks(color: Color) -> void:
 ## Pitches and banks a flyer's airframe (radians); the plate and ring stay flat.
 func set_attitude(pitch: float, bank: float) -> void:
 	_frame.rotation = Vector3(pitch, 0.0, bank)
+
+
+## The airframe's whole orientation within the node's yaw (any attitude, loops and rolls included).
+func set_airframe(basis_in_node: Basis) -> void:
+	_frame.basis = basis_in_node
 
 
 ## The unit is `height` metres above the ground under it (a flyer). The plate and ring stay on that ground.

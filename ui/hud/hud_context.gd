@@ -11,3 +11,5 @@ var rig: CameraRig
 var stats: UiStats
 ## What the strategist's next ground click does (the commands panel arms it, `StrategyControl` spends it).
 var tools: StrategyTools
+## Where command buttons ask the RTS controls to act.
+var commands: HudCommands

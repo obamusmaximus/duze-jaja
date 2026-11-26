@@ -14,9 +14,10 @@ const TUNING_DIR: String = "res://tuning/"
 ## Tab name to the stats classes shown on it.
 const TABS: Dictionary = {
 	"Camera": ["CameraStats", "CockpitStats"],
-	"Units": ["UnitStats", "WeaponStats", "OrderStats", "CargoStats", "CarryallStats", "EconomyStats"],
+	"Units": ["UnitStats", "WeaponStats", "BoostStats", "DeployStats", "FlightModeStats", "OrderStats", "CargoStats", "CarryallStats", "ExplorerStats", "EconomyStats"],
+	"Flight": ["FlightStats", "HoverStats", "HelmetHudStats"],
 	"Map": ["BattlefieldStats", "MothershipStats", "MapStats", "WarTableStats", "BirdsEyeStats", "PropStats", "TerrainStats", "HeightmapStats", "WaterStats", "WorldLookStats", "LightStats"],
-	"Audio": ["AudioStats", "SfxCue", "FxStats"],
+	"Audio": ["AudioStats", "FlightSoundStats", "SfxCue", "FxStats"],
 	"Controls": ["PlayerControlStats", "StrategyControlStats", "UiStats"],
 	"Debug": ["PlaytestLogStats", "TimeScaleStats"],
 }

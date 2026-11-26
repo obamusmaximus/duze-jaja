@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/cargo_explorer.tres" id="2_cargo"]
+[ext_resource type="PackedScene" path="res://assets/kenney_space_kit/craft_cargoB.glb" id="3_model"]
+[ext_resource type="Texture2D" path="res://ui/icons/units/explorer.svg" id="4_icon"]
+[ext_resource type="Resource" path="res://tuning/explorer_default.tres" id="5_explorer"]
+[ext_resource type="Resource" path="res://tuning/ability_deploy_explorer.tres" id="6_ability"]
+[ext_resource type="Resource" path="res://tuning/hover_explorer.tres" id="7_hover"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Explorer"
+icon = ExtResource("4_icon")
+speed = 16.0
+turn_rate = 18.0
+radius = 22.0
+height = 20.0
+flying = true
+flight_acceleration = 3.0
+flight_arrive_radius = 12.0
+flight_look_ahead = 20.0
+flight_separation_height = 30.0
+flight_max_bank_deg = 4.0
+flight_lean_rate = 1.0
+shadow_scale = 1.2
+height_line_width = 0.4
+flight_height = 40.0
+flight_terrain_follow = 0.2
+flight_min_clearance = 12.0
+flight_climb_rate = 10.0
+ability = ExtResource("6_ability")
+cargo = ExtResource("2_cargo")
+explorer = ExtResource("5_explorer")
+model = ExtResource("3_model")
+model_scale = 22.0
+max_health = 4000.0
+sight_range = 60.0
+death_cue = &"death_large"
+death_effect_scale = 4.0
+hover_flight = ExtResource("7_hover")
+cockpit_offset = Vector3(0, 17, -24)

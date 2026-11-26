@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SfxLibrary" load_steps=24 format=3]
+[gd_resource type="Resource" script_class="SfxLibrary" load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://tuning/sfx_library.gd" id="1_lib"]
 [ext_resource type="Script" path="res://tuning/sfx_cue.gd" id="2_cue"]
@@ -23,7 +23,10 @@
 [ext_resource type="Resource" path="res://tuning/sfx_death_small.tres" id="21_c"]
 [ext_resource type="Resource" path="res://tuning/sfx_death_large.tres" id="22_c"]
 [ext_resource type="Resource" path="res://tuning/sfx_ambient_mars_wind.tres" id="23_c"]
+[ext_resource type="Resource" path="res://tuning/sfx_flight_engine.tres" id="24_c"]
+[ext_resource type="Resource" path="res://tuning/sfx_flight_wind.tres" id="25_c"]
+[ext_resource type="Resource" path="res://tuning/sfx_stall_warning.tres" id="26_c"]
 
 [resource]
 script = ExtResource("1_lib")
-cues = Array[ExtResource("2_cue")]([ExtResource("3_c"), ExtResource("4_c"), ExtResource("5_c"), ExtResource("6_c"), ExtResource("7_c"), ExtResource("8_c"), ExtResource("9_c"), ExtResource("10_c"), ExtResource("11_c"), ExtResource("12_c"), ExtResource("13_c"), ExtResource("14_c"), ExtResource("15_c"), ExtResource("16_c"), ExtResource("17_c"), ExtResource("18_c"), ExtResource("19_c"), ExtResource("20_c"), ExtResource("21_c"), ExtResource("22_c"), ExtResource("23_c")])
+cues = Array[ExtResource("2_cue")]([ExtResource("3_c"), ExtResource("4_c"), ExtResource("5_c"), ExtResource("6_c"), ExtResource("7_c"), ExtResource("8_c"), ExtResource("9_c"), ExtResource("10_c"), ExtResource("11_c"), ExtResource("12_c"), ExtResource("13_c"), ExtResource("14_c"), ExtResource("15_c"), ExtResource("16_c"), ExtResource("17_c"), ExtResource("18_c"), ExtResource("19_c"), ExtResource("20_c"), ExtResource("21_c"), ExtResource("22_c"), ExtResource("23_c"), ExtResource("24_c"), ExtResource("25_c"), ExtResource("26_c")])

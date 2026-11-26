@@ -12,6 +12,14 @@ const UNIT_TYPES: Array[UnitStats] = [
 	preload("res://tuning/unit_ifv.tres"), preload("res://tuning/unit_tank.tres")]
 const FIGHTER_TYPE: UnitStats = preload("res://tuning/unit_fighter.tres")
 const VTOL_TYPE: UnitStats = preload("res://tuning/unit_vtol.tres")
+const EXPLORER_TYPE: UnitStats = preload("res://tuning/unit_explorer.tres")
+## What each test Explorer carries: 20 troopers, 4 IFVs, a tank and a VTOL (40 of its 40).
+const EXPLORER_DEMO_HOLD: Array[Array] = [[preload("res://tuning/unit_trooper.tres"), 20],
+	[preload("res://tuning/unit_ifv.tres"), 4], [preload("res://tuning/unit_tank.tres"), 1], [VTOL_TYPE, 1]]
+## Where each team's first test Explorer starts (x, z): low ground near its block (team 0's side is mountainous).
+const EXPLORER_SPOTS: Array[Vector2] = [Vector2(-140.0, 95.0), Vector2(100.0, 70.0)]
+## Spacing of further test Explorers, metres (toward the island's middle).
+const EXPLORER_SPACING: float = 90.0
 ## Spacing of the test flyers in their row, metres.
 const FLYER_SPACING: float = 14.0
 const TABLE_STATS: WarTableStats = preload("res://tuning/war_table_default.tres")
@@ -46,22 +54,26 @@ var cockpit: CockpitView
 var shore: ShoreField
 var _dirty: bool = false
 var _grid_started_usec: int = 0
+## How long computing the grid took during the load, microseconds.
+var _grid_usec: int = 0
 
 
 func _ready() -> void:
 	battlefield.changed.connect(func() -> void: _dirty = true)
+	_water.stats.changed.connect(_cover_seabed)
+	_apply_size() # Sizes the sea first, so the chunks it covers are never built.
 	heights = _load_heights()
 	_chunks.set_sun($WorldLight.sun())
-	_chunks.setup(heights)
-	_apply_size()
 	var grid: MapGrid = _map_node()
 	grid.terrain = heights
-	_chunks.changed_area.connect(grid.resample)
-	grid.cells_changed.connect(_on_grid_built)
 	shore = ShoreField.new()
 	shore.name = "ShoreField"
 	add_child(shore)
-	shore.bake(heights, _water.stats.field_texel, _water.stats.field_reach, _water.stats.field_settle)
+	var build := LevelBuild.new()
+	build.run(heights, _chunks, shore, _water.stats, grid, _grid_area, battlefield.threaded_load)
+	_grid_usec = build.grid_usec
+	_chunks.changed_area.connect(grid.resample)
+	grid.cells_changed.connect(_on_grid_built)
 	_water.set_shore_field(shore)
 	_chunks.changed_area.connect(shore.mark_changed)
 	var reloader := HeightmapReloader.new()
@@ -79,6 +91,7 @@ func _ready() -> void:
 	await super()
 	_spawn_units()
 	_spawn_flyers()
+	_spawn_explorers()
 	_build_war_table()
 
 
@@ -162,7 +175,6 @@ func _load_heights() -> TerrainHeights:
 
 ## The grid is land only, so it covers the dry samples' bounding box (plus a margin) and nothing more.
 func _grid_area() -> Rect2:
-	_grid_started_usec = Time.get_ticks_usec()
 	var first: Vector2i = heights.samples
 	var last := Vector2i(-1, -1)
 	for iz: int in heights.samples.y:
@@ -174,6 +186,12 @@ func _grid_area() -> Rect2:
 		return heights.bounds()
 	var land := Rect2(heights.origin + Vector2(first) * heights.spacing, Vector2(last - first) * heights.spacing)
 	return land.grow(LAND_MARGIN).intersection(heights.bounds())
+
+
+## The grid was computed with the rest of the level (`LevelBuild`). The readout's time is that plus publishing.
+func _build_map() -> void:
+	_grid_started_usec = Time.get_ticks_usec() - _grid_usec
+	_map_node().publish()
 
 
 func _map_node() -> MapGrid:
@@ -194,10 +212,18 @@ func _apply_size() -> void:
 	camera_bounds = map_area.grow(-50.0)
 	_map_node().air.bounds = map_area
 	_water.set_size(extent + Vector2(400.0, 400.0))
+	_cover_seabed()
 	var camera: Camera3D = $CameraRig/Camera
 	camera.far = maxf(1000.0, extent.length() * 1.5)
 	_place_motherships()
 	_readout.grid_cells = 0
+
+
+## Tells the terrain where the sea hides it, so it draws no seabed there.
+func _cover_seabed() -> void:
+	var centre := Vector2(_water.global_position.x, _water.global_position.z)
+	_chunks.set_water_cover(Rect2(centre - _water.size * 0.5, _water.size),
+		_water.global_position.y - _water.max_trough())
 
 
 ## Each mothership hovers at its side of the map (team 0 west, 1 east), its long side to the atoll: the bow points
@@ -243,3 +269,16 @@ func _spawn_flyers() -> void:
 		for i: int in types.size():
 			var at := Vector3(side * (TEAM_GAP * 0.5 + i * FLYER_SPACING), 0.0, -FLYER_SPACING * 2.0)
 			_units.spawn(types[i], team, at)
+
+
+## The test Explorers: a row per team near its block, each with the demo hold aboard.
+func _spawn_explorers() -> void:
+	for team: int in 2:
+		for i: int in battlefield.test_explorers:
+			var spot: Vector2 = EXPLORER_SPOTS[team] - Vector2(0.0, i * EXPLORER_SPACING)
+			var at := Vector3(spot.x, 0.0, spot.y)
+			var explorer: Unit = _units.spawn(EXPLORER_TYPE, team, at)
+			explorer.explorer.squads = squads
+			for row: Array in EXPLORER_DEMO_HOLD:
+				for n: int in row[1]:
+					explorer.cargo.load_entry(CargoEntry.new(0, row[0]))

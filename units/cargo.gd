@@ -14,31 +14,36 @@ func _init(hold: CargoStats) -> void:
 	stats = hold
 
 
-## Slots of its class that `unit_type` takes, 0 if it can't be carried.
-static func slots_of(unit_type: UnitStats) -> int:
-	return unit_type.cargo_slots if unit_type.cargo_class != UnitStats.CargoClass.NONE else 0
+## Fills below this much of a slot still count as fitting (sizes are in halves, sums stay exact; this is only a guard).
+const EPSILON: float = 0.001
 
 
-func capacity(cargo_class: UnitStats.CargoClass) -> int:
-	return stats.capacity(cargo_class)
+## Room `unit_type` takes in a hold (in infantry), 0 if it can't be carried.
+static func size_of(unit_type: UnitStats) -> float:
+	return unit_type.cargo_size if unit_type.cargo_class != UnitStats.CargoClass.NONE else 0.0
 
 
-func used(cargo_class: UnitStats.CargoClass) -> int:
-	var total: int = 0
+## The hold's whole volume.
+func capacity() -> float:
+	return stats.volume
+
+
+## Room taken by the units aboard.
+func used() -> float:
+	var total: float = 0.0
 	for entry: CargoEntry in entries:
-		if entry.unit_type.cargo_class == cargo_class:
-			total += slots_of(entry.unit_type)
+		total += size_of(entry.unit_type)
 	return total
 
 
-func free_slots(cargo_class: UnitStats.CargoClass) -> int:
-	return capacity(cargo_class) - used(cargo_class)
+func free_room() -> float:
+	return capacity() - used()
 
 
-## Whether `unit_type` fits in the slots left.
+## Whether `unit_type` fits in the room left.
 func can_load(unit_type: UnitStats) -> bool:
-	var slots: int = slots_of(unit_type)
-	return slots > 0 and slots <= free_slots(unit_type.cargo_class)
+	var size: float = size_of(unit_type)
+	return size > 0.0 and size <= free_room() + EPSILON
 
 
 ## Stores `entry` if it fits; returns whether it did.
@@ -52,17 +57,28 @@ func load_entry(entry: CargoEntry) -> bool:
 
 ## Whether a whole list of unit types fits together (a squad against an empty hold of this size).
 func fits_all(unit_types: Array[UnitStats]) -> bool:
-	var left: Dictionary = {}
-	for cargo_class: UnitStats.CargoClass in [UnitStats.CargoClass.INFANTRY, UnitStats.CargoClass.MACHINERY]:
-		left[cargo_class] = capacity(cargo_class)
+	var total: float = 0.0
 	for unit_type: UnitStats in unit_types:
-		var slots: int = slots_of(unit_type)
-		if slots == 0:
+		var size: float = size_of(unit_type)
+		if size <= 0.0:
 			return false
-		left[unit_type.cargo_class] -= slots
-		if left[unit_type.cargo_class] < 0:
-			return false
-	return true
+		total += size
+	return total <= capacity() + EPSILON
+
+
+## How many of each type are aboard, in the order each type first came aboard: `[{type, count}]` (views).
+func type_counts() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for entry: CargoEntry in entries:
+		var found: bool = false
+		for row: Dictionary in out:
+			if row.type == entry.unit_type:
+				row.count += 1
+				found = true
+				break
+		if not found:
+			out.append({type = entry.unit_type, count = 1})
+	return out
 
 
 ## Removes and returns the entry for `unit_id` (null if aboard none).
@@ -74,6 +90,14 @@ func unload(unit_id: int) -> CargoEntry:
 			changed.emit()
 			return entry
 	return null
+
+
+## Removes `entry` (one picked by the carrier itself, ids may be 0 for units built aboard).
+func remove_entry(entry: CargoEntry) -> void:
+	var at: int = entries.find(entry)
+	if at >= 0:
+		entries.remove_at(at)
+		changed.emit()
 
 
 ## Empties the hold (the units aboard are scrapped).

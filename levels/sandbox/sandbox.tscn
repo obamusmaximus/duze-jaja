@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" path="res://camera/camera_rig.tscn" id="3_rig"]
 [ext_resource type="Script" uid="uid://kckbklxacva7" path="res://units/unit_registry.gd" id="4_registry"]
 [ext_resource type="PackedScene" path="res://units/unit.tscn" id="5_unit"]
-[ext_resource type="Resource" path="res://tuning/unit_hornet.tres" id="hornet_stats"]
 [ext_resource type="Script" uid="uid://crvkkhds0ykyh" path="res://selection/selection.gd" id="6_selection"]
 [ext_resource type="Script" uid="uid://qqulbhdpr27d" path="res://orders/command_issuer.gd" id="7_issuer"]
 [ext_resource type="Resource" path="res://tuning/order_default.tres" id="8_order_stats"]
@@ -164,15 +163,6 @@ team = 1
 
 [node name="Enemy4" parent="Units" unique_id=1066003693 instance=ExtResource("5_unit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -9)
-team = 1
-
-[node name="AllyHornet" parent="Units" unique_id=518204771 instance=ExtResource("5_unit")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 15)
-stats = ExtResource("hornet_stats")
-
-[node name="EnemyHornet" parent="Units" unique_id=518204772 instance=ExtResource("5_unit")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -12)
-stats = ExtResource("hornet_stats")
 team = 1
 
 [node name="Selection" type="Node" parent="." unique_id=683835224]

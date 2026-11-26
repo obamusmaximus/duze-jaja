@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FlightStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tuning/flight_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+thrust = 6.0
+cruise_speed = 22.0
+brake_drag = 10.0
+stall_speed = 10.0
+pitch_rate = 70.0
+roll_rate = 120.0
+yaw_rate = 60.0
+full_control_speed = 14.0
+hover_speed = 10.0

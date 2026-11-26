@@ -1,7 +1,7 @@
 class_name PilotSeats
 extends RefCounted
 ## Which unit each team's player inhabits (one each; a team has one player for now). Taking a seat swaps the unit's
-## brain for a `PilotBrain`, drops its orders and runs it at the full rate; leaving gives it back to its orders, so
+## brain for a `PilotBrain`, drops its orders, puts it on the flight model and runs it at the full rate; leaving gives it back to its orders, so
 ## it idles where it is (a fixed wing circles). A seat ends by itself when its unit dies or leaves the world.
 ## Changed only through the `CommandIssuer`, which owns it. Simulation.
 
@@ -37,10 +37,11 @@ func is_inhabited(unit: Unit) -> bool:
 	return _units.get(unit.team) == unit
 
 
-## Whether a unit of this kind can be flown by a player. Only jets and VTOLs for now: ground units and carryalls get
-## their own controls later.
+## Whether a unit can be flown by a player: any flyer, but not an Explorer that is deploying, deployed or packing up.
+## Ground units get their own controls later.
 func can_inhabit(unit: Unit) -> bool:
-	return unit != null and unit.alive and unit.is_flying() and unit.carryall == null
+	return unit != null and unit.alive and unit.is_flying() \
+		and (unit.explorer == null or not unit.explorer.anchored())
 
 
 ## `team` takes over `unit`. False for another team's unit, one that can't be inhabited, or a team already seated.
@@ -59,6 +60,9 @@ func enter(team: int, unit: Unit) -> bool:
 	if unit.movement.autopilot != null:
 		unit.movement.autopilot.end_orbit()
 	unit.set_brain(brain)
+	if unit.carryall != null:
+		unit.carryall.take_controls()
+	unit.movement.start_flight(brain.input)
 	unit.full_rate = true
 	unit.died.connect(_on_unit_died)
 	inhabited.emit(team, unit)
@@ -88,6 +92,7 @@ func _release(team: int, reason: Release) -> void:
 	_brains.erase(team)
 	unit.died.disconnect(_on_unit_died)
 	unit.full_rate = false
+	unit.movement.end_flight()
 	unit.set_brain(unit.brain)
 	brain.queue_free()
 	released.emit(team, unit, reason)

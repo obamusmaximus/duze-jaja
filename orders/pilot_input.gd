@@ -10,8 +10,11 @@ var team: int = 0
 var unit_id: int = 0
 ## Where the player aims: a world direction (the mouse-aim reticle). Zero: no aim.
 var aim := Vector3.ZERO
-## The direct axes (WASD), each -1 to 1: x right, y up. What they turn is decided with the flight model.
+## The direct axes (WASD), each -1 to 1: x right, y up on the keys. A jet rolls and pitches by them; a hover flies
+## right and forward by them.
 var stick := Vector2.ZERO
+## Hover: up (+) and down, -1 to 1.
+var lift: float = 0.0
 ## The air brake is held.
 var air_brake: bool = false
 ## The ability key is held (`docs/plans/flight.md` step 4).
@@ -22,9 +25,10 @@ var ability: bool = false
 func copy_controls(other: PilotInput) -> void:
 	aim = other.aim.normalized() if other.aim.is_finite() else Vector3.ZERO
 	stick = other.stick.clamp(-Vector2.ONE, Vector2.ONE) if other.stick.is_finite() else Vector2.ZERO
+	lift = clampf(other.lift, -1.0, 1.0) if is_finite(other.lift) else 0.0
 	air_brake = other.air_brake
 	ability = other.ability
 
 
 func to_dict() -> Dictionary:
-	return {"team": team, "unit_id": unit_id, "aim": aim, "stick": stick, "air_brake": air_brake, "ability": ability}
+	return {"team": team, "unit_id": unit_id, "aim": aim, "stick": stick, "lift": lift, "air_brake": air_brake, "ability": ability}

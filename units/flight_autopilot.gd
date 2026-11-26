@@ -29,6 +29,8 @@ const PULL_UP_SLOPE: float = 1.5
 const CLIMB_MARGIN: float = 0.8
 ## Flyers never get closer to the ground than this, whatever the climb rate (metres). Not for landings.
 const HARD_FLOOR: float = 0.5
+## After a hand-over, how fast the climb or dive it was given eases to its own, metres per second per second.
+const TAKE_OVER_EASE: float = GRAVITY * 2.0
 ## Hover types lean this share of the angle their acceleration would ask for (look only).
 const HOVER_LEAN: float = 0.6
 
@@ -58,6 +60,10 @@ var _pull_up: bool = false
 ## What an idle fixed wing orbits, once it has one.
 var _orbit_centre := Vector3.ZERO
 var _orbiting: bool = false
+## The vertical speed taken over from the flight model is still being eased out.
+var _easing: bool = false
+## Fades from 1 to 0 after a hand-over: holds off a hover type's slowing to climb, which would brake it at once.
+var _carry_on: float = 0.0
 
 
 func _init(body: Unit, stats: UnitStats, air: AirLayer) -> void:
@@ -103,17 +109,20 @@ func step(delta: float, altitude_override: float) -> void:
 	var flat: Vector3
 	if is_fixed_wing():
 		var before: float = _speed
-		var wanted_speed: float = clampf(_target_velocity.length(), _stats.flight_min_speed, _stats.speed)
-		_speed = move_toward(_speed, wanted_speed, _stats.flight_acceleration * delta)
+		var wanted_speed: float = clampf(_target_velocity.length(), _stats.flight_min_speed, _stats.speed) \
+			* _body.speed_boost
+		_speed = move_toward(_speed, wanted_speed, _stats.flight_acceleration * _body.speed_boost * delta)
 		acceleration = (_speed - before) / delta
 		flat = _forward() * _speed
 	else:
 		var before: float = _drive.dot(_forward())
-		_drive = _drive.move_toward(_target_velocity, _stats.flight_acceleration * delta)
+		_drive = _drive.move_toward(_target_velocity * _body.speed_boost,
+			_stats.flight_acceleration * _body.speed_boost * delta)
 		acceleration = (_drive.dot(_forward()) - before) / delta
 		flat = _drive
 		if is_nan(altitude_override):
-			flat *= _climb_first()
+			_carry_on = move_toward(_carry_on, 0.0, delta)
+			flat *= lerpf(_climb_first(), 1.0, _carry_on)
 	flat += _nudge
 	var position: Vector3 = _body.global_position
 	var wanted_height: float = _cruise if is_nan(altitude_override) else altitude_override
@@ -121,6 +130,10 @@ func step(delta: float, altitude_override: float) -> void:
 	if _pull_up and is_nan(altitude_override):
 		climb_limit = maxf(climb_limit, Vector2(flat.x, flat.z).length() * PULL_UP_SLOPE)
 	var climb: float = clampf((wanted_height - position.y) / delta, -_stats.flight_climb_rate, climb_limit)
+	if _easing:
+		var eased: float = move_toward(velocity.y, climb, TAKE_OVER_EASE * delta)
+		_easing = not is_equal_approx(eased, climb)
+		climb = eased
 	var moved: Vector3 = _air.clamp_point(position + Vector3(flat.x, climb, flat.z) * delta)
 	var ground: float = _air.ground_height(moved)
 	if is_nan(altitude_override):
@@ -129,6 +142,28 @@ func step(delta: float, altitude_override: float) -> void:
 	_body.global_position = moved
 	_body.set_hover(moved.y - ground)
 	_lean(delta, _yaw_rate, acceleration)
+
+
+## Carries on from another flight model's state: the same velocity and attitude, with no orbit.
+func take_over(with_velocity: Vector3, facing: Basis) -> void:
+	var angles: Vector3 = facing.get_euler(EULER_ORDER_YXZ)
+	_body.rotation.y = angles.y
+	pitch = angles.x
+	bank = angles.z
+	_body.set_attitude(pitch, bank)
+	velocity = with_velocity
+	var flat := Vector3(with_velocity.x, 0.0, with_velocity.z)
+	_speed = flat.length()
+	_drive = flat
+	_nudge = Vector3.ZERO
+	_target_velocity = flat
+	_target_yaw = NAN
+	_yaw_rate = 0.0
+	_orbiting = false
+	_pull_up = false
+	_easing = true
+	_carry_on = 1.0
+	_cruise = _cruise_height()
 
 
 ## The height above sea level kept over ground at `ground`: `flight_height` plus a share of the ground's rise, but

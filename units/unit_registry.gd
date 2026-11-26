@@ -112,7 +112,10 @@ func _register(unit: Unit, keep_id: int = 0) -> void:
 
 
 func _on_died(unit: Unit) -> void:
-	playtest_event.emit(&"death", {"unit": unit.id, "team": unit.team, "killer": unit.killed_by})
+	var data: Dictionary = {"unit": unit.id, "team": unit.team, "killer": unit.killed_by}
+	if unit.crash_cause != FlightCrash.Cause.NONE:
+		data["crash"] = FlightCrash.Cause.keys()[unit.crash_cause]
+	playtest_event.emit(&"death", data)
 
 
 func _forget(unit: Unit) -> void:

@@ -5,15 +5,15 @@ What a carrier can hold and how units take up room in it. Design: `GAME_DESIGN.m
 **Scripts:** `units/cargo.gd`, `units/cargo_entry.gd`, `tuning/cargo_stats.gd`, `ui/components/cargo_view.gd`, `ui/components/unit_icon.gd`, `units/models/` (`proto_parts.gd`, `ifv_proto`, `tank_proto`).
 
 ## How it works
-- **Cargo class and slots:** a unit type's `UnitStats.cargo_class` (none, infantry, machinery) and `cargo_slots` (slots of that class it takes). Trooper: infantry 1. Rover: machinery 1. IFV: machinery 2. Tank: machinery 4. Class none (flyers, boats, carryalls) can't be carried.
-- **The hold:** a type with `UnitStats.cargo` (a `CargoStats`: infantry and machinery slot counts, infantry twice machinery by design) gets a `Cargo` on its `Unit` (`unit.cargo`, else null). The two classes are separate pools. A tank fills a hold's machinery slots; an IFV takes half.
-- **Carried units are data:** `CargoEntry` (unit id, type, health). `Cargo.load_entry` stores it if it fits, `unload(id)` returns it, `can_load`, `used`, `free_slots`, `fits_all(types)` (does a squad fit an empty hold; the squad builder's check). `changed` signal for views. Taking a live unit off the map and putting it back is step 9.
-- **Icons:** each type's `UnitStats.icon` is a flat white SVG in `ui/icons/units/` (trooper, rover, ifv, tank, hornet, skiff, carryall), tinted by the HUD. Swapping one is replacing the file or the `icon` field. `UnitIcon` draws it (the type's initial if none) and is the one component for every place a type shows as a symbol; the production queue and squad builder (step 8) reuse it.
-- **HUD:** selecting a single carrier shows `CargoView` under its stats in the selection module: a row per class with a slot per capacity, filled slots as bone cards holding the unit's icon and spanning as many slots as the unit takes, free slots hatched. Slot width is `UiStats.cargo_slot_units`.
+- **Cargo class and size:** a unit type's `UnitStats.cargo_class` (none, infantry, machinery, air: what kind of cargo it is, e.g. which can be side gunners) and `cargo_size` (room it takes, counted in infantry). Trooper 1, rover 2, IFV 2.5, tank 5, flyers 5, carryall 10. Class none (boats, the Explorer) can't be carried.
+- **The hold:** a type with `UnitStats.cargo` (a `CargoStats`: one shared `volume`) gets a `Cargo` on its `Unit` (`unit.cargo`, else null). Every kind of cargo shares the volume: the carryall's 10 takes any squad preset, the Explorer's 40 takes 40 troopers, 16 IFVs, 8 tanks or flyers, 4 carryalls or a mix.
+- **Carried units are data:** `CargoEntry` (unit id, type, health; `land()` puts it back on the map). `Cargo.load_entry` stores it if it fits, `unload(id)`, `remove_entry`, `take_first`, `can_load`, `used`, `free_room`, `capacity`, `fits_all(types)` (does a squad fit an empty hold; the squad builder's check), `type_counts` (for views). `changed` signal for views.
+- **Icons:** each type's `UnitStats.icon` is a flat white SVG in `ui/icons/units/` (trooper, rover, ifv, tank, skiff, carryall), tinted by the HUD. Swapping one is replacing the file or the `icon` field. `UnitIcon` draws it (the type's initial if none) and is the one component for every place a type shows as a symbol; the production queue and squad builder (step 8) reuse it.
+- **HUD:** selecting a single carrier shows `CargoView` under its stats in the selection module: HOLD used / volume, a fill bar, and a bone card per type aboard with its icon and count (a hatched square when empty). Card height is `UiStats.cargo_slot_units`.
 - **Models:** the IFV and tank are primitive prototypes (`units/models/*_proto.tscn`, built in `_init` from `ProtoParts`, at true scale, one livery stripe in the team colour, a `Muzzle` marker). They plug in through `UnitStats.model`, so a `.glb` replaces one by changing that field and, if needed, `model_scale`. The trooper and rover are the Kenney models at true scale now (1.8 m and about 2.5 m tall), the base plate carrying readability.
 
 ## Settled
-- Infantry and machinery are separate pools; slot counts and sizes are tunables.
+- One shared volume per hold (was separate infantry and machinery pools); sizes and volumes are tunables.
 
 ## Tried and passed on
 

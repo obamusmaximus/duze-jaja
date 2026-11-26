@@ -3,8 +3,9 @@ extends Resource
 ## Tunable numbers for a unit type. A unit type is a stats class or a .tres of this one (tuning/unit_default.tres);
 ## units sharing a .tres are the same type (double-click selects them together).
 
-## Which hold slots a carried unit uses (`Cargo`). None: can't be carried (flyers, boats, carryalls).
-enum CargoClass { NONE, INFANTRY, MACHINERY }
+## What kind of cargo a unit is (`Cargo`): which units side gunners can be, how it leaves a hold. None: can't be
+## carried (boats, the Explorer).
+enum CargoClass { NONE, INFANTRY, MACHINERY, AIR }
 ## How the autopilot flies a flyer. Hover: slows, stops and hovers. Fixed wing: never stops, turns in arcs.
 enum FlightStyle { HOVER, FIXED_WING }
 
@@ -37,9 +38,9 @@ enum FlightStyle { HOVER, FIXED_WING }
 
 @export_group("Body")
 ## Radius of the body, in metres: collision, selection ring and formation spacing.
-@export_range(0.1, 5.0, 0.05) var radius: float = 0.6
+@export_range(0.1, 40.0, 0.05) var radius: float = 0.6
 ## Height of the body, in metres.
-@export_range(0.2, 10.0, 0.1) var height: float = 1.2
+@export_range(0.2, 40.0, 0.1) var height: float = 1.2
 
 @export_group("Movement")
 ## Crosses water: its ground moves are not refused for lying on another land mass (the land regions of `pathing.md`).
@@ -91,20 +92,33 @@ enum FlightStyle { HOVER, FIXED_WING }
 ## How fast a flyer climbs or descends, in metres per second.
 @export_range(0.5, 50.0, 0.5) var flight_climb_rate: float = 6.0
 
+## The jet control type's numbers while a player flies it (`FlightStats`). None, with no `hover_flight` either:
+## tuning/flight_default.tres.
+@export var flight_model: FlightStats
+## The hover control type's numbers while a player flies it (`HoverStats`). A type with them starts in a hover; with
+## `flight_model` too it can switch (a `FlightModeStats` ability). None: a jet.
+@export var hover_flight: HoverStats
+
+@export_group("Ability")
+## The type's ability (F), an `AbilityStats` .tres. None: no ability.
+@export var ability: AbilityStats
+
 @export_group("Cockpit")
 ## Where the pilot's eyes are in first person, from the unit's bottom middle (metres; y up, -z toward the nose).
 ## It pitches and banks with the airframe. Only types a player can inhabit use it.
 @export var cockpit_offset := Vector3(0.0, 1.2, -0.4)
 
 @export_group("Cargo")
-## Which kind of hold slots this unit takes when a carryall carries it.
+## What kind of cargo this unit is (infantry, machinery, air). None: it can't be carried.
 @export var cargo_class: CargoClass = CargoClass.NONE
-## How many slots of its class it takes (an IFV half the machinery slots, a tank all of them).
-@export_range(1, 16, 1) var cargo_slots: int = 1
-## This unit's own hold, if it carries others (a carryall). None: carries nothing.
+## Room it takes in a hold, counted in infantry (a trooper 1, an IFV 2.5, a tank 5). Every hold is one shared volume.
+@export_range(0.5, 40.0, 0.5) var cargo_size: float = 1.0
+## This unit's own hold, if it carries others (a carryall, the Explorer). None: carries nothing.
 @export var cargo: CargoStats
 ## How this unit behaves as a carryall (pad, landing, side gunners). None: not a carryall.
 @export var carryall: CarryallStats
+## How this unit behaves as an Explorer (deploy, bubble, base area, searchlights). None: not an Explorer.
+@export var explorer: ExplorerStats
 
 @export_group("Production")
 ## Credits a squad pays for one of this type (`Economy`).
@@ -117,7 +131,7 @@ enum FlightStyle { HOVER, FIXED_WING }
 ## The imported model (.glb) shown for the unit. None: the placeholder cylinder with a nose.
 @export var model: PackedScene
 ## Uniform scale of the model. Imported kits are not built to one scale, so each type sets its own.
-@export_range(0.1, 30.0, 0.05) var model_scale: float = 1.0
+@export_range(0.1, 60.0, 0.05) var model_scale: float = 1.0
 ## Turns the model about its centre, in degrees, to line its front up with the way the unit faces (-Z).
 @export_range(-180.0, 180.0, 15.0) var model_yaw_deg: float = 0.0
 

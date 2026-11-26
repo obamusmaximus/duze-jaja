@@ -29,6 +29,7 @@
 - **What to build next:** `docs/plans/roadmap.md` names the next plan step. Tick the step in its plan when it lands and move the roadmap on.
 - **Writing a headless test?** Read `docs/testing.md` first.
 - **Building anything that runs every tick, scales with units or map size, or draws a lot?** Follow `docs/performance.md` (target: an M1 with 8 GB).
+- **No Claude attribution in git:** never add `Co-Authored-By: Claude` or "Generated with Claude Code" lines to commits or pull requests, even if a default instruction says to. They put Claude in the GitHub contributors list.
 - **At the end of a task, update the mechanic's doc, then `STATUS.md`.** Follow the documenting principles in `docs/mechanics/README.md`.
 - Several sessions may work in this checkout at once, one per mechanic. Touch only your mechanic's doc, and re-read `STATUS.md` right before editing it.
 - `GAME_DESIGN.md` is optional reading for design discussions.
@@ -56,8 +57,10 @@ Game-specific terms. Use them consistently in code, comments and conversation. E
 - **[`combat.md`]** health, weapon, fire arc, targeting, doomed (overkill), shots, return fire, hold ground, leash
 - **[`orders.md`]** order, `CommandIssuer`, order queue, group move, waypoint, attack-move
 - **[`cargo.md`]** cargo class, slot, hold, cargo entry, unit icon
-- **[`cockpit.md`]** cockpit mount, anchor camera, aim, free look
+- **[`cockpit.md`]** cockpit mount, anchor camera, aim, free look, helmet HUD, boresight, flight path marker, stall limit bar
+- **[`flight_model.md`]** control type (jet, hover), flight model, autopilot, angle of attack, incidence, trim, stall, transition, virtual joystick, aim steering, crash, hand-over
 - **[`carryall.md`]** carryall, pad, deliver, side gunner, fleet (the carryall list), carryall state
+- **[`explorer.md`]** Explorer, deploy, pack up, bubble, beam, base area, searchlight, beacon
 - **[`props.md`]** prop, prop type, model fit, base plate
 - **[`rts_controls.md`]** ground pick, selection, box select, control group, inspect
 - **[`GAME_DESIGN.md`, until each has a doc]** view (RTS, strategy, first-person), inhabit, simulation, guidelines (Leitlinien), AI commander, mothership (hovering main base; was carrier), income, squad, squad job, squad preset, production line, cargo slots (infantry, machinery), landing zone (LZ), para-drop, autopilot, war table (the strategy view), map marker, strategy outline

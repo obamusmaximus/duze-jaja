@@ -4,7 +4,7 @@ extends Node
 ## orders. Left-click selects, right-click orders (the StarCraft scheme), both decided on release (PointerInput): a box
 ## selects; a click on an own unit selects it; a click on an enemy inspects it, on ground clears the selection.
 ## A right click with a selection moves (ground) or attacks (enemy); with no selection it only cancels attack-move.
-## Attack-move, once armed, takes the next left click.
+## Attack-move, once armed, takes the next left click, and so does a targeted ability (a right click cancels it).
 ##
 ## Gestures are resolved on the next physics tick, where picking (GroundPick) is safe. View side: it changes the
 ## game only through the CommandIssuer.
@@ -37,6 +37,12 @@ func setup(team: int, selection: Selection, issuer: CommandIssuer, camera_rig: C
 	_pointer.right_clicked.connect(func(point: Vector2) -> void: _pending.append(_resolve_order.bind(point)))
 
 
+## Wires the HUD's command buttons to the same actions as their keys.
+func bind_hud(commands: HudCommands) -> void:
+	commands.ability_pressed.connect(_orders.use_ability)
+	_orders.ability_armed_changed.connect(func(armed: bool) -> void: commands.ability_armed = armed)
+
+
 func _physics_process(_delta: float) -> void:
 	if _selection == null:
 		return
@@ -48,6 +54,9 @@ func _physics_process(_delta: float) -> void:
 
 func _resolve_click(point: Vector2, double_click: bool) -> void:
 	var unit: Unit = _unit_under(point)
+	if _orders.ability_armed:
+		_orders.target_ability(unit, GroundPick.ground_point(get_viewport(), point))
+		return
 	if _orders.attack_move_armed and not _selection.is_empty():
 		_order_at(unit, point)
 		return
@@ -60,6 +69,9 @@ func _resolve_click(point: Vector2, double_click: bool) -> void:
 
 
 func _resolve_order(point: Vector2) -> void:
+	if _orders.ability_armed:
+		_orders.disarm()
+		return
 	if _selection.is_empty():
 		_orders.disarm()
 		return

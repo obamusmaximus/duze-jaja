@@ -29,6 +29,13 @@ var _image: Image
 
 ## Bakes the whole map from `heights`. `texel_size` is metres per texel; `max_reach` how far the distance is kept.
 func bake(heights: TerrainHeights, texel_size: float, max_reach: float, settle_seconds: float = 0.6) -> void:
+	prepare(heights, texel_size, max_reach, settle_seconds)
+	compute()
+	finish()
+
+
+## The first part of `bake()`, on the main thread: sizes the field.
+func prepare(heights: TerrainHeights, texel_size: float, max_reach: float, settle_seconds: float = 0.6) -> void:
 	settle = settle_seconds
 	_heights = heights
 	texel = texel_size
@@ -37,7 +44,15 @@ func bake(heights: TerrainHeights, texel_size: float, max_reach: float, settle_s
 	size = Vector2i((extent / texel).ceil()) + Vector2i.ONE
 	origin = heights.bounds().position
 	_image = Image.create(size.x, size.y, false, Image.FORMAT_RGF)
+
+
+## The second part, safe on a worker thread (after `TerrainHeights.prepare()`): the distances, into the CPU image.
+func compute() -> void:
 	_bake_window(Rect2i(Vector2i.ZERO, size), Rect2i(Vector2i.ZERO, size))
+
+
+## The last part, on the main thread: the texture.
+func finish() -> void:
 	texture = ImageTexture.create_from_image(_image)
 
 
@@ -99,6 +114,12 @@ func _bake_window(write: Rect2i, compute: Rect2i) -> void:
 			depth[y * w + x] = maxf(-height, 0.0)
 	var to_land: PackedFloat32Array = _chamfer(land, w, h, 1)
 	var to_water: PackedFloat32Array = _chamfer(land, w, h, 0)
+	if not write.has_area():
+		return
+	# Red and green per texel, handed to the image in one go (far cheaper than a `set_pixel` each).
+	var texels := PackedFloat32Array()
+	texels.resize(write.size.x * write.size.y * 2)
+	var o: int = 0
 	for y: int in range(write.position.y, write.end.y):
 		for x: int in range(write.position.x, write.end.x):
 			var i: int = (y - compute.position.y) * w + (x - compute.position.x)
@@ -107,7 +128,11 @@ func _bake_window(write: Rect2i, compute: Rect2i) -> void:
 				distance = -(to_water[i] - 0.5) * texel
 			else:
 				distance = (to_land[i] - 0.5) * texel
-			_image.set_pixel(x, y, Color(clampf(distance, -reach, reach), depth[i], 0.0))
+			texels[o] = clampf(distance, -reach, reach)
+			texels[o + 1] = depth[i]
+			o += 2
+	var baked: Image = Image.create_from_data(write.size.x, write.size.y, false, Image.FORMAT_RGF, texels.to_byte_array())
+	_image.blit_rect(baked, Rect2i(Vector2i.ZERO, write.size), write.position)
 
 
 ## Distance in texels from every texel to the nearest texel whose mask is `target` (a two-pass chamfer with

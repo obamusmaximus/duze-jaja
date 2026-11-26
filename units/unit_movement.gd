@@ -24,6 +24,8 @@ var physical: bool = false
 var altitude_override: float = NAN
 ## Flies a flyer (null on a ground unit, and before the unit joins a match with a map).
 var autopilot: FlightAutopilot
+## The flight model while a player flies the unit (`start_flight`), instead of the brain and autopilot; else null.
+var flight: PilotFlight
 
 var _body: Unit
 var _stats: UnitStats
@@ -51,6 +53,8 @@ func setup(body: Unit, stats: UnitStats, start_brain: UnitBrain, registry: UnitR
 
 ## One decision (the unit's own tick; `delta` is the time since its last one).
 func decide(delta: float) -> void:
+	if flight:
+		return # The flight model reads the pilot's controls itself, every tick.
 	var wanted := Vector3.ZERO
 	var facing := Vector3.ZERO
 	if brain:
@@ -59,7 +63,9 @@ func decide(delta: float) -> void:
 	wanted.y = 0.0
 	facing.y = 0.0
 	if autopilot:
-		autopilot.command(wanted, facing, _separation() * _stats.speed)
+		# A deploying or deployed Explorer isn't pushed off its bubble; others still make way for it.
+		var anchored: bool = _body.explorer != null and _body.explorer.anchored()
+		autopilot.command(wanted, facing, Vector3.ZERO if anchored else _separation() * _stats.speed)
 		return
 	if wanted.length_squared() > 0.0001:
 		facing = wanted
@@ -79,6 +85,9 @@ func decide(delta: float) -> void:
 
 ## Every physics tick: turn and move by what was decided.
 func integrate(delta: float) -> void:
+	if flight:
+		flight.step(delta)
+		return
 	if autopilot:
 		autopilot.step(delta, altitude_override)
 		return
@@ -88,6 +97,21 @@ func integrate(delta: float) -> void:
 		_move_physical(delta)
 	elif _flat.length_squared() > 0.0001:
 		_walk(delta)
+
+
+## A flyer goes over to the flight model, flown by `input`, from the autopilot's present state.
+func start_flight(input: PilotInput) -> void:
+	if autopilot:
+		flight = PilotFlight.new(_body, input, autopilot)
+
+
+## Back to the autopilot, with the flight's state (a destroyed unit just stops flying).
+func end_flight() -> void:
+	if flight == null:
+		return
+	if _body.alive:
+		autopilot.take_over(flight.model.velocity, flight.model.basis)
+	flight = null
 
 
 ## The usual height above sea level over ground at `ground` (`FlightAutopilot.altitude_for`). Flyers only.

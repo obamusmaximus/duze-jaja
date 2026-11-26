@@ -5,6 +5,10 @@ extends Resource
 ## Compact: a height is 16 bits (`min_height` + `height_range` * value / 65535) in a byte array, a role one byte.
 ## Plain data with no nodes, so a headless server reads the same map the views draw. Setting a sample does not emit
 ## anything: after a batch of edits tell `TerrainChunks.changed()` which area moved.
+##
+## Reads go through a decoded copy of the heights in metres, because the load reads them millions of times. It is made
+## on the first read (call `prepare()` before other threads read), kept up to date by `set_index_height`, and dropped when `data`, `min_height` or `height_range`
+## is assigned. So write heights through these, never into `data` in place.
 
 ## World x, z of sample (0, 0).
 @export var origin: Vector2 = Vector2.ZERO
@@ -13,13 +17,26 @@ extends Resource
 ## Samples across x and z.
 @export var samples: Vector2i = Vector2i(2, 2)
 ## Height (world y) of the lowest storable value, metres.
-@export var min_height: float = -20.0
+@export var min_height: float = -20.0:
+	set(value):
+		min_height = value
+		_stale = true
 ## Metres between the lowest and the highest storable height.
-@export var height_range: float = 60.0
+@export var height_range: float = 60.0:
+	set(value):
+		height_range = value
+		_stale = true
 ## 16-bit heights, little endian, row by row along x.
-@export var data: PackedByteArray = PackedByteArray()
+@export var data: PackedByteArray = PackedByteArray():
+	set(value):
+		data = value
+		_stale = true
 ## Painted role per sample: 0 picks one from slope and height, otherwise `WorldMaterials.Role + 1`.
 @export var roles: PackedByteArray = PackedByteArray()
+
+## `data` decoded to metres (see the top comment), and whether it must be decoded again.
+var _meters := PackedFloat32Array()
+var _stale: bool = true
 
 
 ## A flat map at `height` covering `extent` metres from `at`, at least two samples each way.
@@ -44,17 +61,31 @@ func bounds() -> Rect2:
 	return Rect2(origin, Vector2(samples - Vector2i.ONE) * spacing)
 
 
+## Decodes now if needed. The decode on first read isn't thread-safe: call this on the main thread before worker
+## threads read.
+func prepare() -> void:
+	if _stale:
+		_decode()
+
+
 func index_height(index: int) -> float:
-	return min_height + height_range * float(data.decode_u16(index * 2)) / 65535.0
+	if _stale:
+		_decode()
+	return _meters[index]
 
 
 func set_index_height(index: int, height: float) -> void:
-	data.encode_u16(index * 2, clampi(roundi((height - min_height) / height_range * 65535.0), 0, 65535))
+	var value: int = clampi(roundi((height - min_height) / height_range * 65535.0), 0, 65535)
+	data.encode_u16(index * 2, value)
+	if not _stale:
+		_meters[index] = min_height + height_range * float(value) / 65535.0
 
 
 ## Height of sample (`ix`, `iz`), indices clamped to the map.
 func sample_height(ix: int, iz: int) -> float:
-	return index_height(clampi(iz, 0, samples.y - 1) * samples.x + clampi(ix, 0, samples.x - 1))
+	if _stale:
+		_decode()
+	return _meters[clampi(iz, 0, samples.y - 1) * samples.x + clampi(ix, 0, samples.x - 1)]
 
 
 func set_sample_height(ix: int, iz: int, height: float) -> void:
@@ -81,10 +112,12 @@ func height_at(x: float, z: float) -> float:
 	var tx: float = fx - x0
 	var tz: float = fz - z0
 	var row: int = z0 * samples.x + x0
-	var a: float = index_height(row)
-	var b: float = index_height(row + 1)
-	var c: float = index_height(row + samples.x)
-	var d: float = index_height(row + samples.x + 1)
+	if _stale:
+		_decode()
+	var a: float = _meters[row]
+	var b: float = _meters[row + 1]
+	var c: float = _meters[row + samples.x]
+	var d: float = _meters[row + samples.x + 1]
 	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), tz)
 
 
@@ -95,3 +128,11 @@ func samples_in(area: Rect2) -> Rect2i:
 	first = first.clamp(Vector2i.ZERO, samples - Vector2i.ONE)
 	last = last.clamp(Vector2i.ZERO, samples - Vector2i.ONE)
 	return Rect2i(first, last - first + Vector2i.ONE)
+
+
+func _decode() -> void:
+	var count: int = data.size() / 2
+	_meters.resize(count)
+	for i: int in count:
+		_meters[i] = min_height + height_range * float(data.decode_u16(i * 2)) / 65535.0
+	_stale = false

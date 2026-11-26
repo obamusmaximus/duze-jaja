@@ -24,14 +24,23 @@ var alive: bool = true
 var selected: bool = false
 ## Id of the unit that dealt the killing blow (0 if none).
 var killed_by: int = 0
+## What it crashed into (`FlightCrash.Cause`); NONE if it didn't.
+var crash_cause: FlightCrash.Cause = FlightCrash.Cause.NONE
 ## Flyers: height above the ground or sea under it, kept by the autopilot; 0 on the ground.
 var hover_height: float = 0.0
 ## The squad this unit belongs to (`SquadRegistry`); 0 for none.
 var squad_id: int = 0
+## The type's ability and its charges (`stats.ability`); null for a type without one.
+var ability: UnitAbility
+## Set by a running ability (1: none): the flight model's thrust, and the autopilot's top speed and acceleration.
+var thrust_boost: float = 1.0
+var speed_boost: float = 1.0
 ## The hold, for a type with `stats.cargo` (a carryall); null otherwise.
 var cargo: Cargo
 ## The carryall behaviour (pad, delivery, side gunners), for a type with `stats.carryall`; null otherwise.
 var carryall: Carryall
+## The Explorer behaviour (deploy, bubble, base area), for a type with `stats.explorer`; null otherwise.
+var explorer: Explorer
 
 @onready var movement: UnitMovement = $Movement
 @onready var navigator: UnitNavigator = $Navigator
@@ -55,6 +64,10 @@ func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 		cargo = Cargo.new(stats.cargo)
 	if stats.carryall != null and cargo != null:
 		carryall = Carryall.new(self, stats.carryall)
+	if stats.explorer != null:
+		explorer = Explorer.new(self, stats.explorer)
+	if stats.ability != null:
+		ability = UnitAbility.new(self, stats.ability)
 	if stats.flying:
 		collision_mask = 0 # Flyers pass over walls and buildings; they only share the air with other flyers.
 	weapon.setup(self, stats.weapon, unit_registry.shots)
@@ -65,6 +78,8 @@ func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 	if registry.map:
 		_look.air = registry.map.air
 	_look.setup(stats, team)
+	if explorer != null:
+		_look.add_explorer(explorer)
 	_apply_size()
 	stats.changed.connect(_apply_size)
 	health.damaged.connect(targeting.note_attacker)
@@ -75,6 +90,10 @@ func setup(new_id: int, unit_registry: UnitRegistry) -> void:
 func think(delta: float) -> void:
 	if carryall != null:
 		carryall.step(delta)
+	if explorer != null:
+		explorer.step(delta)
+	if ability != null:
+		ability.step(delta)
 	targeting.step(delta)
 	movement.decide(delta)
 	weapon.step(delta)
@@ -137,6 +156,18 @@ func set_attitude(pitch: float, bank: float) -> void:
 	_look.set_attitude(pitch, bank)
 
 
+## The flight while a player flies this unit, for views to read (speed, stall, controls); else null.
+func pilot_flight() -> PilotFlight:
+	return movement.flight
+
+
+## Destroyed by flying into something.
+func crash(cause: FlightCrash.Cause) -> void:
+	if alive:
+		crash_cause = cause
+		die()
+
+
 func die(killer_id: int = 0) -> void:
 	if not alive:
 		return
@@ -145,6 +176,11 @@ func die(killer_id: int = 0) -> void:
 	collision_layer = 0
 	died.emit(self)
 	queue_free()
+
+
+## Flyers under the flight model: the airframe's whole orientation within the node's yaw (look and cockpit mount).
+func set_airframe(basis_in_node: Basis) -> void:
+	_look.set_airframe(basis_in_node)
 
 
 func _apply_size() -> void:

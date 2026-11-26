@@ -4,6 +4,7 @@ extends Node3D
 ## levels of detail (visibility ranges) and a `HeightMapShape3D` on the World layer. A change names an area
 ## (`changed()`); only the chunks it touches rebuild, `chunks_per_tick` at a time, and once the queue empties
 ## `changed_area` carries the whole changed area (the level then re-reads the map grid there).
+## A chunk lying wholly under opaque water (`set_water_cover`) keeps its collision but gets no meshes.
 ## View and collision only: the simulation reads the heights from the data.
 
 ## The queued rebuilds finished: the ground in `area` (world x, z) now matches the data.
@@ -17,7 +18,8 @@ var heights: TerrainHeights
 ## Chunks across x and z.
 var chunk_count: Vector2i = Vector2i.ZERO
 var _body: StaticBody3D
-## Per chunk (Vector2i): {"near": MeshInstance3D, "far": MeshInstance3D, "shape": CollisionShape3D}.
+## Per chunk (Vector2i): {"near": MeshInstance3D, "far": MeshInstance3D, "shape": CollisionShape3D,
+## "top": float (its highest sample), "drawn": bool}.
 var _chunks: Dictionary = {}
 ## Chunks waiting to rebuild (Vector2i keys, insertion order), and the area they cover so far.
 var _queue: Dictionary = {}
@@ -29,6 +31,11 @@ var _base_overlay: Material
 ## The baked light (null until a sun is given with `set_sun`: chunks are then plain white vertex colours).
 var _light: TerrainLight
 var _light_key: Array = []
+## Chunk data between `compute()` and `finish()` (Vector2i to `_chunk_data()`, in build order).
+var _prepared: Dictionary = {}
+## Where opaque water hides the ground (world x, z; empty: nowhere) and the lowest its surface dips (world y).
+var _cover_area: Rect2 = Rect2()
+var _cover_level: float = 0.0
 
 
 ## Gives the ground its baked light from `sun` (horizon shadows, hollows, tint). Call before `setup`.
@@ -39,6 +46,13 @@ func set_sun(sun: DirectionalLight3D) -> void:
 
 ## Builds every chunk of `data`. Call once the node is in the tree.
 func setup(data: TerrainHeights) -> void:
+	begin(data)
+	compute()
+	finish()
+
+
+## The first part of `setup()`, on the main thread: clears and gets ready for `data`.
+func begin(data: TerrainHeights) -> void:
 	for child: Node in get_children():
 		child.queue_free()
 	_chunks.clear()
@@ -46,10 +60,9 @@ func setup(data: TerrainHeights) -> void:
 	heights = data
 	if _light != null:
 		_light.setup(heights, stats)
-		_light.bake(Rect2i(Vector2i.ZERO, heights.samples))
 		_light_key = _key()
-		if not stats.changed.is_connected(_on_stats_changed):
-			stats.changed.connect(_on_stats_changed)
+	if not stats.changed.is_connected(_on_stats_changed):
+		stats.changed.connect(_on_stats_changed)
 	_body = StaticBody3D.new()
 	_body.name = "Ground"
 	_body.collision_layer = WORLD_LAYER
@@ -58,9 +71,24 @@ func setup(data: TerrainHeights) -> void:
 	var n: int = stats.chunk_cells
 	var cells: Vector2i = heights.samples - Vector2i.ONE
 	chunk_count = Vector2i(ceili(float(cells.x) / n), ceili(float(cells.y) / n))
+
+
+## The second part, safe on a worker thread (after `TerrainHeights.prepare()`): bakes the light and computes every
+## chunk's data. It makes no engine objects; nothing may read the light or write the heights until it returns.
+func compute() -> void:
+	if _light != null:
+		_light.bake(Rect2i(Vector2i.ZERO, heights.samples))
+	_prepared.clear()
 	for cz: int in chunk_count.y:
 		for cx: int in chunk_count.x:
-			_build_chunk(Vector2i(cx, cz), true)
+			_prepared[Vector2i(cx, cz)] = _chunk_data(Vector2i(cx, cz))
+
+
+## The last part, on the main thread: makes the nodes, meshes and collision shapes.
+func finish() -> void:
+	for chunk: Vector2i in _prepared:
+		_apply_chunk(chunk, _prepared[chunk], true)
+	_prepared.clear()
 
 
 ## The map changed inside `area` (world x, z): queue the chunks it touches for a rebuild.
@@ -82,6 +110,14 @@ func changed(area: Rect2) -> void:
 	_has_pending = true
 
 
+## Opaque water covers `area` (world x, z) and never dips below `level` (world y): chunks wholly under it there go
+## undrawn. Give it before `setup` so they are never built; call again when the water changes. An empty area draws all.
+func set_water_cover(area: Rect2, level: float) -> void:
+	_cover_area = area
+	_cover_level = level
+	_queue_cover_changes()
+
+
 ## Draws `material` over every chunk (a debug overlay such as the height bands), or nothing for null.
 func set_overlay(material: Material) -> void:
 	_overlay = material if material != null else _base_overlay
@@ -101,7 +137,25 @@ func _key() -> Array:
 		stats.light_ao_radius, stats.tint_strength, stats.tint_frequency]
 
 
+## Queues the chunks that should start or stop being drawn.
+func _queue_cover_changes() -> void:
+	for chunk: Vector2i in _chunks:
+		var parts: Dictionary = _chunks[chunk]
+		if _is_submerged(chunk, parts["top"]) == (parts["drawn"] as bool):
+			_queue[chunk] = true
+
+
+## Whether chunk `chunk`, whose highest sample is `top`, lies wholly under the water cover.
+func _is_submerged(chunk: Vector2i, top: float) -> bool:
+	if top >= _cover_level - stats.submerged_depth:
+		return false
+	var span: Array[Vector2i] = _chunk_span(chunk)
+	var footprint := Rect2(heights.origin + Vector2(span[0]) * heights.spacing, Vector2(span[1]) * heights.spacing)
+	return _cover_area.encloses(footprint)
+
+
 func _on_stats_changed() -> void:
+	_queue_cover_changes()
 	if _light == null or heights == null or _key() == _light_key:
 		return
 	_light_key = _key()
@@ -127,7 +181,8 @@ func _physics_process(_delta: float) -> void:
 	var keys: Array = _queue.keys()
 	for i: int in mini(stats.chunks_per_tick, keys.size()):
 		_queue.erase(keys[i])
-		_build_chunk(keys[i] as Vector2i, false)
+		var chunk := keys[i] as Vector2i
+		_apply_chunk(chunk, _chunk_data(chunk), false)
 	if _queue.is_empty() and _has_pending:
 		_has_pending = false
 		changed_area.emit(_pending)
@@ -141,7 +196,31 @@ func _chunk_span(chunk: Vector2i) -> Array[Vector2i]:
 	return [first, cells]
 
 
-func _build_chunk(chunk: Vector2i, create: bool) -> void:
+## What chunk `chunk` is made of, as plain data: collision "values", "top" (highest sample), "drawn", and the "near"
+## and "far" mesh surfaces (`TerrainChunkMesh.arrays()`, empty for no mesh). Only reads.
+func _chunk_data(chunk: Vector2i) -> Dictionary:
+	var span: Array[Vector2i] = _chunk_span(chunk)
+	var first: Vector2i = span[0]
+	var cells: Vector2i = span[1]
+	var values := PackedFloat32Array()
+	values.resize((cells.x + 1) * (cells.y + 1))
+	var top: float = -INF
+	var i: int = 0
+	for z: int in cells.y + 1:
+		for x: int in cells.x + 1:
+			var height: float = heights.sample_height(first.x + x, first.y + z)
+			values[i] = height
+			top = maxf(top, height)
+			i += 1
+	var drawn: bool = not _is_submerged(chunk, top)
+	var near: Dictionary = TerrainChunkMesh.arrays(heights, stats, first, cells, 1, _light) if drawn else {}
+	var far: Dictionary = TerrainChunkMesh.arrays(heights, stats, first, cells, stats.lod_step, _light) \
+			if drawn and stats.lod_step > 1 else {}
+	return {"values": values, "top": top, "drawn": drawn, "near": near, "far": far}
+
+
+## Puts `data` (`_chunk_data()`) into chunk `chunk`'s meshes and shape, making the nodes first if `create`.
+func _apply_chunk(chunk: Vector2i, data: Dictionary, create: bool) -> void:
 	var span: Array[Vector2i] = _chunk_span(chunk)
 	var first: Vector2i = span[0]
 	var cells: Vector2i = span[1]
@@ -153,22 +232,17 @@ func _build_chunk(chunk: Vector2i, create: bool) -> void:
 		_chunks[chunk] = parts
 	else:
 		parts = _chunks[chunk]
-	(parts["near"] as MeshInstance3D).mesh = TerrainChunkMesh.build(heights, stats, first, cells, 1, _light)
+	parts["top"] = data["top"]
+	parts["drawn"] = data["drawn"]
+	(parts["near"] as MeshInstance3D).mesh = TerrainChunkMesh.make_mesh(data["near"])
 	var far_view: MeshInstance3D = parts["far"]
 	far_view.visible = stats.lod_step > 1
-	far_view.mesh = TerrainChunkMesh.build(heights, stats, first, cells, stats.lod_step, _light) if stats.lod_step > 1 else null
+	far_view.mesh = TerrainChunkMesh.make_mesh(data["far"])
 	var shape: CollisionShape3D = parts["shape"]
 	var map := shape.shape as HeightMapShape3D
 	map.map_width = cells.x + 1
 	map.map_depth = cells.y + 1
-	var values := PackedFloat32Array()
-	values.resize((cells.x + 1) * (cells.y + 1))
-	var i: int = 0
-	for z: int in cells.y + 1:
-		for x: int in cells.x + 1:
-			values[i] = heights.sample_height(first.x + x, first.y + z)
-			i += 1
-	map.map_data = values
+	map.map_data = data["values"]
 	# The shape is centred on its node and one sample apart per unit, so scale it to the spacing.
 	shape.position = corner + Vector3(cells.x, 0.0, cells.y) * heights.spacing * 0.5
 	shape.scale = Vector3(heights.spacing, 1.0, heights.spacing)

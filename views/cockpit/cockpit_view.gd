@@ -13,6 +13,8 @@ signal entering
 signal leaving
 
 const STATS: CockpitStats = preload("res://tuning/cockpit_default.tres")
+const HUD_STATS: HelmetHudStats = preload("res://tuning/helmet_hud_default.tres")
+const SOUND_STATS: FlightSoundStats = preload("res://tuning/flight_sound_default.tres")
 
 var state: State = State.OFF
 var controls := PilotControls.new()
@@ -25,6 +27,9 @@ var _views: ViewSwitcher
 var _rts_rig: CameraRig
 var _light: WorldLight
 var _unit: Unit
+var hud := HelmetHud.new()
+var _feel := CockpitFeel.new()
+var _sound := CockpitSound.new()
 var _flight := ViewTransition.new()
 ## A still copy of whatever camera was showing when a switch began: where the flight starts from.
 var _anchor := Camera3D.new()
@@ -56,12 +61,16 @@ func setup(team: int, selection: Selection, issuer: CommandIssuer, views: ViewSw
 	controls.name = "PilotControls"
 	add_child(controls)
 	controls.setup(STATS, issuer)
+	_feel.setup(STATS)
+	_sound.name = "CockpitSound"
+	add_child(_sound)
+	_sound.setup(SOUND_STATS, STATS)
 	var layer := CanvasLayer.new()
 	layer.layer = 8 # Over the world, under the HUD.
 	add_child(layer)
-	var mark := CockpitAimMark.new()
-	layer.add_child(mark)
-	mark.setup(STATS, controls)
+	hud.name = "HelmetHud"
+	layer.add_child(hud)
+	hud.setup(HUD_STATS, SOUND_STATS, controls)
 	issuer.seats.inhabited.connect(_on_inhabited)
 	issuer.seats.released.connect(_on_released)
 	set_process(false)
@@ -79,7 +88,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			Sfx.play_ui(&"ui_error")
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if is_instance_valid(_unit):
+		_feel.step(delta, _unit.pilot_flight())
 	_pose()
 
 
@@ -92,6 +103,9 @@ func _on_inhabited(team: int, unit: Unit) -> void:
 	_unit = unit
 	state = State.ENTERING
 	controls.start(unit)
+	_feel.start(unit.pilot_flight())
+	_sound.start(unit)
+	hud.start(unit)
 	set_process(true)
 	_pose()
 	_fly_to(camera, _light.environment())
@@ -107,6 +121,8 @@ func _on_released(team: int, unit: Unit, _reason: PilotSeats.Release) -> void:
 	_anchor_here()
 	state = State.LEAVING
 	controls.stop()
+	_sound.stop()
+	hud.stop()
 	set_process(false)
 	_listener.clear_current()
 	_rts_listener_current()
@@ -140,12 +156,15 @@ func _fly_to(target: Camera3D, environment: Environment) -> void:
 func _on_flight_blend(blend: float) -> void:
 	if state == State.ENTERING and is_instance_valid(_unit):
 		_unit.set_cockpit_occupied(blend >= STATS.hide_airframe_blend)
+		# The HUD comes on over the last of the flight in, once the camera looks the way it will.
+		hud.modulate.a = smoothstep(STATS.hide_airframe_blend, 1.0, blend)
 
 
 func _on_flight_finished(_reached_end: bool) -> void:
 	if state == State.ENTERING:
 		state = State.IN
 		_unit.set_cockpit_occupied(true)
+		hud.modulate.a = 1.0
 		camera.make_current()
 		_listener.make_current()
 	elif state == State.LEAVING:
@@ -153,14 +172,14 @@ func _on_flight_finished(_reached_end: bool) -> void:
 		_views.take_back()
 
 
-## The cockpit camera: at the mount, turned with the airframe, then by the pilot's head.
+## The cockpit camera: at the mount, turned with the airframe, then by the pilot's head and the shake.
 func _pose() -> void:
 	if not is_instance_valid(_unit):
 		return
 	var mount: Transform3D = _unit.cockpit_mount().get_global_transform_interpolated()
 	var head := Basis.from_euler(Vector3(controls.look.x, controls.look.y, 0.0), EULER_ORDER_YXZ)
-	camera.global_transform = Transform3D(mount.basis.orthonormalized() * head, mount.origin)
-	camera.fov = STATS.fov
+	camera.global_transform = Transform3D(mount.basis.orthonormalized() * head * _feel.shake, mount.origin)
+	camera.fov = STATS.fov + _feel.fov_gain
 	camera.near = STATS.near
 	camera.far = STATS.far
 

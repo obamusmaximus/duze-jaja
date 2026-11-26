@@ -3,11 +3,13 @@ extends HudModule
 ## HUD module: what the local player has selected. None: a hatched empty slot. One unit: its model turning in a
 ## hatched well (`UnitPortrait`), its name in the wide face with a team mark, health with a bar, and stat chips.
 ## Several: `SelectionGroup` (the main type on top, a grid of type or unit cards below, RA3 style). It changes only
-## the `Selection` (view state): card clicks pick the main type or narrow the selection.
+## the `Selection` (view state): card clicks pick the main type or narrow the selection. Under own units sits the main
+## type's ability (`AbilityButton`); its press goes to the RTS controls through `HudCommands`.
 
 var _units: Array[Unit] = []
 var _health_row: StatRow
 var _group: SelectionGroup
+var _ability: AbilityButton
 var _since_refresh: float = INF
 
 
@@ -18,6 +20,8 @@ func _title() -> String:
 func _build() -> void:
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	context.selection.changed.connect(_rebuild)
+	context.selection.main_changed.connect(_refresh_ability)
+	context.commands.armed_changed.connect(_refresh_ability)
 
 
 func _apply() -> void:
@@ -30,6 +34,7 @@ func _process(delta: float) -> void:
 	if _since_refresh < 1.0 / context.stats.readout_rate:
 		return
 	_since_refresh = 0.0
+	_refresh_ability()
 	if _group != null:
 		_group.refresh()
 	elif _health_row != null and not _units.is_empty() and is_instance_valid(_units[0]):
@@ -48,6 +53,7 @@ func _rebuild() -> void:
 		_units = [inspected] # An enemy being inspected: the same sheet, without its hold.
 	_health_row = null
 	_group = null
+	_ability = null
 	_since_refresh = INF
 	for child: Node in content.get_children():
 		content.remove_child(child)
@@ -64,6 +70,16 @@ func _rebuild() -> void:
 		_group = SelectionGroup.new()
 		content.add_child(_group)
 		_group.setup(context.selection, context.stats, context.team)
+	if not context.selection.is_empty():
+		_ability = AbilityButton.new(context.stats.ability_button_units)
+		_ability.pressed.connect(context.commands.ability_pressed.emit)
+		content.add_child(_ability)
+		_refresh_ability()
+
+
+func _refresh_ability() -> void:
+	if _ability != null:
+		_ability.refresh(context.selection.main_units(), context.commands.ability_armed)
 
 
 func _empty() -> void:

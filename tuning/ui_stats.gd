@@ -30,6 +30,8 @@ extends Resource
 @export_range(1, 8, 1) var selection_columns: int = 4
 ## Rows of the selection card grid; more cards than fit end in a "+N" card.
 @export_range(1, 6, 1) var selection_rows: int = 3
+## Side of the square ability button (F) under the selection, in base units.
+@export_range(6, 16, 1) var ability_button_units: int = 9
 
 @export_group("Command grid")
 ## Columns of the command and build grid.

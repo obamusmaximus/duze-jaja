@@ -10,6 +10,7 @@ Read before writing a headless or `--script` test harness. Add a line here when 
 - Code that uses `get_tree().current_scene` gets null when a script adds the level to `root`.
 - Autoloads (`Sfx`) are not yet registered while a `--script` harness runs `_init`: `await process_frame` before loading a level whose scripts name them.
 - Run one level load per process when comparing several loads.
+- To change a stats resource before loading a level, keep the loaded resource in a variable: otherwise it can be freed and the level loads a fresh copy.
 - A GDScript lambda captures locals by value: assigning to an outer variable inside one (a signal callback collecting results) changes nothing outside. Mutate a container instead (`got[0] = x`).
 - For a deterministic run (comparing a trace before and after a refactor), pass `--fixed-fps 60`; without it the physics step count follows wall time.
 - A screenshot script on a small window must set `root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED`, or the project's 1920x1080 stretch shrinks everything to a corner.

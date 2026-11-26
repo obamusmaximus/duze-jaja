@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="UnitStats" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="UnitStats" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://tuning/unit_stats.gd" id="1_stats"]
 [ext_resource type="Resource" path="res://tuning/cargo_default.tres" id="2_cargo"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" path="res://ui/icons/units/carryall.svg" id="4_icon"]
 
 [ext_resource type="Resource" path="res://tuning/carryall_default.tres" id="5_carryall"]
+[ext_resource type="Resource" path="res://tuning/hover_carryall.tres" id="7_hover"]
 
 [resource]
 script = ExtResource("1_stats")
@@ -15,6 +16,8 @@ speed = 20.0
 radius = 7.0
 height = 6.0
 flying = true
+cargo_class = 3
+cargo_size = 10.0
 flight_height = 40.0
 flight_climb_rate = 15.0
 cargo = ExtResource("2_cargo")
@@ -22,3 +25,5 @@ carryall = ExtResource("5_carryall")
 model = ExtResource("3_model")
 model_scale = 8.0
 max_health = 600.0
+hover_flight = ExtResource("7_hover")
+cockpit_offset = Vector3(0, 4.5, -6)

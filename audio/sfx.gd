@@ -86,12 +86,20 @@ func start_ambient(id: StringName) -> void:
 	var cue: SfxCue = _cues.get(id)
 	if cue == null or cue.streams.is_empty():
 		return
-	_ambient = AudioStreamPlayer.new()
-	_ambient.stream = _looped(cue.streams[0])
-	_ambient.bus = cue.bus
-	_ambient.volume_db = cue.volume_db
+	_ambient = SfxLoop.new(cue, _looped(cue.streams[0]))
 	add_child(_ambient)
 	_ambient.play()
+
+
+## A new loop of `id` for a view that drives its own volume and pitch (engine, wind), or null for an unknown cue. It
+## is silent until `SfxLoop.drive`, pauses with the game, and the caller adds it to the tree and frees it.
+func make_loop(id: StringName) -> SfxLoop:
+	var cue: SfxCue = _cues.get(id)
+	if cue == null or cue.streams.is_empty():
+		return null
+	var loop := SfxLoop.new(cue, _looped(cue.streams[0]))
+	loop.process_mode = Node.PROCESS_MODE_PAUSABLE
+	return loop
 
 
 func stop_ambient() -> void:
@@ -174,7 +182,8 @@ func _looped(stream: AudioStream) -> AudioStream:
 		var wav := copy as AudioStreamWAV
 		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		wav.loop_begin = 0
-		wav.loop_end = wav.data.size() / (2 if wav.format == AudioStreamWAV.FORMAT_16_BITS else 1) / (2 if wav.stereo else 1)
+		# In sample frames. From the length: the data of a compressed import (QOA) doesn't count them by its size.
+		wav.loop_end = roundi(wav.get_length() * wav.mix_rate)
 	elif copy is AudioStreamOggVorbis:
 		(copy as AudioStreamOggVorbis).loop = true
 	return copy

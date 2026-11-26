@@ -14,7 +14,6 @@ signal playtest_event(event: StringName, data: Dictionary)
 const WORLD_MASK: int = 1 << 0
 const RAY_TOP: float = 1000.0
 const RAY_BOTTOM: float = -1000.0
-const SIDES: Array = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 @export var stats: MapStats
 
@@ -43,6 +42,8 @@ var _clearance_cells: int = 1
 ## Obstacle areas (world x, z) blocking the cells they cover. Kept as areas so a rebuild can re-apply them.
 var _obstacles: Array[Rect2] = []
 var _built: bool = false
+## How many obstacles `compute()` had.
+var _computed_obstacles: int = 0
 ## The settings the grid was built with: cell size, slope limit, clearance.
 var _built_shape := Vector3.ZERO
 var _rebuild_pending: bool = false
@@ -62,6 +63,15 @@ func is_built() -> bool:
 
 ## Builds the whole grid over `area` from the ground under it. Call on a physics tick (the level does, after load).
 func build(area: Rect2) -> void:
+	compute(area)
+	publish()
+
+
+## The first part of `build()`: samples the ground and labels the regions. With `terrain` set it uses no physics, so it
+## may run on a worker thread (after `TerrainHeights.prepare()`); then nothing else may touch the grid until it returns.
+## The grid stays unbuilt until `publish()`.
+func compute(area: Rect2) -> void:
+	_built = false
 	bounds = area
 	cell_size = stats.cell_size
 	_built_shape = Vector3(stats.cell_size, stats.max_slope_deg, stats.path_clearance)
@@ -78,11 +88,21 @@ func build(area: Rect2) -> void:
 	astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
 	astar.jumping_enabled = true
 	astar.update()
-	_built = true
 	var all := Rect2i(Vector2i.ZERO, size)
+	_computed_obstacles = _obstacles.size()
 	_sample(all)
 	_refresh(all)
 	regions.label_all(_walkable, size)
+
+
+## The second part, on the main thread: the grid is now built and says so.
+func publish() -> void:
+	# An obstacle or a shape setting may have changed since `compute()`.
+	if _obstacles.size() != _computed_obstacles:
+		_refresh(Rect2i(Vector2i.ZERO, size))
+		regions.label_all(_walkable, size)
+	_built = true
+	_on_stats_changed()
 	cells_changed.emit(bounds, true)
 
 
@@ -273,41 +293,87 @@ func _sample_data(cells: Rect2i) -> void:
 ## Recomputes what is blocked in `cells` (and their rim, whose slope depends on them), then path walkability
 ## (blocked grown by the clearance) around them.
 func _refresh(cells: Rect2i) -> void:
-	var max_step: float = cell_size * tan(deg_to_rad(stats.max_slope_deg))
 	var near: Rect2i = cells.grow(1).intersection(astar.region)
-	for y: int in range(near.position.y, near.end.y):
-		for x: int in range(near.position.x, near.end.x):
-			var cell := Vector2i(x, y)
-			_blocked[y * size.x + x] = 1 if _is_steep(cell, max_step) or _is_covered(cell) else 0
+	_mark_blocked(near)
+	_mark_walkable(near.grow(_clearance_cells).intersection(astar.region))
+
+
+## A cell is blocked with no ground, a step to a neighbour steeper than the slope limit, or an obstacle over it. A
+## neighbour with no ground (NAN) never counts as steep: no comparison with NAN is true.
+func _mark_blocked(cells: Rect2i) -> void:
+	var max_step: float = cell_size * tan(deg_to_rad(stats.max_slope_deg))
+	var width: int = size.x
+	var last: Vector2i = size - Vector2i.ONE
+	var has_obstacles: bool = not _obstacles.is_empty()
+	for y: int in range(cells.position.y, cells.end.y):
+		for x: int in range(cells.position.x, cells.end.x):
+			var i: int = y * width + x
+			var height: float = _heights[i]
+			var blocked: bool = not is_finite(height) \
+					or (x > 0 and absf(height - _heights[i - 1]) > max_step) \
+					or (x < last.x and absf(height - _heights[i + 1]) > max_step) \
+					or (y > 0 and absf(height - _heights[i - width]) > max_step) \
+					or (y < last.y and absf(height - _heights[i + width]) > max_step)
+			if not blocked and has_obstacles:
+				blocked = _is_covered(Vector2i(x, y))
+			_blocked[i] = 1 if blocked else 0
+
+
+## Sets walkability in `cells`: a cell is not walkable with a blocked cell within the clearance (a square). Two
+## passes, along rows and then along columns, each remembering the last blocked cell it met, so the cost does not grow
+## with the clearance. `astar` takes each row in runs of equal cells, far fewer calls than one per cell.
+func _mark_walkable(cells: Rect2i) -> void:
+	if not cells.has_area():
+		return
 	var k: int = _clearance_cells
-	var around: Rect2i = near.grow(k).intersection(astar.region)
-	for y: int in range(around.position.y, around.end.y):
-		for x: int in range(around.position.x, around.end.x):
-			var clear: bool = not _blocked_within(x, y, k)
-			_walkable[y * size.x + x] = 1 if clear else 0
-			astar.set_point_solid(Vector2i(x, y), not clear)
-
-
-func _is_steep(cell: Vector2i, max_step: float) -> bool:
-	var height: float = _heights[_index(cell)]
-	if not is_finite(height):
-		return true
-	for side: Vector2i in SIDES:
-		var other: Vector2i = cell + side
-		if astar.is_in_boundsv(other):
-			var other_height: float = _heights[_index(other)]
-			if is_finite(other_height) and absf(height - other_height) > max_step:
-				return true
-	return false
-
-
-func _blocked_within(x: int, y: int, k: int) -> bool:
-	for cy: int in range(maxi(y - k, 0), mini(y + k, size.y - 1) + 1):
-		var row: int = cy * size.x
-		for cx: int in range(maxi(x - k, 0), mini(x + k, size.x - 1) + 1):
-			if _blocked[row + cx] == 1:
-				return true
-	return false
+	var reach: int = k * 2
+	var width: int = size.x
+	# Rows the column pass reads: `cells` and the clearance above and below.
+	var top: int = maxi(cells.position.y - k, 0)
+	var bottom: int = mini(cells.end.y + k, size.y)
+	# Per cell of those rows, over the columns of `cells`: 1 with a blocked cell within `k` along its row.
+	var near_in_row := PackedByteArray()
+	near_in_row.resize(cells.size.x * (bottom - top))
+	for y: int in range(top, bottom):
+		var row: int = y * width
+		var out: int = (y - top) * cells.size.x - cells.position.x
+		var last: int = -width - reach
+		for x: int in range(maxi(cells.position.x - k, 0), mini(cells.position.x + k, width)):
+			if _blocked[row + x] == 1:
+				last = x
+		for x: int in range(cells.position.x, cells.end.x):
+			var ahead: int = x + k
+			if ahead < width and _blocked[row + ahead] == 1:
+				last = ahead
+			near_in_row[out + x] = 1 if last >= x - k else 0
+	# The same down the columns, walked row by row: `seen` is the last row with a hit, per column.
+	var seen := PackedInt32Array()
+	seen.resize(cells.size.x)
+	seen.fill(-size.y - reach)
+	for y: int in range(top, mini(cells.position.y + k, bottom)):
+		var from: int = (y - top) * cells.size.x
+		for c: int in cells.size.x:
+			if near_in_row[from + c] == 1:
+				seen[c] = y
+	for y: int in range(cells.position.y, cells.end.y):
+		var ahead: int = y + k
+		if ahead < bottom:
+			var from: int = (ahead - top) * cells.size.x
+			for c: int in cells.size.x:
+				if near_in_row[from + c] == 1:
+					seen[c] = ahead
+		var row: int = y * width
+		var run_start: int = cells.position.x
+		var run_clear: bool = seen[0] < y - k
+		for c: int in cells.size.x:
+			var x: int = cells.position.x + c
+			var clear: bool = seen[c] < y - k
+			_walkable[row + x] = 1 if clear else 0
+			if clear != run_clear:
+				astar.fill_solid_region(Rect2i(run_start, y, x - run_start, 1), not run_clear)
+				run_start = x
+				run_clear = clear
+		astar.fill_solid_region(Rect2i(run_start, y, cells.end.x - run_start, 1), not run_clear)
 
 
 func _is_covered(cell: Vector2i) -> bool:

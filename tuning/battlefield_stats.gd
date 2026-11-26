@@ -8,6 +8,11 @@ extends Resource
 ## Size of the whole map in metres (x, z), centred on the origin. The sea, the seabed and the camera bounds follow it.
 @export var map_extent: Vector2 = Vector2(3000.0, 2000.0)
 
+@export_group("Loading")
+## Builds the ground, shore and map grid side by side on worker threads while loading. Off: one after another, for
+## comparing. Read at level load.
+@export var threaded_load: bool = true
+
 @export_group("Atoll")
 ## Radius of the reef ring around the lagoon, in metres.
 @export_range(100.0, 1200.0, 5.0) var ring_radius: float = 520.0
@@ -41,3 +46,5 @@ extends Resource
 @export_range(0, 20, 1) var test_fighters: int = 2
 ## Test VTOLs (hovering) per team, placed over its block at the start.
 @export_range(0, 20, 1) var test_vtols: int = 2
+## Explorers per team, each with a demo hold (troopers, IFVs, a tank, a VTOL), parked behind the test flyers.
+@export_range(0, 4, 1) var test_explorers: int = 1

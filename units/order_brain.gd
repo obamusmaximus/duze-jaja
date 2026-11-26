@@ -6,6 +6,7 @@ extends UnitBrain
 ## - Attack: chases its target until in range, faces it and fires; done when the target is gone.
 ## - Attack-move: goes there, but fights anything it meets on the way (enemies within `sight_range`), chasing at most
 ##   `leash_distance` from where it met them, so it can't be kited away; then carries on.
+## - An Explorer that is deploying, deployed or packing up holds still (`Explorer`).
 ## - Deliver (carryalls): the carryall flies, lands, unloads and lifts off (`Carryall.deliver`).
 ## - Fixed wings can't stand: whenever one of the above has it fight, it makes attack passes (`AttackRun`).
 ## - Idle (no orders): holds its ground, faces and fires at enemies in range, the one that hit it last first.
@@ -50,6 +51,10 @@ func wanted_velocity(delta: float) -> Vector3:
 	_facing = Vector3.ZERO
 	if _unit.carryall != null and _unit.carryall.leaving():
 		return _unit.carryall.leave_velocity() # Off the pad first, level with the deck.
+	if _unit.explorer != null and _unit.explorer.anchored():
+		_nav.stop()
+		_active = null # Orders given meanwhile start afresh once it flies again.
+		return Vector3.ZERO # Deploying, deployed or packing up: it holds still (an order packs it up first).
 	var order: Order = _queue.current()
 	while order and order.kind == Order.Kind.STOP:
 		_queue.finish()

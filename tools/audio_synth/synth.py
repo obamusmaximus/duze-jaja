@@ -92,6 +92,43 @@ def wind_loop(seconds: float = 12.0) -> list[float]:
     return out
 
 
+def noise_loop(seconds: float, low_pass: float, high_pass: float, seed: int) -> list[float]:
+    """Steady band-passed noise, its tail crossfaded into its start so the loop point is seamless."""
+    rng = random.Random(seed)
+    n = int(seconds * RATE)
+    fade = int(0.5 * RATE)
+    raw: list[float] = []
+    y = slow = 0.0
+    for _ in range(n + fade):
+        y += (rng.uniform(-1, 1) - y) * low_pass
+        slow += (y - slow) * high_pass
+        raw.append(y - slow)
+    out = raw[:n]
+    for i in range(fade):  # equal power: two noises that don't match would dip with a straight crossfade
+        k = i / fade
+        out[i] = out[i] * math.sqrt(k) + raw[n + i] * math.sqrt(1.0 - k)
+    return out
+
+
+def engine_loop(seconds: float = 3.0) -> list[float]:
+    """A jet-like drone: low harmonics with a slow beat, a thin turbine whine and a rumble. Every tone fits a whole
+    number of cycles into the loop."""
+    n = int(seconds * RATE)
+    rumble = noise_loop(seconds, 0.03, 0.005, 11)
+    scale = 1.0 / max(abs(s) for s in rumble)
+    tones = [(55.0, 0.5), (110.0, 0.28), (111.0, 0.2), (165.0, 0.12), (220.0, 0.07), (880.0, 0.025), (883.0, 0.02)]
+    return [sum(a * math.sin(2 * math.pi * f * i / RATE) for f, a in tones) + rumble[i] * scale * 0.45 for i in range(n)]
+
+
+def stall_warning_loop() -> list[float]:
+    """One beep and its gap."""
+    n = int(0.09 * RATE)
+    edge = int(0.004 * RATE)
+    beep = [math.copysign(0.3, math.sin(2 * math.pi * 950 * i / RATE)) + 0.7 * math.sin(2 * math.pi * 950 * i / RATE)
+            for i in range(n)]
+    return [s * min(1.0, i / edge, (n - 1 - i) / edge) for i, s in enumerate(beep)] + silence(0.08)
+
+
 def main() -> None:
     # Order acknowledgements: short, clean, digital. Move rises, attack falls and bites, attack-move does both.
     write("order_move", tone(660, 990, 0.05, "tri") + silence(0.012) + tone(990, 1320, 0.07, "tri"), 0.55)
@@ -104,6 +141,10 @@ def main() -> None:
     write("hit_spark", mix(noise_burst(0.07, 0.6, 5.0, 3), tone(1800, 600, 0.05, "sine", 4.0)), 0.7)
     # Ambient wind.
     write("ambient_mars_wind", wind_loop(), 0.6)
+    # The inhabited flight: engine and wind (the game drives their pitch and volume) and the stall warning.
+    write("flight_engine", engine_loop(), 0.6)
+    write("flight_wind", noise_loop(5.0, 0.22, 0.02, 13), 0.6)
+    write("stall_warning", stall_warning_loop(), 0.55)
     print("wrote", sorted(p.name for p in OUT.iterdir()))
 
 

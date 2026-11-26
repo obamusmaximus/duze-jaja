@@ -4,8 +4,8 @@ extends RefCounted
 ## squad is built into the hold, leaves the pad sideways at deck level and then drops to cruise height, delivers by
 ## landing and unloading round itself, then hovers back beside its mothership (never onto a pad). Its side gunners
 ## (infantry aboard) shoot ground enemies. Simulation: the `Unit` steps it from `think`, and the `OrderBrain` asks it
-## for the velocity of a delivery. In the air a carryall only moves in x and z at its cruise height (`UnitMovement`
-## altitude); flying it freely in 3D comes with first-person piloting, as a brain swap.
+## for the velocity of a delivery. On the autopilot a carryall only moves in x and z at its cruise height
+## (`UnitMovement` altitude); a player flies it freely with the hover controls (`HoverModel`).
 
 ## The carryall left its pad (the production line it was loading from stops, `Production`).
 signal took_off
@@ -69,6 +69,21 @@ func step(delta: float) -> void:
 	if pad >= 0 and not _exiting and not unit.orders.is_idle():
 		_take_off()
 	_fire_gunners(delta)
+
+
+## A player takes it over: it is off its pad at once (a line still loading it stops), and any delivery or exit is
+## dropped.
+func take_controls() -> void:
+	var docked: bool = pad >= 0
+	pad = -1
+	_exiting = false
+	delivery_finished = false
+	_phase = Phase.FLY
+	unit.movement.altitude_override = NAN
+	_deploy_squads()
+	if docked:
+		building = false
+		took_off.emit()
 
 
 ## True while the carryall flies level off its pad; the brain then asks `leave_velocity` instead of following orders.
@@ -170,8 +185,7 @@ func _unload_one() -> void:
 		if cell.x >= 0:
 			at = map.cell_center(cell)
 		at.y = map.surface_height(at)
-	var landed: Unit = unit.registry.spawn(entry.unit_type, unit.team, at, entry.unit_id)
-	landed.health.current = entry.health
+	var landed: Unit = entry.land(unit.registry, unit.team, at)
 	if squads != null and entry.squad_id != 0:
 		squads.attach(entry.squad_id, landed)
 		_deployed_squads[entry.squad_id] = true

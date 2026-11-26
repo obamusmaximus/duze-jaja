@@ -48,17 +48,16 @@ func build_seconds(scale: float) -> float:
 func validate(stats: EconomyStats) -> String:
 	if type_ids.is_empty():
 		return "empty squad"
-	var used: Dictionary = {}
+	var used: float = 0.0
 	for id: String in type_ids:
 		var type: UnitStats = UnitCatalog.by_id(StringName(id))
 		if type == null:
 			return "unknown type"
-		if type.cargo_class == UnitStats.CargoClass.NONE:
+		if Cargo.size_of(type) <= 0.0:
 			return "%s can't be carried" % type.display_name
-		used[type.cargo_class] = int(used.get(type.cargo_class, 0)) + type.cargo_slots
-	for cargo_class: int in used:
-		if int(used[cargo_class]) > stats.squad_hold.capacity(cargo_class as UnitStats.CargoClass) * stats.squad_carryalls:
-			return "too big for the hold"
+		used += Cargo.size_of(type)
+	if used > stats.squad_hold.volume * stats.squad_carryalls + Cargo.EPSILON:
+		return "too big for the hold"
 	return ""
 
 

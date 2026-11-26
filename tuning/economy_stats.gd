@@ -23,7 +23,7 @@ extends Resource
 @export_range(0.0, 1.0, 0.05) var takeoff_refund: float = 0.5
 
 @export_group("Squads")
-## The hold a squad must fit (one carryall's slots by default).
+## The hold a squad must fit (one carryall's volume by default).
 @export var squad_hold: CargoStats
 ## How many carryall holds one squad may fill; above 1 the squad needs several carryalls.
 @export_range(1, 8, 1) var squad_carryalls: int = 1

@@ -23,6 +23,14 @@ const BONE: Color = Color("#E3DDCB")
 ## Text on dark, highlights, bright surfaces.
 const OFF_WHITE: Color = Color("#F2F0E9")
 
+# The helmet HUD of the first person (`views/cockpit/hud/`): one line colour, warnings in the warning accent, and a
+# dark edge under every stroke so it reads over sky, sea and sand.
+const HUD_LINE: Color = GREEN
+const HUD_WARNING: Color = ORANGE
+const HUD_EDGE: Color = Color(BLACK, 0.55)
+## Thin reference lines that guide the eye without competing with the marks.
+const HUD_REFERENCE: Color = Color(HUD_LINE, 0.6)
+
 # Tones stacked between black and concrete (depth comes from tone, not effects).
 ## Raised dark surface: cards and modules on the black HUD.
 const GRAPHITE: Color = Color("#1E1E22")

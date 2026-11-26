@@ -3,7 +3,7 @@ extends RefCounted
 ## A command from a player or an AI, as plain data: unit ids and a target point or unit id, never node references,
 ## so it can go over the network and into saves later. Sent through `CommandIssuer.issue()`, the only way in.
 
-enum Kind { MOVE, ATTACK, ATTACK_MOVE, STOP, PRODUCE, CANCEL, DELIVER, MARKER, CLEAR_MARKER, INHABIT, LEAVE }
+enum Kind { MOVE, ATTACK, ATTACK_MOVE, STOP, PRODUCE, CANCEL, DELIVER, MARKER, CLEAR_MARKER, INHABIT, LEAVE, ABILITY }
 
 ## How a carryall puts its cargo down. Only landing exists so far; para-drop falls back to it.
 enum DeliveryMode { LAND, PARADROP }
@@ -62,6 +62,12 @@ static func deliver(by_team: int, ids: PackedInt32Array, point: Vector3, deliver
 	var order := _make(Kind.DELIVER, by_team, ids, point, 0, false)
 	order.mode = delivery_mode
 	return order
+
+
+## Units `ids` use their abilities now (never queued; their other orders stand). A targeted ability is aimed at
+## `point` or the unit `target_id`.
+static func ability(by_team: int, ids: PackedInt32Array, point: Vector3 = Vector3.ZERO, target_id: int = 0) -> Order:
+	return _make(Kind.ABILITY, by_team, ids, point, target_id, false)
 
 
 ## The team's player takes over its unit `unit_id` (`PilotSeats`).

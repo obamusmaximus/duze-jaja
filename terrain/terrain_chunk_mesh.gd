@@ -3,12 +3,21 @@ extends RefCounted
 ## Builds the flat-shaded facet mesh of one terrain chunk from `TerrainHeights`: two triangles per quad, one surface
 ## per palette role (materials come from `WorldMaterials`, so the ground recolours with the palette). Roles are
 ## painted or picked from slope and height (`HeightmapStats`, "Surface").
+## Two parts: `arrays()` returns plain data and only reads (safe on a worker thread once the heights are decoded and
+## the light is baked); `make_mesh()` makes the engine objects, on the main thread.
 
 
 ## The mesh for the cells (`first`, `cells`) of `heights`, using every `step`-th sample (a coarser level of detail).
 ## Positions are relative to the chunk's corner sample. Null if nothing to draw.
 static func build(heights: TerrainHeights, stats: HeightmapStats, first: Vector2i, cells: Vector2i, step: int,
 		light: TerrainLight = null) -> ArrayMesh:
+	return make_mesh(arrays(heights, stats, first, cells, step, light))
+
+
+## The pure part of `build()`: per palette role, that surface's mesh arrays (`Mesh.ARRAY_MAX` long). Empty if nothing
+## to draw.
+static func arrays(heights: TerrainHeights, stats: HeightmapStats, first: Vector2i, cells: Vector2i, step: int,
+		light: TerrainLight = null) -> Dictionary:
 	var positions: Dictionary = {}
 	var normals: Dictionary = {}
 	var colors: Dictionary = {}
@@ -39,16 +48,24 @@ static func build(heights: TerrainHeights, stats: HeightmapStats, first: Vector2
 				c11 = light.color_at(ix1, iz1)
 			_triangle(positions, normals, colors, stats, rock_cos, painted, [p00, p01, p10], [c00, c01, c10])
 			_triangle(positions, normals, colors, stats, rock_cos, painted, [p10, p01, p11], [c10, c01, c11])
-	if positions.is_empty():
+	var surfaces: Dictionary = {}
+	for role: int in positions:
+		var surface: Array = []
+		surface.resize(Mesh.ARRAY_MAX)
+		surface[Mesh.ARRAY_VERTEX] = positions[role]
+		surface[Mesh.ARRAY_NORMAL] = normals[role]
+		surface[Mesh.ARRAY_COLOR] = colors[role]
+		surfaces[role] = surface
+	return surfaces
+
+
+## The main-thread part of `build()`: the mesh of `arrays()`'s surfaces, each with its role's material. Null for none.
+static func make_mesh(surfaces: Dictionary) -> ArrayMesh:
+	if surfaces.is_empty():
 		return null
 	var mesh := ArrayMesh.new()
-	for role: int in positions:
-		var arrays: Array = []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = positions[role]
-		arrays[Mesh.ARRAY_NORMAL] = normals[role]
-		arrays[Mesh.ARRAY_COLOR] = colors[role]
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	for role: int in surfaces:
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surfaces[role])
 		mesh.surface_set_material(mesh.get_surface_count() - 1, WorldMaterials.role(role as WorldMaterials.Role))
 	return mesh
 

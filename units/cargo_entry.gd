@@ -14,3 +14,10 @@ func _init(id: int, type: UnitStats, current_health: float = -1.0) -> void:
 	unit_id = id
 	unit_type = type
 	health = type.max_health if current_health < 0.0 else current_health
+
+
+## Puts the unit back on the map at `at` for `team` (same id if it had one, its health kept); returns it.
+func land(registry: UnitRegistry, team: int, at: Vector3) -> Unit:
+	var landed: Unit = registry.spawn(unit_type, team, at, unit_id)
+	landed.health.current = health
+	return landed

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="HoverStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tuning/hover_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+speed = 20.0
+strafe_share = 0.5
+reverse_share = 0.4
+acceleration = 6.0
+braking = 5.5
+settle = 2.0
+climb_speed = 8.0
+climb_acceleration = 7.0
+yaw_rate = 50.0
+pitch_rate = 35.0
+pitch_limit_deg = 30.0
+steer_gain = 1.6
+turn_response = 5.0
+lean_pitch_deg = 4.0
+lean_roll_deg = 6.0
+turn_bank_deg = 7.0
+lean_response = 2.5
+ground_gap = 1.0
+crash_speed = 17.0

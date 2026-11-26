@@ -18,7 +18,7 @@ The order for making aircraft a core part of the game: flyers in the RTS view on
 - **A crash in first person** (proposal: the unit is destroyed, a real loss, and the player drops back to the RTS view; an eject may come later).
 - **Leaving the cockpit for another view** while inhabiting (V, B): allowed as a peek, or J first? (Built in step 2 as J first: V and B do nothing in first person.)
 - **The army while the player is in first person:** the friendly AI commander isn't built. Until it is, the rest of the army keeps its last orders.
-- **The WASD mapping:** W/S pitch and A/D roll, or A/D yaw? Pick it during step 3b's feel pass.
+- **The WASD mapping** (built in 3b-1 as W/S pitch, A/D roll, with a pitch swap in the tuning panel): confirm in the feel pass, or move A/D to yaw.
 
 ## Key bindings to watch
 - **B** is already `toggle_war_table`. The air brake is a new action `air_brake`, also on B; only the active view's controls read their actions, so the war table must ignore B while a unit is inhabited (and the flight controls ignore it otherwise).
@@ -61,7 +61,7 @@ Select one own unit in the RTS view (or the bird's-eye view) and press J to take
 ## 3. First-person flight
 The full flight model, the controls and the helmet HUD. The longest feel iteration in the plan: split as below, and split further if a sub-step runs long.
 
-### 3a. Flight model  [ ]
+### 3a. Flight model  [x]
 - **`FlightModel`** (simulation, our own integration on the tick) and **`FlightStats`** (`tuning/`, a Flight tab or a group on `UnitStats`; listed in `TuningPanel.TABS`). State: position, velocity, orientation, angular rates.
 - **Aerodynamics, kept cheap:** fixed thrust per type; lift from speed squared and angle of attack up to a stall angle, falling off past it; drag growing with speed squared and with angle of attack (hard turns bleed speed); gravity (climbs cost speed, dives give it back); a soft, recoverable stall; sideslip pulled back toward the nose so it never feels slippery.
 - **Air brake (B):** extra drag while held.
@@ -70,13 +70,16 @@ The full flight model, the controls and the helmet HUD. The longest feel iterati
 - **VTOL:** the same model with its own `FlightStats` (slower, more drag, no stall below a speed it hovers at through thrust). Its full hover mode is a later ability, not part of this step.
 - **Headless check:** level flight holds height at cruise, a full pull-up stalls and recovers, a dive into terrain crashes, the hand-over keeps velocity.
 
-### 3b. Controls and feel  [ ]
+### 3b-1. Controls  [x]
 - **Mouse aim:** the mouse moves an aim reticle around the view sphere (independent of the nose); a controller turns pitch, roll and yaw to bring the nose onto it, limited by the model (it can stall the plane if asked to; that's the learning curve). Tunable gains per type.
-- **WASD** as a secondary direct control that overrides the mouse while held, and free look that holds the reticle.
-- **Cockpit feel:** field of view widening with speed, a light camera shake with speed and in a stall, sound from `Sfx` (engine, wind, stall warning).
+- **WASD** as a secondary direct control that overrides the mouse while held (W/S pitch, A/D roll), and free look that holds the reticle.
 - **A feel pass with the user** over the atoll. Expect several rounds.
 
-### 3c. Flight HUD (helmet display)  [ ]
+### 3b-2. Cockpit feel  [x]
+- Field of view widening with speed, a light camera shake with speed and in a stall, sound from `Sfx` (engine, wind, stall warning; the engine and wind loops need `Sfx` to run more than its one ambient loop, with live pitch and volume).
+- **A feel pass with the user.**
+
+### 3c. Flight HUD (helmet display)  [x]
 A dynamic head-up display in the style of a real HUD or an F-35 helmet visor: thin lines in one HUD colour from `UiTokens`, drawn in screen space from projected 3D directions so the markings sit on the world.
 - **Horizon line and pitch ladder**, rolling with the plane.
 - **Flight path marker** (where the plane is actually going) and **boresight** (where the nose points); the gap between them shows the angle of attack.
@@ -86,12 +89,18 @@ A dynamic head-up display in the style of a real HUD or an F-35 helmet visor: th
 - If it runs long: split into 3c-1 (horizon, ladder, markers, reticle) and 3c-2 (tapes and warnings).
 - **Done when:** the user can fly by the HUD alone and reads a stall coming before it happens.
 
-## 4. Unit abilities (F)  [ ]
-The framework only: the abilities themselves come with each unit type.
-- **An ability per unit type:** `UnitStats` names an ability resource (its own stats class: cooldown, charges, duration as the ability needs); a unit runs it as a part (`UnitAbility`).
-- **Triggered by an order** (`Order.ability`, through `CommandIssuer`): F on the selection in the RTS view (and a command-grid button), F while inhabited (through the control channel). Targeted abilities take a point or a unit after F, like attack-move.
+## 4. Unit abilities (F)
+The framework only: the abilities themselves come with each unit type. Split in two sessions.
+
+### 4a. Framework, cockpit F and the test ability  [x]
+- **An ability per unit type:** `UnitStats.ability` names an `AbilityStats` resource (cooldown, charges, duration); a unit runs it as a part (`UnitAbility`).
+- **Triggered by an order** (`Order.ability`, through `CommandIssuer`), and by F while inhabited (through the control channel).
+- **A test ability** on the test fighter (`BoostStats`: a short boost).
+
+### 4b. F in the RTS view and the HUD  [x]
+- (F on the selection's main type in the RTS view landed early with the Explorer, `explorer.md`; the button and HUD remain.)
+- F on the selection in the RTS view, and a command-grid button (built as a command cell in the selection panel; the empty command grid stays out of the layouts). Targeted abilities take a point or a unit after F, like attack-move (the targeting kind goes on `AbilityStats` when this is built).
 - **Shown in the HUD:** ready, cooling down, charges, in the selection panel and in the flight HUD.
-- **A test ability** on the test fighter (for example a short boost) to prove the path end to end.
 - **Done when:** F works from both views with cooldowns shown, and a new unit type adds an ability with a `.tres` and one script.
 
 ## After this plan

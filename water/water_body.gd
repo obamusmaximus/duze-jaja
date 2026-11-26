@@ -169,7 +169,7 @@ func _apply() -> void:
 	_near.visible = patched
 	_material.set_shader_parameter("patch_half", stats.near_size * 0.5 if patched else 0.0)
 	_far_material.set_shader_parameter("wave_gain", 0.0 if patched else 1.0)
-	_far_material.set_shader_parameter("vertex_drop", _max_trough() if patched else 0.0)
+	_far_material.set_shader_parameter("vertex_drop", max_trough() if patched else 0.0)
 	_near_centre = Vector2(INF, INF)
 	for key: String in values:
 		_material.set_shader_parameter(key, values[key])
@@ -177,7 +177,7 @@ func _apply() -> void:
 
 
 ## The deepest trough the waves can make (m): the sum of the wave heights as they fall off.
-func _max_trough() -> float:
+func max_trough() -> float:
 	return stats.wave_height / maxf(1.0 - stats.height_falloff, 0.05)
 
 
@@ -196,5 +196,5 @@ func _apply_mesh() -> void:
 	var near_cells: int = maxi(0, ceili(stats.near_size / quad) - 1)
 	_near_plane.subdivide_width = near_cells
 	_near_plane.subdivide_depth = near_cells
-	extra_cull_margin = _max_trough() + 1.0
+	extra_cull_margin = max_trough() + 1.0
 	_near.extra_cull_margin = extra_cull_margin

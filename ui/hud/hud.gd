@@ -21,6 +21,8 @@ var _swap := HudSwap.new()
 var _mode: Mode = Mode.RTS
 ## The armed map marker or landing zone; shared with the strategy views' controls.
 var tools := StrategyTools.new()
+## The command buttons' link to the RTS controls (`RtsPlayer.bind_hud`).
+var commands := HudCommands.new()
 
 
 ## `area` is the part of the ground (x, z) the map covers.
@@ -32,6 +34,7 @@ func setup(selection: Selection, team: int, area: Rect2, rig: CameraRig) -> void
 	context.rig = rig
 	context.stats = stats
 	context.tools = tools
+	context.commands = commands
 	_swap.name = "Swap"
 	add_child(_swap)
 	_swap.setup(stats)
