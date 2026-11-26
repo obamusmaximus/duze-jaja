@@ -1,13 +1,13 @@
 class_name Carryall
 extends RefCounted
 ## What makes a flying unit with a hold a carryall (`docs/mechanics/carryall.md`): it sits on a mothership pad while its
-## squad is built into the hold, leaves the pad sideways at deck level and then drops to cruise height, delivers by
-## landing and unloading round itself, then hovers back beside its mothership (never onto a pad). Its side gunners
+## squad is built into the hold, delivers by landing and unloading round itself (a delivery order, or its deploy
+## ability where it is), then flies back to land on a mothership pad (`Landing`, as any flyer does). Its side gunners
 ## (infantry aboard) shoot ground enemies. Simulation: the `Unit` steps it from `think`, and the `OrderBrain` asks it
 ## for the velocity of a delivery. On the autopilot a carryall only moves in x and z at its cruise height
 ## (`UnitMovement` altitude); a player flies it freely with the hover controls (`HoverModel`).
 
-## The carryall left its pad (the production line it was loading from stops, `Production`).
+## The carryall left a pad (a production line loading it stops, `Production`).
 signal took_off
 
 ## What the strategy view and the commander read: where a carryall stands in its work.
@@ -16,18 +16,14 @@ enum Phase { FLY, DESCEND, UNLOAD, LIFT }
 
 var unit: Unit
 var stats: CarryallStats
-## The mothership it belongs to and returns to; set by the `CarryallFleet`.
-var mothership: Mothership
 var squads: SquadRegistry
-## The pad it sits on, -1 in the air.
-var pad: int = -1
+## It sat on a pad at its last tick.
+var docked: bool = false
 ## A production line is still adding units to its hold.
 var building: bool = false
 ## The current delivery is done (the brain finishes the order).
 var delivery_finished: bool = false
 
-var _exiting: bool = false
-var _exit_point: Vector3 = Vector3.ZERO
 var _phase: Phase = Phase.FLY
 var _land_point: Vector3 = Vector3.ZERO
 var _timer: float = 0.0
@@ -44,13 +40,20 @@ func _init(body: Unit, carryall_stats: CarryallStats) -> void:
 	stats = carryall_stats
 
 
-## Sits the carryall on pad `index` of `ship` (the fleet calls this right after spawning it).
-func dock(ship: Mothership, index: int) -> void:
-	mothership = ship
-	pad = index
-	var at: Vector3 = ship.pad_position(index)
-	unit.global_position = at + Vector3.UP * stats.deck_clearance
-	unit.movement.altitude_override = at.y + stats.deck_clearance
+## Sits the carryall on a free pad of `field` (the fleet calls this right after spawning it). False if none is free.
+func dock(field: Airfield) -> bool:
+	var pad: Pad = field.request_pad(unit.id)
+	if pad == null:
+		field.release(unit.id)
+		return false
+	unit.landing.dock(field, pad)
+	docked = true
+	return true
+
+
+## On a pad, empty, with nothing to do: a production line may build a new squad into it.
+func ready_to_load() -> bool:
+	return not building and unit.landing.is_down() and unit.orders.is_idle() and unit.cargo.entries.is_empty()
 
 
 func state() -> State:
@@ -64,47 +67,48 @@ func state() -> State:
 	return State.RETURNING if order.returning else State.FOLLOWING
 
 
-## The carryall's own tick, before its movement decision: leaves the pad when it is given an order, and fires the guns.
+## The carryall's own tick, before its movement decision: notes leaving a pad, and fires the guns.
 func step(delta: float) -> void:
-	if pad >= 0 and not _exiting and not unit.orders.is_idle():
-		_take_off()
+	if unit.landing.is_down():
+		docked = true
+	elif docked:
+		docked = false
+		building = false
+		took_off.emit()
 	_fire_gunners(delta)
 
 
-## A player takes it over: it is off its pad at once (a line still loading it stops), and any delivery or exit is
-## dropped.
+## A player has the controls: any delivery is dropped.
 func take_controls() -> void:
-	var docked: bool = pad >= 0
-	pad = -1
-	_exiting = false
 	delivery_finished = false
 	_phase = Phase.FLY
 	unit.movement.altitude_override = NAN
 	_deploy_squads()
-	if docked:
-		building = false
-		took_off.emit()
 
 
-## True while the carryall flies level off its pad; the brain then asks `leave_velocity` instead of following orders.
-func leaving() -> bool:
-	return _exiting
+## Whether the deploy ability does anything now: something aboard, in the air, not delivering already, and ground it
+## can set down on under it.
+func can_deploy() -> bool:
+	if building or unit.cargo.entries.is_empty() or unit.landing.holds_craft():
+		return false
+	var order: Order = unit.orders.current()
+	if order != null and order.kind == Order.Kind.DELIVER:
+		return false
+	var map: MapGrid = unit.registry.map
+	if map == null or not map.is_built():
+		return true
+	var rings: int = ceili(stats.deploy_reach / map.stats.cell_size)
+	return map.nearest_walkable(map.cell_of(unit.global_position), rings).x >= 0
 
 
-## Heads for the point beyond the hull's side at deck level; at it the carryall is free to drop to cruise height.
-func leave_velocity() -> Vector3:
-	var to: Vector3 = _exit_point - unit.global_position
-	to.y = 0.0
-	if to.length() <= stats.land_arrive_radius:
-		_exiting = false
-		unit.movement.altitude_override = NAN
-		return Vector3.ZERO
-	return to.normalized() * unit.stats.speed
+## The deploy ability: lands here, unloads and returns to a mothership pad, dropping its other orders.
+func deploy() -> void:
+	unit.orders.replace(Order.deliver(unit.team, PackedInt32Array([unit.id]), unit.global_position))
 
 
 ## The brain started `order` (null: it went idle): a flight height held for landing is let go.
 func order_started(order: Order) -> void:
-	if not _exiting and pad < 0:
+	if not unit.landing.holds_craft():
 		unit.movement.altitude_override = NAN
 	delivery_finished = false
 	_phase = Phase.FLY
@@ -154,21 +158,14 @@ func deliver(nav: UnitNavigator, delta: float) -> Vector3:
 	return Vector3.ZERO
 
 
-func _take_off() -> void:
-	var from: Vector3 = unit.global_position
-	_exit_point = mothership.side_point(from.z, stats.exit_margin, from.y)
-	_exiting = true
-	pad = -1
-	building = false
-	took_off.emit()
-
-
-## The way back: a hover point beside the mothership at cruise height, flagged so the state reads `RETURNING`.
+## The way back: a land order for the nearest mothership pad with room, flagged so the state reads `RETURNING`. Queued
+## waypoints are flown first.
 func _go_home() -> void:
-	if mothership == null:
+	var field: Airfield = Airfield.nearest_for(unit)
+	if field == null:
 		return
-	var order: Order = Order.move(unit.team, PackedInt32Array([unit.id]),
-		mothership.side_point(mothership.global_position.z, stats.home_margin, 0.0))
+	var order: Order = Order.land(unit.team, PackedInt32Array([unit.id]), field.airfield_id)
+	order.target_position = field.global_position
 	order.returning = true
 	unit.orders.append(order)
 
@@ -214,7 +211,7 @@ func _ground_at(point: Vector3) -> float:
 ## Side gunners: the first `side_gunners` infantry aboard with a weapon each shoot the nearest ground enemy in range.
 ## A hold without them (an empty carryall) has no guns. Nothing fires on the pad.
 func _fire_gunners(delta: float) -> void:
-	if pad >= 0 or stats.side_gunners <= 0 or unit.registry == null or unit.registry.shots == null:
+	if unit.landing.holds_craft() or stats.side_gunners <= 0 or unit.registry == null or unit.registry.shots == null:
 		return
 	var manned: int = 0
 	for entry: CargoEntry in unit.cargo.entries:
@@ -235,7 +232,8 @@ func _fire_gunners(delta: float) -> void:
 		_cooldowns.clear()
 
 
-## The nearest living enemy on the ground within `reach` (flat, edge to edge), or null. Flyers are never chosen.
+## The nearest living enemy on the ground within `reach` (flat, edge to edge) that the carryall knows of, or null.
+## Flyers are never chosen.
 func _ground_enemy_within(reach: float) -> Unit:
 	unit.registry.units_near(unit.global_position, reach + 8.0, _near)
 	var best: Unit = null
@@ -245,7 +243,7 @@ func _ground_enemy_within(reach: float) -> Unit:
 			continue
 		var distance: float = Vector2(other.global_position.x - unit.global_position.x,
 			other.global_position.z - unit.global_position.z).length()
-		if distance <= reach + other.stats.radius and distance < best_distance:
+		if distance <= reach + other.stats.radius and distance < best_distance and unit.knows(other):
 			best = other
 			best_distance = distance
 	return best

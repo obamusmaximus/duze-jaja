@@ -119,7 +119,7 @@ func _pick(lines: Array[ProductionLine], index: int) -> ProductionLine:
 
 ## The hold a squad must fit: the carryall type's own.
 func fleet_hold() -> CargoStats:
-	return CarryallFleet.CARRYALL_TYPE.cargo
+	return CarryallFleet.carryall_type().cargo
 
 
 ## Gives the job at the front of `line` its carryall and squad record once a pad is free; false while it waits (or
@@ -131,7 +131,7 @@ func _ensure_carryall(team: int, job: ProductionLine.Job, line: ProductionLine) 
 		line.jobs.erase(job) # The carryall was shot down with the squad half built: the credits are gone.
 		changed.emit(line.team)
 		return false
-	var carryall: Carryall = fleet.spawn_on_pad(team)
+	var carryall: Carryall = fleet.claim_on_pad(team)
 	if carryall == null:
 		return false
 	job.carryall = carryall

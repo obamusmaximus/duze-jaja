@@ -5,16 +5,22 @@ extends Node
 ## a production line a fresh carryall on a free pad of the team's mothership, free of charge, and cleans up when one
 ## is lost. Simulation: no view or camera is read here. Group `carryalls`.
 
-## A carryall left its pad (`Production` stops the line that was loading it).
+## A carryall left a pad (`Production` stops the line that was loading it).
 signal took_off(carryall: Carryall)
 ## A team's carryalls changed (one appeared, left or was lost).
 signal changed(team: int)
 
-const CARRYALL_TYPE: UnitStats = preload("res://tuning/unit_carryall.tres")
+## Read from outside through `carryall_type()`: a direct read of another script's `static var` breaks the engine's cleanup at exit.
+static var _carryall_type: UnitStats = preload("res://tuning/unit_carryall.tres")
 
 var squads: SquadRegistry
 var _units: UnitRegistry
 var _carryalls: Array[Carryall] = []
+
+
+static func carryall_type() -> UnitStats:
+	return _carryall_type
+
 
 
 func setup(unit_registry: UnitRegistry, squad_registry: SquadRegistry) -> void:
@@ -23,22 +29,35 @@ func setup(unit_registry: UnitRegistry, squad_registry: SquadRegistry) -> void:
 	add_to_group(&"carryalls")
 
 
-## Puts a new empty carryall on a free pad of `team`'s mothership; null if there is none free (or no mothership).
-func spawn_on_pad(team: int) -> Carryall:
-	var ship: Mothership = _mothership_of(team)
-	if ship == null or _units == null:
+## A carryall for a production line to load: an empty one waiting on a pad of `team`'s mothership, else a new one on
+## a free pad. Null if there is neither (the pads are all taken).
+func claim_on_pad(team: int) -> Carryall:
+	for carryall: Carryall in of_team(team):
+		if carryall.ready_to_load():
+			return carryall
+	var deck: Airfield = _deck_of(team)
+	if deck == null or _units == null or deck.free_pads() == 0:
 		return null
-	var index: int = _free_pad(team, ship.stats.carryall_pads)
-	if index < 0:
-		return null
-	var body: Unit = _units.spawn(CARRYALL_TYPE, team, ship.pad_position(index))
+	var carryall: Carryall = _spawn(team, deck.global_position)
+	carryall.dock(deck)
+	changed.emit(team)
+	return carryall
+
+
+## A new empty carryall of `team` hovering over `at` (a level's starting carryalls).
+func spawn_hovering(team: int, at: Vector3) -> Carryall:
+	var carryall: Carryall = _spawn(team, at)
+	changed.emit(team)
+	return carryall
+
+
+func _spawn(team: int, at: Vector3) -> Carryall:
+	var body: Unit = _units.spawn(_carryall_type, team, at)
 	var carryall: Carryall = body.carryall
 	carryall.squads = squads
-	carryall.dock(ship, index)
 	carryall.took_off.connect(func() -> void: took_off.emit(carryall))
 	_carryalls.append(carryall)
 	body.died.connect(_on_died.bind(carryall), CONNECT_ONE_SHOT)
-	changed.emit(team)
 	return carryall
 
 
@@ -77,22 +96,12 @@ func closest_idle(team: int, point: Vector3, empty_only: bool = true) -> Carryal
 	return best
 
 
-func _free_pad(team: int, pad_count: int) -> int:
-	for index: int in pad_count:
-		var taken: bool = false
-		for carryall: Carryall in of_team(team):
-			if carryall.pad == index:
-				taken = true
-				break
-		if not taken:
-			return index
-	return -1
-
-
-func _mothership_of(team: int) -> Mothership:
-	for node: Node in get_tree().get_nodes_in_group(&"motherships"):
-		if (node as Mothership).team == team:
-			return node as Mothership
+## The team's carryall pads, or null (a level without a mothership).
+func _deck_of(team: int) -> Airfield:
+	for node: Node in get_tree().get_nodes_in_group(&"airfields"):
+		var field := node as Airfield
+		if field.team == team and field.for_carryalls:
+			return field
 	return null
 
 

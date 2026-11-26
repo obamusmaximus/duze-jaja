@@ -1,16 +1,8 @@
 class_name CarryallStats
 extends Resource
-## Tunable numbers for a carryall's behaviour (`units/carryall.gd`, `tuning/carryall_default.tres`): leaving the
-## mothership's pad, landing to deliver, and the side gunners. A unit type points at one from `UnitStats.carryall`;
+## Tunable numbers for a carryall's behaviour (`units/carryall.gd`, `tuning/carryall_default.tres`): landing to
+## deliver and the side gunners (its pads are `MothershipStats`). A unit type points at one from `UnitStats.carryall`;
 ## its hold is `UnitStats.cargo`, its flight (cruise height, climb rate) the usual `UnitStats` flight group.
-
-@export_group("Pad and mothership")
-## Height (metres) of the carryall's body above the pad while it sits on it.
-@export_range(0.0, 10.0, 0.1) var deck_clearance: float = 1.0
-## How far (metres) beyond the hull's side a carryall flies level, off the pad, before it descends to cruise height.
-@export_range(0.0, 200.0, 1.0) var exit_margin: float = 25.0
-## How far (metres) beyond the hull's side a carryall hovers when it returns from a delivery. It never lands on a pad.
-@export_range(0.0, 400.0, 1.0) var home_margin: float = 60.0
 
 @export_group("Delivery")
 ## Height (metres) of the carryall's body above the ground while it sits landed to unload.
@@ -23,6 +15,9 @@ extends Resource
 @export_range(0.0, 10.0, 0.1) var unload_gap: float = 1.5
 ## Seconds the carryall waits on the ground after the last unit left, before it lifts off.
 @export_range(0.0, 10.0, 0.1) var liftoff_delay: float = 1.0
+
+## The deploy ability works with walkable ground at most this far (metres, flat) from the carryall.
+@export_range(2.0, 100.0, 1.0) var deploy_reach: float = 20.0
 
 @export_group("Side gunners")
 ## How many infantry in the hold fire their own weapons at ground enemies from the carryall's sides. A carryall with

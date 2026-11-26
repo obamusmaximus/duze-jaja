@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="AirfieldStats" format=3]
+
+[ext_resource type="Script" path="res://tuning/airfield_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://tuning/pad_default.tres" id="2_pad"]
+
+[resource]
+script = ExtResource("1_stats")
+pad = ExtResource("2_pad")
